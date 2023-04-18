@@ -1,0 +1,31 @@
+(require '[clojure.string :as str]
+         '[stigmergy.config :as c]
+         '[stigmergy.ikota :as ik])
+
+(defn foo [a
+
+           b])
+(defn head [title]
+  [:head
+   [:meta {:charset "utf-8"}]
+   [:meta {:http-equiv "X-UA-Compatible", :content "IE=edge"}]
+   [:meta {:name "viewport", :content "width=device-width, initial-scale=1"}]
+
+   [:link {:href "https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@48,400,0,0" :rel "stylesheet"}]
+
+   [:link
+    {:rel "stylesheet",
+     :href
+     "https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css"}]
+   [:script {:src  "https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"}]
+   [:title title]])
+
+[:html
+ [head "Lambda Kids"]
+ [:body
+  [:div {:id "content", :class "mui-container-fluid"}
+
+   [:h1 "wassup lambdacart2"]]
+
+  [:script {:src "/js/main.js"}]
+  [:script {:src "https://storage.googleapis.com/app.klipse.tech/plugin/js/klipse_plugin.js"}]]]
