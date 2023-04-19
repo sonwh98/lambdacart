@@ -9,7 +9,7 @@
     {:name "viewport",
      :content "width=device-width, initial-scale=1, shrink-to-fit=no"}]
    [:meta {:http-equiv "x-ua-compatible", :content "ie=edge"}]
-   [:title "Material Design for Bootstrap"]
+   [:title title]
    [:link
     {:rel "stylesheet",
      :href "https://use.fontawesome.com/releases/v5.11.2/css/all.css"}]
@@ -609,13 +609,10 @@
            {:class "align-self-center"}
            [:i {:class "fas fa-wallet text-success fa-3x"}]]]]]]]]]])
 
-(defn body [])
 
-(comment
-  (load-file "public/template.chp")
-  (ik/hiccup->html-str (header2)))
 
 [:html
- [head "Lambda Kids"]
- [header]]
+ [head "CyberNut"]
+ [:body
+  ][header]]
 
