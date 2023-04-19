@@ -4,7 +4,7 @@
  :port 3001
  :chp-dir "public"
  :public-dir "public"
- :index "template.chp"
+ :index "mdb-template.chp"
  :mime-types {"chp" "text/html" 
               "blog" "text/html"
               nil "text/html"}

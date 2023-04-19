@@ -2,4 +2,4 @@
   (:require [stigmergy.chp]))
 
 (defn default-handler [req]
-  (stigmergy.chp/render "template.chp" {}))
+  (stigmergy.chp/render "mdb-template.chp" {}))
