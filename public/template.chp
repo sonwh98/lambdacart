@@ -4,30 +4,673 @@
 
 (defn head [title]
   [:head
-   [:meta {:charset "utf-8"}]
-   [:meta {:http-equiv "X-UA-Compatible", :content "IE=edge"}]
-   [:meta {:name "viewport", :content "width=device-width, initial-scale=1"}]
+   [:meta {:charset "UTF-8"}]
+   [:meta
+    {:name "viewport",
+     :content "width=device-width, initial-scale=1, shrink-to-fit=no"}]
+   [:meta {:http-equiv "x-ua-compatible", :content "ie=edge"}]
+   [:title "Material Design for Bootstrap"]
 
-   [:link {:href "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
-           :rel "stylesheet"}]
+   [:link
+    {:rel "stylesheet",
+     :href "https://use.fontawesome.com/releases/v5.11.2/css/all.css"}]
 
-   [:link {:href "https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap"
-           :rel "stylesheet"}]
+   [:link
+    {:rel "stylesheet",
+     :href
+     "https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap"}]
 
-   [:link {:href "https://cdnjs.cloudflare.com/ajax/libs/mdb-ui-kit/6.2.0/mdb.min.css"
-           :rel "stylesheet"}]
+   [:link {:rel "stylesheet", :href "css/mdb.min.css"}]
 
-   [:script {:type "text/javascript"
-             :src "https://cdnjs.cloudflare.com/ajax/libs/mdb-ui-kit/6.2.0/mdb.min.js"}]
-
+   [:link {:rel "stylesheet", :href "css/admin.css"}]
+   [:script
+    {:src
+     "https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.min.js",
+     :integrity
+     "sha512-d9xgZrVZpmmQlfonhQUvTR7lMPtO7NkZMkA0ABN3PHCbKA5nqylQ/yWlFAyY6hYgdF1Qh6nYiuADWwKB4C2WSw==",
+     :crossorigin "anonymous"}]
    [:title title]])
+
+(defn body [])
 
 [:html
  [head "Lambda Kids"]
  [:body
-  [:div {:id "content", :class "mui-container-fluid"}
 
-   [:h1 "wassup lambdacart2"]]
+  [:header
 
-  [:script {:src "/js/main.js"}]
-  [:script {:src "https://storage.googleapis.com/app.klipse.tech/plugin/js/klipse_plugin.js"}]]]
+   [:nav
+    {:id "sidebarMenu",
+     :class "collapse d-lg-block sidebar collapse bg-white"}
+    [:div
+     {:class "position-sticky"}
+     [:div
+      {:class "list-group list-group-flush mx-3 mt-4"}
+      [:a
+       {:href "#",
+        :class "list-group-item list-group-item-action py-2 ripple",
+        :aria-current "true"}
+       [:i {:class "fas fa-tachometer-alt fa-fw me-3"}]
+       [:span "Main dashboard"]]
+      [:a
+       {:href "#",
+        :class
+        "list-group-item list-group-item-action py-2 ripple active"}
+       [:i {:class "fas fa-chart-area fa-fw me-3"}]
+       [:span "Webiste traffic"]]
+      [:a {:href "#" :class "list-group-item list-group-item-action py-2 ripple"}
+       [:i {:class "fas fa-lock fa-fw me-3"}]
+       [:span "Password"]]
+      [:a
+       {:href "#",
+        :class "list-group-item list-group-item-action py-2 ripple"}
+       [:i {:class "fas fa-chart-line fa-fw me-3"}]
+       [:span "Analytics"]]
+      [:a
+       {:href "#",
+        :class "list-group-item list-group-item-action py-2 ripple"}
+       [:i {:class "fas fa-chart-pie fa-fw me-3"}]
+       [:span "SEO"]]
+      [:a
+       {:href "#",
+        :class "list-group-item list-group-item-action py-2 ripple"}
+       [:i {:class "fas fa-chart-bar fa-fw me-3"}]
+       [:span "Orders"]]
+      [:a
+       {:href "#",
+        :class "list-group-item list-group-item-action py-2 ripple"}
+       [:i {:class "fas fa-globe fa-fw me-3"}]
+       [:span "International"]]
+      [:a
+       {:href "#",
+        :class "list-group-item list-group-item-action py-2 ripple"}
+       [:i {:class "fas fa-building fa-fw me-3"}]
+       [:span "Partners"]]
+      [:a
+       {:href "#",
+        :class "list-group-item list-group-item-action py-2 ripple"}
+       [:i {:class "fas fa-calendar fa-fw me-3"}]
+       [:span "Calendar"]]
+      [:a
+       {:href "#",
+        :class "list-group-item list-group-item-action py-2 ripple"}
+       [:i {:class "fas fa-users fa-fw me-3"}]
+       [:span "Users"]]
+      [:a
+       {:href "#",
+        :class "list-group-item list-group-item-action py-2 ripple"}
+       [:i {:class "fas fa-money-bill fa-fw me-3"}]
+       [:span "Sales"]]]]]
+
+   [:nav
+    {:id "main-navbar",
+     :class "navbar navbar-expand-lg navbar-light bg-white fixed-top"}
+
+    [:div
+     {:class "container-fluid"}
+
+     [:button
+      {:class "navbar-toggler",
+       :type "button",
+       :data-mdb-toggle "collapse",
+       :data-mdb-target "#sidebarMenu",
+       :aria-controls "sidebarMenu",
+       :aria-expanded "false",
+       :aria-label "Toggle navigation"}
+      [:i {:class "fas fa-bars"}]]
+
+     [:a
+      {:class "navbar-brand", :href "#"}
+      [:img
+       {:src
+        "https://mdbootstrap.com/img/logo/mdb-transaprent-noshadows.png",
+        :alt "",
+        :loading "lazy",
+        :height "25"}]]
+
+     [:form
+      {:class "d-none d-md-flex input-group w-auto my-auto"}
+      [:input
+       {:autocomplete "off",
+        :type "search",
+        :class "form-control rounded",
+        :placeholder "Search (ctrl + \"/\" to focus)",
+        :style "min-width: 225px"}]
+      [:span
+       {:class "input-group-text border-0"}
+       [:i {:class "fas fa-search"}]]]
+
+     [:ul
+      {:class "navbar-nav ms-auto d-flex flex-row"}
+
+      [:li
+       {:class "nav-item dropdown"}
+       [:a
+        {:class "nav-link me-3 me-lg-0 dropdown-toggle hidden-arrow",
+         :href "#",
+         :id "navbarDropdownMenuLink",
+         :role "button",
+         :data-mdb-toggle "dropdown",
+         :aria-expanded "false"}
+        [:i {:class "fas fa-bell"}]
+        [:span
+         {:class "badge rounded-pill badge-notification bg-danger"}
+         "1"]]
+       [:ul
+        {:class "dropdown-menu dropdown-menu-end",
+         :aria-labelledby "navbarDropdownMenuLink"}
+        [:li [:a {:class "dropdown-item", :href "#"} "Some news"]]
+        [:li [:a {:class "dropdown-item", :href "#"} "Another news"]]
+        [:li [:a {:class "dropdown-item", :href "#"} "Something else"]]]]
+
+      [:li
+       {:class "nav-item"}
+       [:a
+        {:class "nav-link me-3 me-lg-0", :href "#"}
+        [:i {:class "fas fa-fill-drip"}]]]
+
+      [:li
+       {:class "nav-item me-3 me-lg-0"}
+       [:a {:class "nav-link", :href "#"} [:i {:class "fab fa-github"}]]]
+
+      [:li
+       {:class "nav-item dropdown"}
+       [:a
+        {:class "nav-link me-3 me-lg-0 dropdown-toggle hidden-arrow",
+         :href "#",
+         :id "navbarDropdown",
+         :role "button",
+         :data-mdb-toggle "dropdown",
+         :aria-expanded "false"}
+        [:i {:class "united kingdom flag m-0"}]]
+       [:ul
+        {:class "dropdown-menu dropdown-menu-end",
+         :aria-labelledby "navbarDropdown"}
+        [:li
+         [:a
+          {:class "dropdown-item", :href "#"}
+          [:i {:class "united kingdom flag"}]
+          "English"
+          [:i {:class "fa fa-check text-success ms-2"}]]]
+        [:li [:hr {:class "dropdown-divider"}]]
+        [:li
+         [:a
+          {:class "dropdown-item", :href "#"}
+          [:i {:class "poland flag"}]
+          "Polski"]]
+        [:li
+         [:a
+          {:class "dropdown-item", :href "#"}
+          [:i {:class "china flag"}]
+          "中文"]]
+        [:li
+         [:a
+          {:class "dropdown-item", :href "#"}
+          [:i {:class "japan flag"}]
+          "日本語"]]
+        [:li
+         [:a
+          {:class "dropdown-item", :href "#"}
+          [:i {:class "germany flag"}]
+          "Deutsch"]]
+        [:li
+         [:a
+          {:class "dropdown-item", :href "#"}
+          [:i {:class "france flag"}]
+          "Français"]]
+        [:li
+         [:a
+          {:class "dropdown-item", :href "#"}
+          [:i {:class "spain flag"}]
+          "Español"]]
+        [:li
+         [:a
+          {:class "dropdown-item", :href "#"}
+          [:i {:class "russia flag"}]
+          "Русский"]]
+        [:li
+         [:a
+          {:class "dropdown-item", :href "#"}
+          [:i {:class "portugal flag"}]
+          "Português"]]]]
+
+      [:li
+       {:class "nav-item dropdown"}
+       [:a
+        {:class
+         "nav-link dropdown-toggle hidden-arrow d-flex align-items-center",
+         :href "#",
+         :id "navbarDropdownMenuLink",
+         :role "button",
+         :data-mdb-toggle "dropdown",
+         :aria-expanded "false"}
+        [:img
+         {:src "https://mdbootstrap.com/img/Photos/Avatars/img (31).jpg",
+          :class "rounded-circle",
+          :alt "",
+          :loading "lazy",
+          :height "22"}]]
+       [:ul
+        {:class "dropdown-menu dropdown-menu-end",
+         :aria-labelledby "navbarDropdownMenuLink"}
+        [:li [:a {:class "dropdown-item", :href "#"} "My profile"]]
+        [:li [:a {:class "dropdown-item", :href "#"} "Settings"]]
+        [:li [:a {:class "dropdown-item", :href "#"} "Logout"]]]]]]]]
+
+  [:main
+   {:style "margin-top: 58px"}
+   [:div
+    {:class "container pt-4"}
+
+    [:section
+     {:class "mb-4"}
+     [:div
+      {:class "card"}
+      [:div
+       {:class "card-header py-3"}
+       [:h5 {:class "mb-0 text-center"} [:strong "Sales"]]]
+      [:div
+       {:class "card-body"}
+       [:canvas {:class "my-4 w-100", :id "myChart", :height "380"}]]]]
+
+    [:section
+     {:class "mb-4"}
+     [:div
+      {:class "card"}
+      [:div
+       {:class "card-header text-center py-3"}
+       [:h5
+        {:class "mb-0 text-center"}
+        [:strong "Sales Performance KPIs"]]]
+      [:div
+       {:class "card-body"}
+       [:div
+        {:class "table-responsive"}
+        [:table
+         {:class "table table-hover text-nowrap"}
+         [:thead
+          [:tr
+           [:th {:scope "col"}]
+           [:th {:scope "col"} "Product Detail Views"]
+           [:th {:scope "col"} "Unique Purchases"]
+           [:th {:scope "col"} "Quantity"]
+           [:th {:scope "col"} "Product Revenue"]
+           [:th {:scope "col"} "Avg. Price"]]]
+         [:tbody
+          [:tr
+           [:th {:scope "row"} "Value"]
+           [:td "18,492"]
+           [:td "228"]
+           [:td "350"]
+           [:td "$4,787.64"]
+           [:td "$13.68"]]
+          [:tr
+           [:th {:scope "row"} "Percentage change"]
+           [:td
+            [:span
+             {:class "text-danger"}
+             [:i {:class "fas fa-caret-down me-1"}]
+             [:span "-48.8%%"]]]
+           [:td
+            [:span
+             {:class "text-success"}
+             [:i {:class "fas fa-caret-up me-1"}]
+             [:span "14.0%"]]]
+           [:td
+            [:span
+             {:class "text-success"}
+             [:i {:class "fas fa-caret-up me-1"}]
+             [:span "46.4%"]]]
+           [:td
+            [:span
+             {:class "text-success"}
+             [:i {:class "fas fa-caret-up me-1"}]
+             [:span "29.6%"]]]
+           [:td
+            [:span
+             {:class "text-danger"}
+             [:i {:class "fas fa-caret-down me-1"}]
+             [:span "-11.5%"]]]]
+          [:tr
+           [:th {:scope "row"} "Absolute change"]
+           [:td
+            [:span
+             {:class "text-danger"}
+             [:i {:class "fas fa-caret-down me-1"}]
+             [:span "-17,654"]]]
+           [:td
+            [:span
+             {:class "text-success"}
+             [:i {:class "fas fa-caret-up me-1"}]
+             [:span "28"]]]
+           [:td
+            [:span
+             {:class "text-success"}
+             [:i {:class "fas fa-caret-up me-1"}]
+             [:span "111"]]]
+           [:td
+            [:span
+             {:class "text-success"}
+             [:i {:class "fas fa-caret-up me-1"}]
+             [:span "$1,092.72"]]]
+           [:td
+            [:span
+             {:class "text-danger"}
+             [:i {:class "fas fa-caret-down me-1"}]
+             [:span "$-1.78"]]]]]]]]]]
+
+    [:section
+     [:div
+      {:class "row"}
+      [:div
+       {:class "col-xl-3 col-sm-6 col-12 mb-4"}
+       [:div
+        {:class "card"}
+        [:div
+         {:class "card-body"}
+         [:div
+          {:class "d-flex justify-content-between px-md-1"}
+          [:div
+           {:class "align-self-center"}
+           [:i {:class "fas fa-pencil-alt text-info fa-3x"}]]
+          [:div
+           {:class "text-end"}
+           [:h3 "278"]
+           [:p {:class "mb-0"} "New Posts"]]]]]]
+      [:div
+       {:class "col-xl-3 col-sm-6 col-12 mb-4"}
+       [:div
+        {:class "card"}
+        [:div
+         {:class "card-body"}
+         [:div
+          {:class "d-flex justify-content-between px-md-1"}
+          [:div
+           {:class "align-self-center"}
+           [:i {:class "far fa-comment-alt text-warning fa-3x"}]]
+          [:div
+           {:class "text-end"}
+           [:h3 "156"]
+           [:p {:class "mb-0"} "New Comments"]]]]]]
+      [:div
+       {:class "col-xl-3 col-sm-6 col-12 mb-4"}
+       [:div
+        {:class "card"}
+        [:div
+         {:class "card-body"}
+         [:div
+          {:class "d-flex justify-content-between px-md-1"}
+          [:div
+           {:class "align-self-center"}
+           [:i {:class "fas fa-chart-line text-success fa-3x"}]]
+          [:div
+           {:class "text-end"}
+           [:h3 "64.89 %"]
+           [:p {:class "mb-0"} "Bounce Rate"]]]]]]
+      [:div
+       {:class "col-xl-3 col-sm-6 col-12 mb-4"}
+       [:div
+        {:class "card"}
+        [:div
+         {:class "card-body"}
+         [:div
+          {:class "d-flex justify-content-between px-md-1"}
+          [:div
+           {:class "align-self-center"}
+           [:i {:class "fas fa-map-marker-alt text-danger fa-3x"}]]
+          [:div
+           {:class "text-end"}
+           [:h3 "423"]
+           [:p {:class "mb-0"} "Total Visits"]]]]]]]
+     [:div
+      {:class "row"}
+      [:div
+       {:class "col-xl-3 col-sm-6 col-12 mb-4"}
+       [:div
+        {:class "card"}
+        [:div
+         {:class "card-body"}
+         [:div
+          {:class "d-flex justify-content-between px-md-1"}
+          [:div
+           [:h3 {:class "text-danger"} "278"]
+           [:p {:class "mb-0"} "New Projects"]]
+          [:div
+           {:class "align-self-center"}
+           [:i {:class "fas fa-rocket text-danger fa-3x"}]]]]]]
+      [:div
+       {:class "col-xl-3 col-sm-6 col-12 mb-4"}
+       [:div
+        {:class "card"}
+        [:div
+         {:class "card-body"}
+         [:div
+          {:class "d-flex justify-content-between px-md-1"}
+          [:div
+           [:h3 {:class "text-success"} "156"]
+           [:p {:class "mb-0"} "New Clients"]]
+          [:div
+           {:class "align-self-center"}
+           [:i {:class "far fa-user text-success fa-3x"}]]]]]]
+      [:div
+       {:class "col-xl-3 col-sm-6 col-12 mb-4"}
+       [:div
+        {:class "card"}
+        [:div
+         {:class "card-body"}
+         [:div
+          {:class "d-flex justify-content-between px-md-1"}
+          [:div
+           [:h3 {:class "text-warning"} "64.89 %"]
+           [:p {:class "mb-0"} "Conversion Rate"]]
+          [:div
+           {:class "align-self-center"}
+           [:i {:class "fas fa-chart-pie text-warning fa-3x"}]]]]]]
+      [:div
+       {:class "col-xl-3 col-sm-6 col-12 mb-4"}
+       [:div
+        {:class "card"}
+        [:div
+         {:class "card-body"}
+         [:div
+          {:class "d-flex justify-content-between px-md-1"}
+          [:div
+           [:h3 {:class "text-info"} "423"]
+           [:p {:class "mb-0"} "Support Tickets"]]
+          [:div
+           {:class "align-self-center"}
+           [:i {:class "far fa-life-ring text-info fa-3x"}]]]]]]]
+     [:div
+      {:class "row"}
+      [:div
+       {:class "col-xl-3 col-sm-6 col-12 mb-4"}
+       [:div
+        {:class "card"}
+        [:div
+         {:class "card-body"}
+         [:div
+          {:class "d-flex justify-content-between px-md-1"}
+          [:div
+           [:h3 {:class "text-info"} "278"]
+           [:p {:class "mb-0"} "New Posts"]]
+          [:div
+           {:class "align-self-center"}
+           [:i {:class "fas fa-book-open text-info fa-3x"}]]]
+         [:div
+          {:class "px-md-1"}
+          [:div
+           {:class "progress mt-3 mb-1 rounded", :style "height: 7px"}
+           [:div
+            {:class "progress-bar bg-info",
+             :role "progressbar",
+             :style "width: 80%",
+             :aria-valuenow "80",
+             :aria-valuemin "0",
+             :aria-valuemax "100"}]]]]]]
+      [:div
+       {:class "col-xl-3 col-sm-6 col-12 mb-4"}
+       [:div
+        {:class "card"}
+        [:div
+         {:class "card-body"}
+         [:div
+          {:class "d-flex justify-content-between px-md-1"}
+          [:div
+           [:h3 {:class "text-warning"} "156"]
+           [:p {:class "mb-0"} "New Comments"]]
+          [:div
+           {:class "align-self-center"}
+           [:i {:class "far fa-comments text-warning fa-3x"}]]]
+         [:div
+          {:class "px-md-1"}
+          [:div
+           {:class "progress mt-3 mb-1 rounded", :style "height: 7px"}
+           [:div
+            {:class "progress-bar bg-warning",
+             :role "progressbar",
+             :style "width: 35%",
+             :aria-valuenow "35",
+             :aria-valuemin "0",
+             :aria-valuemax "100"}]]]]]]
+      [:div
+       {:class "col-xl-3 col-sm-6 col-12 mb-4"}
+       [:div
+        {:class "card"}
+        [:div
+         {:class "card-body"}
+         [:div
+          {:class "d-flex justify-content-between px-md-1"}
+          [:div
+           [:h3 {:class "text-success"} "64.89 %"]
+           [:p {:class "mb-0"} "Bounce Rate"]]
+          [:div
+           {:class "align-self-center"}
+           [:i {:class "fas fa-mug-hot text-success fa-3x"}]]]
+         [:div
+          {:class "px-md-1"}
+          [:div
+           {:class "progress mt-3 mb-1 rounded", :style "height: 7px"}
+           [:div
+            {:class "progress-bar bg-success",
+             :role "progressbar",
+             :style "width: 60%",
+             :aria-valuenow "60",
+             :aria-valuemin "0",
+             :aria-valuemax "100"}]]]]]]
+      [:div
+       {:class "col-xl-3 col-sm-6 col-12 mb-4"}
+       [:div
+        {:class "card"}
+        [:div
+         {:class "card-body"}
+         [:div
+          {:class "d-flex justify-content-between px-md-1"}
+          [:div
+           [:h3 {:class "text-danger"} "423"]
+           [:p {:class "mb-0"} "Total Visits"]]
+          [:div
+           {:class "align-self-center"}
+           [:i {:class "fas fa-map-signs text-danger fa-3x"}]]]
+         [:div
+          {:class "px-md-1"}
+          [:div
+           {:class "progress mt-3 mb-1 rounded", :style "height: 7px"}
+           [:div
+            {:class "progress-bar bg-danger",
+             :role "progressbar",
+             :style "width: 40%",
+             :aria-valuenow "40",
+             :aria-valuemin "0",
+             :aria-valuemax "100"}]]]]]]]]
+
+    [:section
+     [:div
+      {:class "row"}
+      [:div
+       {:class "col-xl-6 col-md-12 mb-4"}
+       [:div
+        {:class "card"}
+        [:div
+         {:class "card-body"}
+         [:div
+          {:class "d-flex justify-content-between p-md-1"}
+          [:div
+           {:class "d-flex flex-row"}
+           [:div
+            {:class "align-self-center"}
+            [:i {:class "fas fa-pencil-alt text-info fa-3x me-4"}]]
+           [:div
+            [:h4 "Total Posts"]
+            [:p {:class "mb-0"} "Monthly blog posts"]]]
+          [:div
+           {:class "align-self-center"}
+           [:h2 {:class "h1 mb-0"} "18,000"]]]]]]
+      [:div
+       {:class "col-xl-6 col-md-12 mb-4"}
+       [:div
+        {:class "card"}
+        [:div
+         {:class "card-body"}
+         [:div
+          {:class "d-flex justify-content-between p-md-1"}
+          [:div
+           {:class "d-flex flex-row"}
+           [:div
+            {:class "align-self-center"}
+            [:i {:class "far fa-comment-alt text-warning fa-3x me-4"}]]
+           [:div
+            [:h4 "Total Comments"]
+            [:p {:class "mb-0"} "Monthly blog posts"]]]
+          [:div
+           {:class "align-self-center"}
+           [:h2 {:class "h1 mb-0"} "84,695"]]]]]]]
+     [:div
+      {:class "row"}
+      [:div
+       {:class "col-xl-6 col-md-12 mb-4"}
+       [:div
+        {:class "card"}
+        [:div
+         {:class "card-body"}
+         [:div
+          {:class "d-flex justify-content-between p-md-1"}
+          [:div
+           {:class "d-flex flex-row"}
+           [:div
+            {:class "align-self-center"}
+            [:h2 {:class "h1 mb-0 me-4"} "$76,456.00"]]
+           [:div
+            [:h4 "Total Sales"]
+            [:p {:class "mb-0"} "Monthly Sales Amount"]]]
+          [:div
+           {:class "align-self-center"}
+           [:i {:class "far fa-heart text-danger fa-3x"}]]]]]]
+      [:div
+       {:class "col-xl-6 col-md-12 mb-4"}
+       [:div
+        {:class "card"}
+        [:div
+         {:class "card-body"}
+         [:div
+          {:class "d-flex justify-content-between p-md-1"}
+          [:div
+           {:class "d-flex flex-row"}
+           [:div
+            {:class "align-self-center"}
+            [:h2 {:class "h1 mb-0 me-4"} "$36,000.00"]]
+           [:div [:h4 "Total Cost"] [:p {:class "mb-0"} "Monthly Cost"]]]
+          [:div
+           {:class "align-self-center"}
+           [:i {:class "fas fa-wallet text-success fa-3x"}]]]]]]]]]]
+
+  [:script {:type "text/javascript", :src "js/mdb.min.js"}]
+
+  [:script {:type "text/javascript", :src "js/admin.js"}]]
+ ;;(body)
+ #_[:body
+    [:div {:id "content", :class "mui-container-fluid"}
+
+     [:h1 "wassup lambdacart2"]]
+
+    [:script {:src "/js/main.js"}]
+    [:script {:src "https://storage.googleapis.com/app.klipse.tech/plugin/js/klipse_plugin.js"}]]]
