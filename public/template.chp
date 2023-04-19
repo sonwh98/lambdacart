@@ -609,10 +609,7 @@
            {:class "align-self-center"}
            [:i {:class "fas fa-wallet text-success fa-3x"}]]]]]]]]]])
 
-
-
 [:html
  [head "CyberNut"]
- [:body
-  ][header]]
+ [:body] [header]]
 
