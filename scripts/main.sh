@@ -1,1 +1,1 @@
-clj -X cybernut.core/main
+clojure -X cybernut.core/main
