@@ -1,1 +1,1 @@
-clojure -X cybernut.core/main
+clojure -J-Dconfig=./config.clj -X cybernut.core/main

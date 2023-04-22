@@ -1,5 +1,6 @@
-(ns cybernut.core)
+(ns cybernut.core
+  (:require [stigmergy.server :as server]))
 
 (defn main [args]
-  (prn "nutz")
+  (server/start-http)
   )
