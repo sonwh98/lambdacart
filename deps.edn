@@ -1,6 +1,9 @@
 {:deps  {cljfmt/cljfmt {:mvn/version "0.9.2"}
          clojure.java-time/clojure.java-time {:mvn/version "1.2.0"}
+         cider/cider-nrepl {:mvn/version "0.30.0"}
          com.draines/postal {:mvn/version "2.0.5"}
+         com.github.stigmergy-systems/plumbdb {:mvn/version "0.1.0-SNAPSHOT"}
+         nrepl/nrepl {:mvn/version "1.0.0"}
          ring/ring {:mvn/version "1.9.6"}
          stigmergy/chp {:mvn/version "0.1.0-SNAPSHOT"}}
  :paths ["src/clj" "src"]
@@ -9,10 +12,14 @@
                   :main-opts ["-m" "cognitect.test-runner"]
                   :exec-fn cognitect.test-runner.api/test}
            :bench {:extra-deps {criterium/criterium {:mvn/version "0.4.6"}}}
-           :repl-server {:extra-deps {compliment {:mvn/version "0.3.10"} }
+           :socket-repl {:extra-deps {compliment/compliment {:mvn/version "0.3.10"} }
                          :exec-fn clojure.core.server/start-server                         
                          :exec-args {:name "repl-server"
                                      :port 5555
                                      :accept clojure.core.server/repl
-                                     :server-daemon false}}}
- }
+                                     :server-daemon false}}
+           :nREPL {:extra-deps {nrepl/nrepl {:mvn/version "1.0.0"}
+                                cider/cider-nrepl {:mvn/version "0.30.0"}
+                                cider/piggieback {:mvn/version "0.4.2"}}
+                   :main-opts ["-m" "nrepl.cmdline" "--middleware" "[cider.nrepl/cider-middleware]"]}}}
+
