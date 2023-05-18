@@ -73,8 +73,7 @@
      [:a
       {:class "navbar-brand", :href "#"}
       [:img
-       {:src
-        "https://mdbootstrap.com/img/logo/mdb-transaprent-noshadows.png",
+       {:src "https://cdn-icons-png.flaticon.com/512/29/29302.png"
         :alt "",
         :loading "lazy",
         :height "25"}]]
@@ -610,6 +609,6 @@
            [:i {:class "fas fa-wallet text-success fa-3x"}]]]]]]]]]])
 
 [:html
- [head "CyberNut"]
+ [head "abitcurious.us"]
  [:body] [header]]
 
