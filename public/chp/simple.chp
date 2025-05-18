@@ -2,33 +2,25 @@
  [:head
   [:meta {:charset "UTF-8"}]
   [:meta {:name "viewport" :content "width=device-width, initial-scale=1.0"}]
-  [:title "Vietnam Search"]
-  [:link {:rel "stylesheet" :href "/css/simple.css"}]
-  [:link {:rel "stylesheet" :href "/css/tour.css"}]]
+  [:title "Tour Search"]
+  [:link {:rel "stylesheet" :href "/css/style.css"}]]
  [:body
   [:div.search-container
-   [:form
-    [:input {:type "text"
-             :placeholder "Search Vietnam tours, cities, foods..."}]]]
+   [:input.search-box {:type "text" :placeholder "Search tours..."}]]
 
-  [:div.tour-grid
-   [:div.tour-card
-    [:img {:src "https://images.unsplash.com/photo-1582430002312-56c292ba6555"
-           :alt "Ha Long Bay"}]
-    [:div.content
+  [:div.tab-bar
+   [:button.tab {:class "active"} "Tours"]
+   [:button.tab "Hotels"]
+   [:button.tab "Transportation"]]
+
+  [:div.card-grid
+   [:div.card
+    [:img {:src "https://source.unsplash.com/400x300/?vietnam" :alt "Tour 1"}]
+    [:div.card-content
      [:h3 "Ha Long Bay Cruise"]
-     [:p "2-day boat tour with kayaking and seafood meals."]]]
-
-   [:div.tour-card
-    [:img {:src "https://images.unsplash.com/photo-1585241936937-d5e94c43f013"
-           :alt "Hoi An"}]
-    [:div.content
-     [:h3 "Hoi An Ancient Town Walk"]
-     [:p "Guided cultural walk through lantern-lit streets and riverside cafés."]]]
-
-   [:div.tour-card
-    [:img {:src "https://images.unsplash.com/photo-1600920848200-d264b69e99b6"
-           :alt "Sapa"}]
-    [:div.content
-     [:h3 "Sapa Mountain Trek"]
-     [:p "Explore rice terraces and ethnic villages with a local guide."]]]]]]
+     [:p "2-day boat tour with kayaking and seafood meals"]]]
+   [:div.card
+    [:img {:src "https://source.unsplash.com/400x300/?hanoi" :alt "Tour 2"}]
+    [:div.card-content
+     [:h3 "Hanoi City Walk"]
+     [:p "Guided walking tour through Old Quarter and local markets"]]]]] ]
