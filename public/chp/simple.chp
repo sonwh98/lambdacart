@@ -1,0 +1,34 @@
+[:html {:lang "en"}
+ [:head
+  [:meta {:charset "UTF-8"}]
+  [:meta {:name "viewport" :content "width=device-width, initial-scale=1.0"}]
+  [:title "Vietnam Search"]
+  [:link {:rel "stylesheet" :href "/css/simple.css"}]
+  [:link {:rel "stylesheet" :href "/css/tour.css"}]]
+ [:body
+  [:div.search-container
+   [:form
+    [:input {:type "text"
+             :placeholder "Search Vietnam tours, cities, foods..."}]]]
+
+  [:div.tour-grid
+   [:div.tour-card
+    [:img {:src "https://images.unsplash.com/photo-1582430002312-56c292ba6555"
+           :alt "Ha Long Bay"}]
+    [:div.content
+     [:h3 "Ha Long Bay Cruise"]
+     [:p "2-day boat tour with kayaking and seafood meals."]]]
+
+   [:div.tour-card
+    [:img {:src "https://images.unsplash.com/photo-1585241936937-d5e94c43f013"
+           :alt "Hoi An"}]
+    [:div.content
+     [:h3 "Hoi An Ancient Town Walk"]
+     [:p "Guided cultural walk through lantern-lit streets and riverside cafés."]]]
+
+   [:div.tour-card
+    [:img {:src "https://images.unsplash.com/photo-1600920848200-d264b69e99b6"
+           :alt "Sapa"}]
+    [:div.content
+     [:h3 "Sapa Mountain Trek"]
+     [:p "Explore rice terraces and ethnic villages with a local guide."]]]]]]

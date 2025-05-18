@@ -1,0 +1,42 @@
+.tour-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 20px;
+  padding: 100px 20px 20px; /* add top padding to not collide with search */
+}
+
+.tour-card {
+  background-color: rgba(255, 255, 255, 0.9);
+  border-radius: 12px;
+  overflow: hidden;
+  width: 300px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s ease;
+}
+
+.tour-card:hover {
+  transform: translateY(-5px);
+}
+
+.tour-card img {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+}
+
+.tour-card .content {
+  padding: 15px;
+}
+
+.tour-card h3 {
+  margin-top: 0;
+  margin-bottom: 8px;
+  font-size: 1.2em;
+}
+
+.tour-card p {
+  margin: 0;
+  color: #444;
+  font-size: 0.95em;
+}
