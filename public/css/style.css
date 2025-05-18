@@ -1,27 +1,24 @@
 body {
   margin: 0;
   font-family: Arial, sans-serif;
-  background: url('/images/ha-giang-loop.jpg')
-	      no-repeat center center fixed;
+  background: url('/images/ha-giang-loop.jpg') no-repeat center center fixed;
   background-size: cover;
-  padding-top: 80px; /* leave space for fixed search */
+  padding-top: 160px;
 }
 
 .header-container {
-    position: fixed;
-    top: 0;
-    width: 100%;
-    background: white;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    z-index: 1000;
+  position: fixed;
+  top: 0;
+  width: 100%;
+  background: white;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
 }
 
 .search-container {
-    width: 100%;
-    padding: 20px;
-    display: flex;
-    justify-content: center;
-    background: white;
+  padding: 20px;
+  display: flex;
+  justify-content: center;
 }
 
 .search-box {
@@ -33,6 +30,29 @@ body {
   border-radius: 25px;
 }
 
+.tab-bar {
+  display: flex;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.tab {
+  padding: 0.8rem 2rem;
+  border: none;
+  background-color: #f8f9fa;
+  font-size: 1.1rem;
+  border-radius: 4px;
+  margin: 0 0.5rem;
+  color: #495057;
+  cursor: pointer;
+}
+
+.tab:hover { background-color: #e9ecef; }
+.tab.active { 
+  background-color: #007bff; 
+  color: white;
+}
+
 .card-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -40,7 +60,6 @@ body {
   padding: 20px;
   max-width: 1200px;
   margin: auto;
-  margin-top: 160px;  /* Changed to 160px to accommodate fixed elements */
 }
 
 .card {
@@ -51,65 +70,13 @@ body {
 }
 
 .card img {
-    width: 100%;
-    height: 200px;
-    display: block;
+  width: 100%;
+  height: 200px;
 }
 
 .card-content {
   padding: 15px;
 }
 
-.card-content h3 {
-  margin: 0 0 10px;
-}
-
-.card-content p {
-  margin: 0;
-  color: #555;
-}
-
-.center-tabs {
-  display: flex;
-  justify-content: center;
-  gap: 1rem;
-  margin: 1rem 0;
-}
-
-.tab-bar {
-    width: 100%;
-    display: flex;
-    justify-content: center;
-    margin: 0;
-    background-color: rgba(255, 255, 255, 0.9);
-    padding: 1rem;
-}
-
-.tab {
-    padding: 0.8rem 2rem;
-    border: none;
-    background-color: #f8f9fa;
-    cursor: pointer;
-    font-size: 1.1rem;
-    font-weight: 500;
-    border-radius: 4px;
-    margin: 0 0.5rem;
-    transition: all 0.2s ease;
-    color: #495057;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.tab.active {
-    background-color: #007bff;
-    color: white;
-    transform: translateY(-2px);
-}
-
-.tab:hover {
-    background-color: #e9ecef;
-    transform: translateY(-1px);
-}
-
-.tab.active:hover {
-    background-color: #0056b3;
-}
+.card-content h3 { margin: 0 0 10px; }
+.card-content p { color: #555; margin: 0; }
