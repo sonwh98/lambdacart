@@ -7,16 +7,21 @@ body {
   padding-top: 80px; /* leave space for fixed search */
 }
 
+.header-container {
+    position: fixed;
+    top: 0;
+    width: 100%;
+    background: white;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+}
+
 .search-container {
-  position: fixed;
-  top: 0;
-  width: 100%;
-  background: white;
-  padding: 20px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  display: flex;
-  justify-content: center;
-  z-index: 1000;
+    width: 100%;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    background: white;
 }
 
 .search-box {
@@ -35,6 +40,7 @@ body {
   padding: 20px;
   max-width: 1200px;
   margin: auto;
+  margin-top: 160px;  /* Changed to 160px to accommodate fixed elements */
 }
 
 .card {
@@ -45,9 +51,9 @@ body {
 }
 
 .card img {
-  width: 100%;
-  height: auto;
-  display: block;
+    width: 100%;
+    height: 200px;
+    display: block;
 }
 
 .card-content {
@@ -61,4 +67,49 @@ body {
 .card-content p {
   margin: 0;
   color: #555;
+}
+
+.center-tabs {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin: 1rem 0;
+}
+
+.tab-bar {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    margin: 0;
+    background-color: rgba(255, 255, 255, 0.9);
+    padding: 1rem;
+}
+
+.tab {
+    padding: 0.8rem 2rem;
+    border: none;
+    background-color: #f8f9fa;
+    cursor: pointer;
+    font-size: 1.1rem;
+    font-weight: 500;
+    border-radius: 4px;
+    margin: 0 0.5rem;
+    transition: all 0.2s ease;
+    color: #495057;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.tab.active {
+    background-color: #007bff;
+    color: white;
+    transform: translateY(-2px);
+}
+
+.tab:hover {
+    background-color: #e9ecef;
+    transform: translateY(-1px);
+}
+
+.tab.active:hover {
+    background-color: #0056b3;
 }
