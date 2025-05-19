@@ -1,0 +1,28 @@
+[:html {:lang "en"}
+ [:head
+  [:meta {:charset "UTF-8"}]
+  [:meta {:name "viewport" :content "width=device-width, initial-scale=1.0"}]
+  [:title "Tour Search"]
+  [:link {:rel "stylesheet" :href "/css/style.css"}]]
+ [:body
+  [:div.search-container
+   [:input.search-box {:type "text" :placeholder "Search tours..."}]]
+
+  [:div.tab-bar
+   [:button.tab {:class "active"} "Promotions"]
+   [:button.tab "Tours"]
+   [:button.tab "Hotels"]
+   [:button.tab "Transportation"]]
+
+  [:div.card-grid
+   [:div.card
+    [:img {:src "/images/ha-long-bay.webp"}]
+    [:div.card-content
+     [:h3 "Ha Long Bay Cruise"]
+     [:p "2-day boat tour with kayaking and seafood meals"]]]
+   [:div.card
+    [:img {:src "/images/train.jpg"}]
+    
+    [:div.card-content
+     [:h3 "Hanoi City Walk"]
+     [:p "Guided walking tour through Old Quarter and local markets"]]]]] ]
