@@ -22,7 +22,12 @@
      [:p "2-day boat tour with kayaking and seafood meals"]]]
    [:div.card
     [:img {:src "/images/train.jpg"}]
-    
     [:div.card-content
      [:h3 "Hanoi City Walk"]
-     [:p "Guided walking tour through Old Quarter and local markets"]]]]] ]
+     [:p "Guided walking tour through Old Quarter and local markets"]]]
+
+   [:div.card
+    [:img {:src "/images/danang.jpg"}]
+    [:div.card-content
+     [:h3 "Bana Hill"]
+     [:p "Visit Bana Hill in Danang"]]]]] ]
