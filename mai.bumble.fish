@@ -1,12 +1,12 @@
 server{
     listen       80;
-    server_name  cybernut.stigmergy.systems;
+    server_name  mai.bumble.fish
     return	 301  https://$host$request_uri;
 }
 
 server {
     listen 	 443 ssl;
-    server_name  cybernut.stigmergy.systems;
+    server_name  mai.bumble.fish;
     client_max_body_size 20M;
 
     gzip            on;
@@ -20,7 +20,7 @@ server {
     	    proxy_set_header X-Real-IP  $remote_addr;
             proxy_set_header X-Forwarded-For $remote_addr;
             proxy_set_header Host $host;
-            proxy_pass http://192.168.1.11:3001;
+            proxy_pass http://localhost:3001;
     }
 
 
