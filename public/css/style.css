@@ -109,3 +109,70 @@ body::before {
   margin: 0;
   line-height: 1.5;
 }
+
+.menu-toggle {
+  display: none;
+  background: none;
+  border: none;
+  padding: 15px;
+  cursor: pointer;
+}
+
+.hamburger {
+  display: block;
+  width: 24px;
+  height: 2px;
+  background: #333;
+  position: relative;
+}
+
+.hamburger::before,
+.hamburger::after {
+  content: '';
+  position: absolute;
+  width: 24px;
+  height: 2px;
+  background: #333;
+  left: 0;
+}
+
+.hamburger::before { top: -6px; }
+.hamburger::after { bottom: -6px; }
+
+@media (max-width: 768px) {
+  .menu-toggle {
+    display: block;
+    position: absolute;
+    right: 20px;
+    top: 20px;
+  }
+
+  .navigation {
+    display: none;
+    width: 100%;
+    background: white;
+  }
+
+  .navigation.active {
+    display: block;
+  }
+
+  .tab-bar {
+    flex-direction: column;
+    padding: 0;
+  }
+
+  .tab {
+    width: 100%;
+    margin: 0;
+    padding: 15px;
+    border-radius: 0;
+    border-bottom: 1px solid #eee;
+  }
+}
+
+@media (min-width: 769px) {
+  .navigation {
+    display: block !important;
+  }
+}

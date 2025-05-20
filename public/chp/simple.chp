@@ -3,16 +3,20 @@
   [:meta {:charset "UTF-8"}]
   [:meta {:name "viewport" :content "width=device-width, initial-scale=1.0"}]
   [:title "Tour Search"]
-  [:link {:rel "stylesheet" :href "/css/style.css"}]]
+  [:link {:rel "stylesheet" :href "/css/style.css"}]
+  [:script {:src "/js/main.js"}]]
  [:body
-  [:div.search-container
-   [:input.search-box {:type "text" :placeholder "Search tours..."}]]
-
-  [:div.tab-bar
-   [:button.tab {:class "active"} "Promotions"]
-   [:button.tab "Tours"]
-   [:button.tab "Hotels"]
-   [:button.tab "Transportation"]]
+  [:div.header-container
+   [:div.search-container
+    [:input.search-box {:type "text" :placeholder "Search tours..."}]]
+   [:button.menu-toggle {:onclick "toggleMenu()"}
+    [:span.hamburger]]
+   [:nav.navigation
+    [:div.tab-bar
+     [:button.tab {:class "active"} "Promotions"]
+     [:button.tab  "Tours"]
+     [:button.tab "Hotels"]
+     [:button.tab "Transportation"]]]]
 
   [:div.card-grid
    [:div.card
