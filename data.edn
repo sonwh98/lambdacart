@@ -1,0 +1,18 @@
+[
+ {:tour-name "Hanoi Walk"
+  :description "Walk in Haoi"
+  :image-url "/images/train.jpg"}
+
+ {:tour-name "Ha Long Bay Cruise"
+  :description "2-day boat tour with kayaking and seafood meals"
+  :image-url "/images/ha-long-bay.webp"}
+
+ {:tour-name "Bana Hill"
+  :description "Bana Hill park"
+  :image-url "/images/danang.jpg"}
+
+  {:tour-name "Disney World"
+  :description "Magic Kingdom"
+  :image-url "/images/disney.jpg"}
+ 
+ ]
