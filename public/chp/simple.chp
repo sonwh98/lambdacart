@@ -14,7 +14,7 @@
    [:nav.navigation
     [:div.tab-bar
      [:button.tab {:class "active"} "Promotions"]
-     [:button.tab  "Tours"]
+     [:button.tab "Tours"]
      [:button.tab "Hotels"]
      [:button.tab "Transportation"]]]]
 
