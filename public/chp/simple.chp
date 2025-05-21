@@ -19,19 +19,11 @@
      [:button.tab "Transportation"]]]]
 
   [:div.card-grid
-   [:div.card
-    [:img {:src "/images/ha-long-bay.webp"}]
-    [:div.card-content
-     [:h3 "Ha Long Bay Cruise"]
-     [:p "2-day boat tour with kayaking and seafood meals"]]]
-   [:div.card
-    [:img {:src "/images/train.jpg"}]
-    [:div.card-content
-     [:h3 "Hanoi City Walk"]
-     [:p "Guided walking tour through Old Quarter and local markets"]]]
-
-   [:div.card
-    [:img {:src "/images/danang.jpg"}]
-    [:div.card-content
-     [:h3 "Bana Hill"]
-     [:p "Visit Bana Hill in Danang"]]]]] ]
+   (let [tours (-> "data.edn" slurp read-string)]
+     (for [t tours]
+       [:div.card
+        [:img {:src (:image-url t)}]
+        [:div.card-content
+         [:h3 (:tour-name t)]
+         [:p (:description t)]]]))
+   ]] ]
