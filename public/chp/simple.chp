@@ -4,12 +4,12 @@
   [:meta {:name "viewport" :content "width=device-width, initial-scale=1.0"}]
   [:title "Tour Search"]
   [:link {:rel "stylesheet" :href "/css/style.css"}]
-  [:script {:src "/js/main.js"}]]
+  [:script {:src "/js/tourism.js"}]]
  [:body
   [:div.header-container
    [:div.search-container
     [:input.search-box {:type "text" :placeholder "Search tours..."}]]
-   [:button.menu-toggle {:onclick "toggleMenu()"}
+   [:button.menu-toggle {:onclick "lambdacart.tourism.toggleMenu()"}
     [:span.hamburger]]
    [:nav.navigation
     [:div.tab-bar
@@ -25,5 +25,4 @@
         [:img {:src (:image-url t)}]
         [:div.card-content
          [:h3 (:tour-name t)]
-         [:p (:description t)]]]))
-   ]] ]
+         [:p (:description t)]]]))]]]

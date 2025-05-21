@@ -1,4 +1,7 @@
 (ns lambdacart.tourism)
 
 (defn init []
-  (js/alert "tourism"))
+  (prn "cljs init"))
+
+(defn ^:export toggleMenu []
+  (.. js/document (querySelector ".navigation") -classList (toggle "active")))
