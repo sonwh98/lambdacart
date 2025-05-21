@@ -33,3 +33,4 @@
 ;;clj -M:fmt
 ;;clj -M:cljs watch app
 ;;clj -M:cljs -m shadow.cljs.devtools.cli watch app
+;;clj -M:cljs -m shadow.cljs.devtools.cli compile app
