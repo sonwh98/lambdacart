@@ -1,0 +1,11 @@
+;; shadow-cljs configuration
+{:source-paths
+ ["src/cljs"
+  "src/cljc"]
+
+ :builds {:app {:target :browser
+                :output-dir "public/js"
+                :modules {:main {:init-fn lambdacart.tourism/init
+                                 :output-to "public/js/tourism.js"}}}}}
+
+;; npx shadow-cljs clj-repl
