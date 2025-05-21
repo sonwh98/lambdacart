@@ -1,7 +1,7 @@
 # run the start script
 
 ```bash
-% npx shadow-cljs release lambdakids
+% npx shadow-cljs release lambdacart
 % ./scripts/start.sh
 ```
 
