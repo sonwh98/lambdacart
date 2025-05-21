@@ -1,1 +1,1 @@
-clj -m cljfmt.main fix public/* src/*
+clj -m cljfmt.main fix public/chp/* src/*
