@@ -24,3 +24,25 @@ then open browser http://localhost:3001
 ```bash
 % docker exec -it lambdakids /bin/sh 
 ```
+
+#deps.edn scripts
+```bash
+
+#run nREPL
+% clj -M:nREPL
+
+#format code
+% clj -M:fmt
+
+k#recompiles cljs to js on change
+% clj -M:cljs watch app
+
+#recompiles cljs to js on change
+% clj -M:cljs -m shadow.cljs.devtools.cli watch app
+
+#compile cljs
+% clj -M:cljs -m shadow.cljs.devtools.cli compile app
+
+# starts chp web-server
+% clj -M:chp 
+```
