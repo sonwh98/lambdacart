@@ -19,4 +19,5 @@ pom.xml.asc
 .hgignore
 .hg/
 .clj-kondo/
+.cpcache/
 /public/js
