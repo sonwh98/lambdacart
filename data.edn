@@ -15,4 +15,7 @@
   :description "Magic Kingdom"
   :image-url "/images/disney.jpg"}
  
+   {:tour-name "Dalat"
+  :description "Dalat Cloud"
+  :image-url "https://dalat.tours/wp-content/uploads/2019/01/dalat_tours3.jpg"}
  ]
