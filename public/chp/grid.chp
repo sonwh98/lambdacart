@@ -1,5 +1,6 @@
+
 (defn header []
-  (let [style {:style {:flex "1" :padding "8px" :border-right "1px solid #ddd"}}]
+  (let [style {:style {:flex "1" :padding "10px" :border-right "1px solid #ddd"}}]
     [:div {:style {:display "flex"
                    :position "sticky"
                    :top "0"
@@ -7,10 +8,11 @@
                    :z-index "1"
                    :font-weight "bold"
                    :border-bottom "1px solid #ccc"}}
+     [:div {:style {:width "20px" :height "20px" :padding "10px" :border-right "1px solid #ddd"}}"a"]
      [:div style "Tour Name"]
      [:div style "Description"]
      [:div style "Image"]
-     [:div {:style {:flex "1" :padding "8px"}} "Price"]]))
+     ]))
 
 [:div {:style {:width "100%"
                :height "300px"
@@ -25,8 +27,10 @@
              prop {:contenteditable "true"
                    :style style}]]
    [:div {:style {:display "flex"}}
+    [:div {:style {:width "20px" :height "20px" :padding "10px" :border-right "1px solid #ddd"}} (+ i 1)]
     [:div prop (rand-int 100)]
     [:div prop (rand-int 100)]
-    [:div prop (rand-int 100)]
+    
+    
     [:div {:contenteditable "true"
            :style {:flex "1" :padding "8px" :border-bottom "1px solid #eee"}}  (rand-int 100)]])]
