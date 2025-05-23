@@ -8,7 +8,7 @@
                    :z-index "1"
                    :font-weight "bold"
                    :border-bottom "1px solid #ccc"}}
-     [:div {:style {:width "20px" :height "20px" :padding "10px" :border-right "1px solid #ddd"}}"a"]
+     [:div {:style {:width "20px" :height "20px" :padding "10px" :border-right "1px solid #ddd"}}""]
      [:div style "Tour Name"]
      [:div style "Description"]
      [:div style "Image"]
