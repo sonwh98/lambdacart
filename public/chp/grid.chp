@@ -1,4 +1,3 @@
-
 (defn header []
   (let [style {:style {:flex "1" :padding "10px" :border-right "1px solid #ddd"}}]
     [:div {:style {:display "flex"
@@ -14,23 +13,27 @@
      [:div style "Image"]
      ]))
 
-[:div {:style {:width "100%"
-               :height "300px"
-               :border "1px solid #ccc"
-               :overflow "auto"
-               :font-family "sans-serif"
-               :font-size "14px"}}
- (header)
+[:html [:head
+        [:meta {:charset "UTF-8"}]
+        [:meta {:name "viewport" :content "width=device-width, initial-scale=1.0"}]
+        [:script {:src "/js/grid.js"}]]
+ [:div {:style {:width "100%"
+                :height "300px"
+                :border "1px solid #ccc"
+                :overflow "auto"
+                :font-family "sans-serif"
+                :font-size "14px"}}
+  (header)
 
- (for [i (range 10)
-       :let [style {:flex "1" :padding "8px" :border-bottom "1px solid #eee" :border-right "1px solid #f9f9f9"}
-             prop {:contenteditable "true"
-                   :style style}]]
-   [:div {:style {:display "flex"}}
-    [:div {:style {:width "20px" :height "20px" :padding "10px" :border-right "1px solid #ddd"}} (+ i 1)]
-    [:div prop (rand-int 100)]
-    [:div prop (rand-int 100)]
-    
-    
-    [:div {:contenteditable "true"
-           :style {:flex "1" :padding "8px" :border-bottom "1px solid #eee"}}  (rand-int 100)]])]
+  (for [i (range 10)
+        :let [style {:flex "1" :padding "8px" :border-bottom "1px solid #eee" :border-right "1px solid #f9f9f9"}
+              prop {:contenteditable "true"
+                    :style style}]]
+    [:div {:style {:display "flex"}}
+     [:div {:style {:width "20px" :height "20px" :padding "10px" :border-right "1px solid #ddd"}} (+ i 1)]
+     [:div prop (rand-int 100)]
+     [:div prop (rand-int 100)]
+     
+     
+     [:div {:contenteditable "true"
+            :style {:flex "1" :padding "8px" :border-bottom "1px solid #eee"}}  (rand-int 100)]])]]
