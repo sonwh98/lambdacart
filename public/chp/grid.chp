@@ -35,11 +35,11 @@
           :let [style {:flex "1" :padding "8px" :border-bottom "1px solid #eee" :border-right "1px solid #f9f9f9"}
                 prop {:contenteditable "true"
                       :style style}]]
-      [:div {:style {:display "flex"}}
-       [:div {:style {:width "20px" :height "20px" :padding "10px" :border-right "1px solid #ddd"}} (+ i 1)]
-       (let [row (nth rows i)]
-         [[:div prop (str (nth row 0))]
+      (concat [:div {:style {:display "flex"}}
+               [:div {:style {:width "20px" :height "20px" :padding "10px" :border-right "1px solid #ddd"}} (+ i 1)]]
+              (let [row (nth rows i)]
+                [[:div prop (str (nth row 0))]
 
-          [:div prop (str (nth row 1))]
-          [:div {:contenteditable "true"
-                 :style {:flex "1" :padding "8px" :border-bottom "1px solid #eee"}} (str (nth row 2))]])]))]]
+                 [:div prop (str (nth row 1))]
+                 [:div {:contenteditable "true"
+                        :style {:flex "1" :padding "8px" :border-bottom "1px solid #eee"}} (str (nth row 2))]]))))]]
