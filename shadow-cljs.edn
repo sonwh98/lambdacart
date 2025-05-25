@@ -9,6 +9,6 @@
 
           :grid {:target :browser
                  :output-dir "public/js"
-                 :modules {:grid {:init-fn lambdacart.grid/init}}}}}
+                 :modules {:grid {:init-fn lambdacart.grid/init!}}}}}
 
 ;; npx shadow-cljs clj-repl

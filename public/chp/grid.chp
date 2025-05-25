@@ -19,7 +19,7 @@
   [:script {:src "/js/grid.js"}]]
 
  (header)
- ;; Scrollable grid rows
+
  [:div {:style {:width "100%"
                 :height "90%" ; or "300px" or any fixed height you want
                 :border "1px solid #ccc"
