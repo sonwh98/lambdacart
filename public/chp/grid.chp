@@ -13,18 +13,21 @@
      [:div style "Image"]
      ]))
 
-[:html [:head
-        [:meta {:charset "UTF-8"}]
-        [:meta {:name "viewport" :content "width=device-width, initial-scale=1.0"}]
-        [:script {:src "/js/grid.js"}]]
+[:html
+ [:head
+  [:meta {:charset "UTF-8"}]
+  [:meta {:name "viewport" :content "width=device-width, initial-scale=1.0"}]
+  [:script {:src "/js/grid.js"}]]
+ ;; Fixed header (outside scrollable area)
+ (header)
+ ;; Scrollable grid rows
  [:div {:style {:width "100%"
-                :height "100%"
+                :height "80vh" ; or "300px" or any fixed height you want
                 :border "1px solid #ccc"
                 :overflow "auto"
                 :font-family "sans-serif"
-                :font-size "14px"}}
-  (header)
-
+                :font-size "14px"
+                :position "relative"}}
   (for [i (range 100)
         :let [style {:flex "1" :padding "8px" :border-bottom "1px solid #eee" :border-right "1px solid #f9f9f9"}
               prop {:contenteditable "true"
@@ -33,7 +36,5 @@
      [:div {:style {:width "20px" :height "20px" :padding "10px" :border-right "1px solid #ddd"}} (+ i 1)]
      [:div prop (rand-int 100)]
      [:div prop (rand-int 100)]
-     
-     
      [:div {:contenteditable "true"
-            :style {:flex "1" :padding "8px" :border-bottom "1px solid #eee"}}  (rand-int 100)]])]]
+            :style {:flex "1" :padding "8px" :border-bottom "1px solid #eee"}} (rand-int 100)]])]]

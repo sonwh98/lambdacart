@@ -1,5 +1,5 @@
 (ns lambdacart.grid)
 
 (defn init []
-  (js/alert "hello-connor")
+  #_(js/alert "hello-connor2")
   (prn "cljs init"))
