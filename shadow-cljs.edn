@@ -5,6 +5,10 @@
 
  :builds {:app {:target :browser
                 :output-dir "public/js"
-                :modules {:tourism {:init-fn lambdacart.tourism/init}}}}}
+                :modules {:tourism {:init-fn lambdacart.tourism/init}}}
+
+          :grid {:target :browser
+                 :output-dir "public/js"
+                 :modules {:grid {:init-fn lambdacart.grid/init}}}}}
 
 ;; npx shadow-cljs clj-repl
