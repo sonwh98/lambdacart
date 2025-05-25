@@ -13,11 +13,11 @@
                (nth cells (inc current-index)))
       :up    (when (pos? current-row-index)
                (let [target-row (nth rows (dec current-row-index))
-                     target-cells (array-seq (.querySelectorAll target-row "[contenteditable='true']"))] ; Added array-seq here
+                     target-cells (array-seq (.querySelectorAll target-row "[contenteditable='true']"))]
                  (nth target-cells current-index)))
       :down  (when (< current-row-index (dec (count rows)))
                (let [target-row (nth rows (inc current-row-index))
-                     target-cells (array-seq (.querySelectorAll target-row "[contenteditable='true']"))] ; Added array-seq here
+                     target-cells (array-seq (.querySelectorAll target-row "[contenteditable='true']"))] 
                  (nth target-cells current-index))))))
 
 (defn handle-key-nav [e]
@@ -31,7 +31,6 @@
       (when-let [target (find-target-cell (.-target e) direction)]
         (.focus target)))))
 
-;; Initialize event listener
 (defn init! []
   (.addEventListener js/document "keydown"
                      (fn [e]
