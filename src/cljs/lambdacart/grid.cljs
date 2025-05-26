@@ -2,19 +2,21 @@
   (:require [reagent.dom.client :as rdc]
             [lambdacart.app :as app]))
 
-(defn header []
-  (let [style {:style {:flex "1" :padding "10px" :border-right "1px solid #ddd"}}]
-    [:div {:style {:display "flex"
-                   :position "sticky"
-                   :top "0"
-                   :background "#f0f0f0"
-                   :z-index "1"
-                   :font-weight "bold"
-                   :border-bottom "1px solid #ccc"}}
-     [:div {:style {:width "20px" :height "20px" :padding "10px" :border-right "1px solid #ddd"}} ""]
-     [:div style "Tour Name"]
-     [:div style "Description"]
-     [:div style "Image"]]))
+(defn header [state]
+  [:div {:style {:display "flex"
+                 :position "sticky"
+                 :top "0"
+                 :background "#f0f0f0"
+                 :z-index "1"
+                 :font-weight "bold"
+                 :border-bottom "1px solid #ccc"}}
+   
+   [:div {:style {:width "20px" :height "20px" :padding "10px" :border-right "1px solid #ddd"}} ""]
+   (let [header (-> @state :grid :header)
+         style {:flex "1" :padding "10px" :border-right "1px solid #ddd"}]
+     (doall (for [h header]
+              [:div {:key (str "h-" h)
+                     :style style} h])))])
 
 (defn handle-key-nav [state e current-idx current-row num-cols]
   (let [key->direction {"ArrowLeft" [-1 0]
@@ -52,7 +54,7 @@
 (defn grid-component [state]
   (let [rows (-> @state :grid :rows)]
     [:div
-     [header]
+     [header state]
      [:div {:style {:width "100%"
                     :height "90%"
                     :border "1px solid #ccc"
@@ -95,7 +97,9 @@
     (when-not @root
       (reset! root (rdc/create-root container))
       (swap! app/state assoc-in [:grid :rows ] (vec (for [i (range 100)]
-                                                      [(rand-int 100) i i]))))
+                                                      [(rand-int 100) i i])))
+
+      (swap! app/state assoc-in [:grid :header] ["Tour Name" "Description" "Image"]))
     (rdc/render @root [grid-component app/state])))
 
 (defn init! []
