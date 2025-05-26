@@ -14,9 +14,19 @@
    [:div {:style {:width "20px" :height "20px" :padding "10px" :border-right "1px solid #ddd"}} ""]
    (let [header (-> @state :grid :header)
          style {:flex "1" :padding "10px" :border-right "1px solid #ddd"}]
-     (doall (for [h header]
+     (doall (for [[i h] (map-indexed (fn [i h]
+                                       [i h])
+                                     header)]
               [:div {:key (str "h-" h)
-                     :style style} h])))])
+                     :style style
+                     :on-click (fn [evt]
+                                 (let [rows (-> @state :grid :rows)
+                                       sorted-rows (sort-by (fn [row]
+                                                              (nth row i))
+                                                            rows)]
+                                   (swap! state assoc-in [:grid :rows]
+                                          sorted-rows))
+                         )} h])))])
 
 (defn handle-key-nav [state e current-idx current-row num-cols]
   (let [key->direction {"ArrowLeft" [-1 0]
@@ -96,8 +106,8 @@
   (when-let [container (.getElementById js/document "app")]
     (when-not @root
       (reset! root (rdc/create-root container))
-      (swap! app/state assoc-in [:grid :rows ] (vec (for [i (range 100)]
-                                                      [(rand-int 100) i i])))
+      (swap! app/state assoc-in [:grid :rows ] (vec (for [i (range 5)]
+                                                      [(rand-int 100) (rand-int 100) (rand-int 100)])))
 
       (swap! app/state assoc-in [:grid :header] ["Tour Name" "Description" "Image"]))
     (rdc/render @root [grid-component app/state])))
