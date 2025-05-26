@@ -81,7 +81,9 @@
           [:div {:style {:width "20px" 
                         :height "20px" 
                         :padding "10px" 
-                        :border-right "1px solid #ddd"}} 
+                        :border-right "1px solid #ddd"
+                        :background "#f0f0f0"  ; Added background color to match header
+                        :font-weight "bold"}}  ; Added bold font to match header
            (inc i)]
           [:<>
            [cell-component 
