@@ -49,6 +49,18 @@
 
 (def rows (r/atom (vec (for [i (range 100)]
                          [(rand-int 100) i i]))))
+
+(defn cell-component [value on-change]
+  [:input {:type "text"
+           :value value
+           :style {:flex "1" 
+                   :padding "8px" 
+                   :border "none"
+                   :border-bottom "1px solid #eee" 
+                   :border-right "1px solid #f9f9f9"}
+           :on-key-down handle-key-nav
+           :on-change #(on-change (.. % -target -value))}])
+
 (defn grid-component [rows]
   [:div
    [header]
@@ -59,18 +71,26 @@
                   :font-family "sans-serif"
                   :font-size "14px"
                   :position "relative"}}
-    (doall (for [i (range 100)
-                 :let [style {:flex "1" :padding "8px" :border-bottom "1px solid #eee" :border-right "1px solid #f9f9f9"}
-                       prop {:contentEditable "true"
-                             :style style}]]
-             (into [:div {:style {:display "flex"}
-                          :key i}
-                    [:div {:style {:width "20px" :height "20px" :padding "10px" :border-right "1px solid #ddd"}} (inc i)]]
-                   (let [row (nth @rows i)]
-                     [[:div prop (str (nth row 0))]
-                      [:div prop (str (nth row 1))]
-                      [:div (assoc prop :style (assoc (:style prop) :border-right "none"))
-                       (str (nth row 2))]]))))]])
+    (doall 
+     (for [i (range 100)]
+       [:div {:style {:display "flex"}
+              :key i}
+        [:div {:style {:width "20px" 
+                      :height "20px" 
+                      :padding "10px" 
+                      :border-right "1px solid #ddd"}} 
+         (inc i)]
+        (let [row (nth @rows i)]
+          [:<>
+           [cell-component 
+            (str (nth row 0)) 
+            #(swap! rows assoc-in [i 0] %)]
+           [cell-component 
+            (str (nth row 1)) 
+            #(swap! rows assoc-in [i 1] %)]
+           [cell-component 
+            (str (nth row 2)) 
+            #(swap! rows assoc-in [i 2] %)]])]))]])
 
 (defonce root (atom nil))
 
