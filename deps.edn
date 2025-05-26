@@ -29,9 +29,9 @@
                             "-Dclojure.server.repl={:port 5555 :accept clojure.core.server/repl}"]
                  :main-opts ["-m" "stigmergy.server"]}}}
 
-;;clj -M:nREPL
-;;clj -M:fmt
-;;clj -M:cljs watch app
-;;clj -M:cljs -m shadow.cljs.devtools.cli watch app
-;;clj -M:cljs -m shadow.cljs.devtools.cli compile app
-;;clj -M:chp
+;; clj -M:nREPL
+;; clj -M:fmt
+;; clj -M:cljs watch app
+;; clj -M:cljs -m shadow.cljs.devtools.cli watch app
+;; clj -M:cljs -m shadow.cljs.devtools.cli compile app
+;; clj -M:chp
