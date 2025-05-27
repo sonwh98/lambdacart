@@ -48,18 +48,19 @@
         (when next-el
           (.focus next-el))))))
 
-(defn cell-component [state value on-change row-idx col-idx]
-  [:input {:type "text"
-           :value value
-           :data-row row-idx
-           :data-col col-idx
-           :style {:flex "1" 
-                   :padding "8px" 
-                   :border "none"
-                   :border-bottom "1px solid #eee" 
-                   :border-right "1px solid #f9f9f9"}
-           :on-key-down #(handle-key-nav state % col-idx row-idx 3)
-           :on-change #(on-change (.. % -target -value))}])
+(defn cell-component [state on-change row-idx col-idx]
+  (let [value (get-in @state [:grid :rows row-idx col-idx])]
+    [:input {:type "text"
+             :value value
+             :data-row row-idx
+             :data-col col-idx
+             :style {:flex "1" 
+                     :padding "8px" 
+                     :border "none"
+                     :border-bottom "1px solid #eee" 
+                     :border-right "1px solid #f9f9f9"}
+             :on-key-down #(handle-key-nav state % col-idx row-idx 3)
+             :on-change #(on-change (.. % -target -value))}]))
 
 (defn grid-component [state]
   (let [rows (-> @state :grid :rows)]
@@ -88,17 +89,14 @@
           [:<>
            [cell-component 
             state
-            (str (nth row 0)) 
             #(swap! rows assoc-in [i 0] %)
             i 0]
            [cell-component 
             state
-            (str (nth row 1)) 
             #(swap! rows assoc-in [i 1] %)
             i 1]
            [cell-component 
             state
-            (str (nth row 2)) 
             #(swap! rows assoc-in [i 2] %)
             i 2]]]))]]))
 
