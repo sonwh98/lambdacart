@@ -48,7 +48,10 @@
         (when next-el
           (.focus next-el))))))
 
-(defn cell-component [state on-change row-idx col-idx]
+(defn update-cell [state row-idx col-idx value]
+  (swap! state assoc-in [:grid :rows row-idx col-idx] value))
+
+(defn cell-component [state row-idx col-idx]
   (let [value (get-in @state [:grid :rows row-idx col-idx])]
     [:input {:type "text"
              :value value
@@ -60,7 +63,7 @@
                      :border-bottom "1px solid #eee" 
                      :border-right "1px solid #f9f9f9"}
              :on-key-down #(handle-key-nav state % col-idx row-idx 3)
-             :on-change #(on-change (.. % -target -value))}]))
+             :on-change #(update-cell state row-idx col-idx (.. % -target -value))}]))
 
 (defn grid-component [state]
   (let [rows (-> @state :grid :rows)]
@@ -75,30 +78,21 @@
                     :position "relative"}}
       (doall 
        (for [[i row] (map-indexed (fn [i row]
-                                   [i row])
-                                 rows)]
+                                    [i row])
+                                  rows)]
          [:div {:style {:display "flex"}
                 :key i}
           [:div {:style {:width "20px" 
-                        :height "20px" 
-                        :padding "10px" 
-                        :border-right "1px solid #ddd"
-                        :background "#f0f0f0"  ; Added background color to match header
-                        :font-weight "bold"}}  ; Added bold font to match header
+                         :height "20px" 
+                         :padding "10px" 
+                         :border-right "1px solid #ddd"
+                         :background "#f0f0f0" ; Added background color to match header
+                         :font-weight "bold"}} ; Added bold font to match header
            (inc i)]
           [:<>
-           [cell-component 
-            state
-            #(swap! rows assoc-in [i 0] %)
-            i 0]
-           [cell-component 
-            state
-            #(swap! rows assoc-in [i 1] %)
-            i 1]
-           [cell-component 
-            state
-            #(swap! rows assoc-in [i 2] %)
-            i 2]]]))]]))
+           [cell-component state i 0]
+           [cell-component state i 1]
+           [cell-component state i 2]]]))]]))
 
 (defonce root (atom nil))
 
