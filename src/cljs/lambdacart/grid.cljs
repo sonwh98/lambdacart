@@ -7,6 +7,7 @@
   [:div {:style {:display "flex"
                  :position "sticky"
                  :top "0"
+                 :cursor "pointer"
                  :background "#f0f0f0"
                  :z-index "1"
                  :font-weight "bold"
@@ -84,7 +85,8 @@
                 :key i}
           [:div {:style {:width "20px" 
                          :height "20px" 
-                         :padding "10px" 
+                         :padding "10px"
+                         :cursor "pointer"
                          :border-right "1px solid #ddd"
                          :background "#f0f0f0" ; Added background color to match header
                          :font-weight "bold"}} ; Added bold font to match header
