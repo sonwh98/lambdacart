@@ -61,6 +61,7 @@
              :style {:flex "1" 
                      :padding "8px" 
                      :border "none"
+                     :background :inherit
                      :border-bottom "1px solid #eee" 
                      :border-right "1px solid #f9f9f9"}
              :on-key-down #(handle-key-nav grid-state % col-idx row-idx 3)
@@ -81,15 +82,23 @@
        (for [[i row] (map-indexed (fn [i row]
                                     [i row])
                                   rows)]
-         [:div {:style {:display "flex"}
+         [:div {:style {:display "flex"
+                        :background (when (= i (:selected-row @grid-state))
+                                      :aliceblue)}
                 :key i}
           [:div {:style {:width "20px" 
                          :height "20px" 
                          :padding "10px"
                          :cursor "pointer"
                          :border-right "1px solid #ddd"
-                         :background "#f0f0f0" ; Added background color to match header
-                         :font-weight "bold"}} ; Added bold font to match header
+                         :background "#f0f0f0"
+                         :font-weight "bold"}
+                 :on-click #(swap! grid-state
+                                   update-in [:selected-row] 
+                                   (fn [selected-row]
+                                     (if (= i selected-row)
+                                       nil
+                                       i)))}
            (inc i)]
           [:<>
            [cell-component grid-state i 0]
