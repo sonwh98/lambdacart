@@ -29,13 +29,14 @@
                                    (swap! grid-state assoc-in [:rows]
                                           sorted-rows)))} h])))])
 
-(defn handle-key-nav [grid-state e current-idx current-row num-cols]
+(defn handle-key-nav [grid-state current-idx current-row e]
   (let [key->direction {"ArrowLeft" [-1 0]
                        "ArrowRight" [1 0]
                        "ArrowUp" [0 -1]
                        "ArrowDown" [0 1]}
         [dx dy] (get key->direction (.-key e))
-        rows (-> @grid-state :rows)]
+        rows (-> @grid-state :rows)
+        num-cols (-> rows first count)]
     (when (and dx dy)
       (.preventDefault e)
       (let [next-idx (+ current-idx dx)
@@ -66,7 +67,7 @@
                      :border-right "1px solid #f9f9f9"}
              :on-focus #(when (not= row-idx (:selected-row @grid-state))
                          (swap! grid-state dissoc :selected-row))
-             :on-key-down #(handle-key-nav grid-state % col-idx row-idx 3)
+             :on-key-down #(handle-key-nav grid-state col-idx row-idx %)
              :on-change #(update-cell grid-state row-idx col-idx (.. % -target -value))}]))
 
 (defn grid-component [grid-state]
