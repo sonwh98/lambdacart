@@ -1,8 +1,9 @@
 (ns lambdacart.grid
-  (:require [reagent.dom.client :as rdc]
+  (:require [reagent.core :as r]
+            [reagent.dom.client :as rdc]
             [lambdacart.app :as app]))
 
-(defn header [state]
+(defn header [grid-state]
   [:div {:style {:display "flex"
                  :position "sticky"
                  :top "0"
@@ -12,7 +13,7 @@
                  :border-bottom "1px solid #ccc"}}
    
    [:div {:style {:width "20px" :height "20px" :padding "10px" :border-right "1px solid #ddd"}} ""]
-   (let [header (-> @state :grid :header)
+   (let [header (-> @grid-state :header)
          style {:flex "1" :padding "10px" :border-right "1px solid #ddd"}]
      (doall (for [[i h] (map-indexed (fn [i h]
                                        [i h])
@@ -20,21 +21,20 @@
               [:div {:key (str "h-" h)
                      :style style
                      :on-click (fn [evt]
-                                 (let [rows (-> @state :grid :rows)
-                                       sorted-rows (sort-by (fn [row]
-                                                              (nth row i))
-                                                            rows)]
-                                   (swap! state assoc-in [:grid :rows]
-                                          sorted-rows))
-                         )} h])))])
+                                 (let [rows (-> @grid-state :rows)
+                                       sorted-rows (vec (sort-by (fn [row]
+                                                                   (nth row i))
+                                                                 rows))]
+                                   (swap! grid-state assoc-in [:rows]
+                                          sorted-rows)))} h])))])
 
-(defn handle-key-nav [state e current-idx current-row num-cols]
+(defn handle-key-nav [grid-state e current-idx current-row num-cols]
   (let [key->direction {"ArrowLeft" [-1 0]
                        "ArrowRight" [1 0]
                        "ArrowUp" [0 -1]
                        "ArrowDown" [0 1]}
         [dx dy] (get key->direction (.-key e))
-        rows (-> @state :grid :rows)]
+        rows (-> @grid-state :rows)]
     (when (and dx dy)
       (.preventDefault e)
       (let [next-idx (+ current-idx dx)
@@ -48,11 +48,11 @@
         (when next-el
           (.focus next-el))))))
 
-(defn update-cell [state row-idx col-idx value]
-  (swap! state assoc-in [:grid :rows row-idx col-idx] value))
+(defn update-cell [grid-state row-idx col-idx value]
+  (swap! grid-state assoc-in [:rows row-idx col-idx] value))
 
-(defn cell-component [state row-idx col-idx]
-  (let [value (get-in @state [:grid :rows row-idx col-idx])]
+(defn cell-component [grid-state row-idx col-idx]
+  (let [value (get-in @grid-state [:rows row-idx col-idx])]
     [:input {:type "text"
              :value value
              :data-row row-idx
@@ -62,13 +62,13 @@
                      :border "none"
                      :border-bottom "1px solid #eee" 
                      :border-right "1px solid #f9f9f9"}
-             :on-key-down #(handle-key-nav state % col-idx row-idx 3)
-             :on-change #(update-cell state row-idx col-idx (.. % -target -value))}]))
+             :on-key-down #(handle-key-nav grid-state % col-idx row-idx 3)
+             :on-change #(update-cell grid-state row-idx col-idx (.. % -target -value))}]))
 
-(defn grid-component [state]
-  (let [rows (-> @state :grid :rows)]
+(defn grid-component [grid-state]
+  (let [rows (-> @grid-state :rows)]
     [:div
-     [header state]
+     [header grid-state]
      [:div {:style {:width "100%"
                     :height "90%"
                     :border "1px solid #ccc"
@@ -90,9 +90,9 @@
                          :font-weight "bold"}} ; Added bold font to match header
            (inc i)]
           [:<>
-           [cell-component state i 0]
-           [cell-component state i 1]
-           [cell-component state i 2]]]))]]))
+           [cell-component grid-state i 0]
+           [cell-component grid-state i 1]
+           [cell-component grid-state i 2]]]))]]))
 
 (defonce root (atom nil))
 
@@ -104,7 +104,7 @@
                                                       [(rand-int 100) (rand-int 100) (rand-int 100)])))
 
       (swap! app/state assoc-in [:grid :header] ["Tour Name" "Description" "Image"]))
-    (rdc/render @root [grid-component app/state])))
+    (rdc/render @root [grid-component (r/cursor app/state [:grid])])))
 
 (defn init! []
   (mount-grid))
