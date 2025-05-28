@@ -64,6 +64,8 @@
                      :background :inherit
                      :border-bottom "1px solid #eee" 
                      :border-right "1px solid #f9f9f9"}
+             :on-focus #(when (not= row-idx (:selected-row @grid-state))
+                         (swap! grid-state dissoc :selected-row))
              :on-key-down #(handle-key-nav grid-state % col-idx row-idx 3)
              :on-change #(update-cell grid-state row-idx col-idx (.. % -target -value))}]))
 
