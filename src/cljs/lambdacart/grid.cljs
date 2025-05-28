@@ -101,7 +101,7 @@
     (when-not @root
       (reset! root (rdc/create-root container))
       (swap! app/state assoc-in [:grid :rows ] (vec (for [i (range 5)]
-                                                      [(rand-int 100) (rand-int 100) (rand-int 100)])))
+                                                      (mapv str [(rand-int 100) (rand-int 100) (rand-int 100)]))))
 
       (swap! app/state assoc-in [:grid :header] ["Tour Name" "Description" "Image"]))
     (rdc/render @root [grid-component (r/cursor app/state [:grid])])))
