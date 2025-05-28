@@ -99,8 +99,7 @@
                  :on-click #(swap! grid-state
                                    update-in [:selected-row] 
                                    (fn [selected-row]
-                                     (if (= i selected-row)
-                                       nil
+                                     (when-not (= i selected-row)
                                        i)))}
            (inc i)]
           [:<>
