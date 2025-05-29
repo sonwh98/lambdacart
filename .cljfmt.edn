@@ -1,0 +1,11 @@
+{:indentation? true
+ :remove-surrounding-whitespace? true
+ :remove-trailing-whitespace? true
+ :insert-missing-whitespace? true
+ :align-associative? false
+ :remove-multiple-non-indenting-spaces? true
+ :paths ["src/cljs" "src/clj" "src/cljc" "public/chp"]
+ :remove-unused-ns? true}
+
+
+
