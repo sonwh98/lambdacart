@@ -17,7 +17,4 @@
   (http/run-server ws-handler {:port 3002})
   (println "WebSocket server running on ws://localhost:3002"))
 
-
-(comment
-
-  )
+(comment)

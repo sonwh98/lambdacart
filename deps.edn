@@ -23,15 +23,12 @@
                   :extra-paths ["src/cljs"]}
            :stream {:extra-deps {http-kit/http-kit {:mvn/version "2.8.0"}}
                     :main-opts ["-m" "lambdacart.server"]}
-           
+
            :chp {:jvm-opts ["-Dconfig=config.clj"
                             "-Dclojure.server.repl={:port 5555 :accept clojure.core.server/repl}"]
                  :extra-deps {stigmergy/chp {:mvn/version "0.1.0-SNAPSHOT"
                                              :exclusions [refactor-nrepl/refactor-nrepl]}}
-                 :main-opts ["-m" "stigmergy.server"]}
-           
-           }
- }
+                 :main-opts ["-m" "stigmergy.server"]}}}
 
 ;; clj -M:nREPL
 ;; clj -M:fmt
