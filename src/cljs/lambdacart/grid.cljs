@@ -4,6 +4,34 @@
             [lambdacart.app :as app]
             [cljs.core.async :refer [chan put! <! >! close! timeout] :as async]))
 
+;; Add context menu state
+(def context-menu (r/atom {:visible? false :x 0 :y 0}))
+
+;; Add delete function
+(defn delete-selected-rows [grid-state]
+  (let [selected (-> @grid-state :selected-rows)
+        rows (-> @grid-state :rows)]
+    (swap! grid-state assoc :rows 
+           (vec (keep-indexed #(when-not (selected %1) %2) rows)))
+    (swap! grid-state assoc :selected-rows (sorted-set))
+    (reset! context-menu {:visible? false :x 0 :y 0})))
+
+;; Add context menu component
+(defn context-menu-component [grid-state]
+  (when (:visible? @context-menu)
+    [:div {:style {:position "fixed"
+                   :left (str (:x @context-menu) "px")
+                   :top (str (:y @context-menu) "px")
+                   :background "white"
+                   :border "1px solid #ccc"
+                   :box-shadow "2px 2px 5px rgba(0,0,0,0.2)"
+                   :z-index 1000}}
+     [:div {:style {:padding "8px 12px"
+                    :cursor "pointer"
+                    :hover {:background "#f5f5f5"}}
+            :on-click #(delete-selected-rows grid-state)}
+      "Delete Selected Rows"]]))
+
 (defn header [grid-state]
   [:div {:style {:display "flex"
                  :position "sticky"
@@ -72,10 +100,14 @@
              :on-key-down #(handle-key-nav grid-state col-idx row-idx %)
              :on-change #(update-cell grid-state row-idx col-idx (.. % -target -value))}]))
 
+;; Modify grid-component to include context menu
 (defn grid-component [grid-state]
   (let [rows (-> @grid-state :rows)]
-    [:div
+    [:div {:on-click #(when (:visible? @context-menu)
+                       (reset! context-menu {:visible? false :x 0 :y 0}))
+           :on-context-menu #(.preventDefault %)}
      [header grid-state]
+     [context-menu-component grid-state]  ; Add context menu
      [:div {:style {:width "100%"
                     :height "90%"
                     :border "1px solid #ccc"
@@ -88,7 +120,14 @@
          [:div {:style {:display "flex"
                         :background (when (contains? (:selected-rows @grid-state) i)
                                     "#e8f2ff")}
-                :key i}
+                :key i
+                :on-context-menu (fn [e]
+                                  (.preventDefault e)
+                                  (when (contains? (:selected-rows @grid-state) i)
+                                    (reset! context-menu 
+                                           {:visible? true
+                                            :x (.-clientX e)
+                                            :y (.-clientY e)})))}
           [:div {:style {:width "20px" 
                         :height "20px" 
                         :padding "10px"
