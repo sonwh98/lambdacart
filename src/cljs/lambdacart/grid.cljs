@@ -61,14 +61,14 @@
              :data-row row-idx
              :data-col col-idx
              :style {:flex "1" 
-                     :padding "8px" 
-                     :border "none"
-                     :background :inherit
-                     :border-bottom "1px solid #eee" 
-                     :border-right "1px solid #f9f9f9"}
-             :on-focus #(when (and (:selected-row @grid-state)
-                                   (not= row-idx (:selected-row @grid-state)))
-                          (swap! grid-state dissoc :selected-row))
+                    :padding "8px" 
+                    :border "none"
+                    :background :inherit
+                    :border-bottom "1px solid #eee" 
+                    :border-right "1px solid #f9f9f9"}
+             :on-focus #(when (and (seq (:selected-rows @grid-state))
+                                  (not ((:selected-rows @grid-state) row-idx)))
+                         (swap! grid-state dissoc :selected-rows))
              :on-key-down #(handle-key-nav grid-state col-idx row-idx %)
              :on-change #(update-cell grid-state row-idx col-idx (.. % -target -value))}]))
 
@@ -84,25 +84,23 @@
                     :font-size "14px"
                     :position "relative"}}
       (doall 
-       (for [[i _row] (map-indexed (fn [i row]
-                                    [i row])
-                                  rows)]
+       (for [[i _row] (map-indexed vector rows)]
          [:div {:style {:display "flex"
-                        :background (when (= i (:selected-row @grid-state))
-                                      :aliceblue)}
+                        :background (when (contains? (:selected-rows @grid-state) i)
+                                    "#e8f2ff")}
                 :key i}
           [:div {:style {:width "20px" 
-                         :height "20px" 
-                         :padding "10px"
-                         :cursor "pointer"
-                         :border-right "1px solid #ddd"
-                         :background "#f0f0f0"
-                         :font-weight "bold"}
-                 :on-click #(swap! grid-state
-                                   update-in [:selected-row] 
-                                   (fn [selected-row]
-                                     (when-not (= i selected-row)
-                                       i)))}
+                        :height "20px" 
+                        :padding "10px"
+                        :cursor "pointer"
+                        :border-right "1px solid #ddd"
+                        :background "#f0f0f0"
+                        :font-weight "bold"}
+                 :on-click #(swap! grid-state update :selected-rows
+                                 (fn [selected]
+                                   (if (contains? selected i)
+                                     (disj selected i)
+                                     (conj (or selected (sorted-set)) i))))}
            (inc i)]
           [:<>
            [cell-component grid-state i 0]
@@ -115,10 +113,11 @@
   (when-let [container (.getElementById js/document "app")]
     (when-not @root
       (reset! root (rdc/create-root container))
-      (swap! app/state assoc-in [:grid :rows ] (vec (for [i (range 50)]
-                                                      (mapv str [(rand-int 100) (rand-int 100) (rand-int 100)]))))
-
-      (swap! app/state assoc-in [:grid :header] ["Tour Name" "Description" "Image"]))
+      (swap! app/state assoc-in [:grid :rows] 
+             (vec (for [i (range 50)]
+                    (mapv str [(rand-int 100) (rand-int 100) (rand-int 100)]))))
+      (swap! app/state assoc-in [:grid :header] ["Tour Name" "Description" "Image"])
+      (swap! app/state assoc-in [:grid :selected-rows] (sorted-set)))
     (rdc/render @root [grid-component (r/cursor app/state [:grid])])))
 
 (defn open-websocket [url]
