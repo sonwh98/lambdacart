@@ -1,7 +1,8 @@
 (ns lambdacart.grid
   (:require [reagent.core :as r]
             [reagent.dom.client :as rdc]
-            [lambdacart.app :as app]))
+            [lambdacart.app :as app]
+            [cljs.core.async :refer [chan put! <! >! close! timeout] :as async]))
 
 (defn header [grid-state]
   [:div {:style {:display "flex"
@@ -82,7 +83,7 @@
                     :font-size "14px"
                     :position "relative"}}
       (doall 
-       (for [[i row] (map-indexed (fn [i row]
+       (for [[i _row] (map-indexed (fn [i row]
                                     [i row])
                                   rows)]
          [:div {:style {:display "flex"
@@ -119,5 +120,38 @@
       (swap! app/state assoc-in [:grid :header] ["Tour Name" "Description" "Image"]))
     (rdc/render @root [grid-component (r/cursor app/state [:grid])])))
 
+(defn open-websocket [url]
+  (let [ws (js/WebSocket. url)
+        ch (chan)]
+    
+    (set! (.-onopen ws)
+          (fn [_]
+            (js/console.log "WebSocket connection opened")))
+    
+    (set! (.-onmessage ws)
+          (fn [event]
+            (put! ch (.-data event))))
+    
+    (set! (.-onclose ws)
+          (fn [_]
+            (js/console.log "WebSocket connection closed")
+            (close! ch)))
+    
+    (set! (.-onerror ws)
+          (fn [error]
+            (js/console.error "WebSocket error:" error)))
+    
+    ;; Handle outgoing messages
+    (async/go-loop []
+      (when-let [msg (<! ch)]
+        (.send ws msg)
+        (recur)))
+    
+    ch))
+
 (defn init! []
-  (mount-grid))
+  (mount-grid)
+  (let [ws-channel (open-websocket "ws://localhost:3002")]
+    (swap! app/state assoc :ws-channel ws-channel)))
+
+
