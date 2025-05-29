@@ -66,8 +66,9 @@
                      :background :inherit
                      :border-bottom "1px solid #eee" 
                      :border-right "1px solid #f9f9f9"}
-             :on-focus #(when (not= row-idx (:selected-row @grid-state))
-                         (swap! grid-state dissoc :selected-row))
+             :on-focus #(when (and (:selected-row @grid-state)
+                                   (not= row-idx (:selected-row @grid-state)))
+                          (swap! grid-state dissoc :selected-row))
              :on-key-down #(handle-key-nav grid-state col-idx row-idx %)
              :on-change #(update-cell grid-state row-idx col-idx (.. % -target -value))}]))
 
@@ -114,7 +115,7 @@
   (when-let [container (.getElementById js/document "app")]
     (when-not @root
       (reset! root (rdc/create-root container))
-      (swap! app/state assoc-in [:grid :rows ] (vec (for [i (range 5)]
+      (swap! app/state assoc-in [:grid :rows ] (vec (for [i (range 50)]
                                                       (mapv str [(rand-int 100) (rand-int 100) (rand-int 100)]))))
 
       (swap! app/state assoc-in [:grid :header] ["Tour Name" "Description" "Image"]))
