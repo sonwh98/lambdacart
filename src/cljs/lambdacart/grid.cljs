@@ -4,11 +4,7 @@
             [lambdacart.app :as app]
             [cljs.core.async :refer [chan put! <! >! close! timeout] :as async]))
 
-;; Add context menu state
-(def context-menu (r/atom {:visible? false :x 0 :y 0}))
-
-;; Add delete function
-(defn delete-selected-rows [grid-state]
+(defn delete-selected-rows [grid-state context-menu]
   (let [selected (-> @grid-state :selected-rows)
         rows (-> @grid-state :rows)]
     (swap! grid-state assoc :rows 
@@ -16,8 +12,7 @@
     (swap! grid-state assoc :selected-rows (sorted-set))
     (reset! context-menu {:visible? false :x 0 :y 0})))
 
-;; Add context menu component
-(defn context-menu-component [grid-state]
+(defn context-menu-component [grid-state context-menu]
   (when (:visible? @context-menu)
     [:div {:style {:position "fixed"
                    :left (str (:x @context-menu) "px")
@@ -29,7 +24,7 @@
      [:div {:style {:padding "8px 12px"
                     :cursor "pointer"
                     :hover {:background "#f5f5f5"}}
-            :on-click #(delete-selected-rows grid-state)}
+            :on-click #(delete-selected-rows grid-state context-menu)}
       "Delete Selected Rows"]]))
 
 (defn header [grid-state]
@@ -100,14 +95,14 @@
              :on-key-down #(handle-key-nav grid-state col-idx row-idx %)
              :on-change #(update-cell grid-state row-idx col-idx (.. % -target -value))}]))
 
-;; Modify grid-component to include context menu
 (defn grid-component [grid-state]
-  (let [rows (-> @grid-state :rows)]
+  (let [rows (-> @grid-state :rows)
+        context-menu (r/cursor app/state [:context-menu])]
     [:div {:on-click #(when (:visible? @context-menu)
-                       (reset! context-menu {:visible? false :x 0 :y 0}))
+                        (swap! context-menu assoc :visible? false))
            :on-context-menu #(.preventDefault %)}
      [header grid-state]
-     [context-menu-component grid-state]  ; Add context menu
+     [context-menu-component grid-state context-menu]
      [:div {:style {:width "100%"
                     :height "90%"
                     :border "1px solid #ccc"
@@ -152,11 +147,12 @@
   (when-let [container (.getElementById js/document "app")]
     (when-not @root
       (reset! root (rdc/create-root container))
-      (swap! app/state assoc-in [:grid :rows] 
-             (vec (for [i (range 50)]
-                    (mapv str [(rand-int 100) (rand-int 100) (rand-int 100)]))))
-      (swap! app/state assoc-in [:grid :header] ["Tour Name" "Description" "Image"])
-      (swap! app/state assoc-in [:grid :selected-rows] (sorted-set)))
+      (swap! app/state assoc :grid 
+             {:rows (vec (for [i (range 50)]
+                          (mapv str [(rand-int 100) (rand-int 100) (rand-int 100)])))
+              :header ["Tour Name" "Description" "Image"]
+              :selected-rows (sorted-set)})
+      (swap! app/state assoc :context-menu {:visible? false :x 0 :y 0}))
     (rdc/render @root [grid-component (r/cursor app/state [:grid])])))
 
 (defn open-websocket [url]
