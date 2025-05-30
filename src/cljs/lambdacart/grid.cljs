@@ -66,22 +66,22 @@
            [:span {:style {:margin-left "8px"}}
             (if (= sort-dir :asc) "▲" "▼")])])))])
 
-(defn handle-key-nav [grid-state current-idx current-row e]
+(defn handle-key-nav [rows-state current-idx current-row e]
   (let [key->direction {"ArrowLeft" [-1 0]
                         "ArrowRight" [1 0]
                         "ArrowUp" [0 -1]
                         "ArrowDown" [0 1]}
         [dx dy] (get key->direction (.-key e))
-        rows (-> @grid-state :rows)
-        num-cols (-> rows first count)]
+        num-of-cols (-> @rows-state first count)
+        num-of-rows (count @rows-state)]
     (when (and dx dy)
       (.preventDefault e)
       (let [next-idx (+ current-idx dx)
             next-row (+ current-row dy)
             next-el (when (and (>= next-idx 0)
-                               (< next-idx num-cols)
+                               (< next-idx num-of-cols)
                                (>= next-row 0)
-                               (< next-row (count rows)))
+                               (< next-row num-of-rows))
                       (.querySelector js/document
                                       (str "[data-row='" next-row "'][data-col='" next-idx "']")))]
         (when next-el
@@ -91,7 +91,8 @@
   (swap! grid-state assoc-in [:rows row-idx col-idx] value))
 
 (defn cell-component [grid-state row-idx col-idx]
-  (let [value (get-in @grid-state [:rows row-idx col-idx])]
+  (let [value (get-in @grid-state [:rows row-idx col-idx])
+        rows (r/cursor grid-state [:rows])]
     [:input {:type "text"
              :value value
              :data-row row-idx
@@ -105,10 +106,11 @@
              :on-focus #(when (and (seq (:selected-rows @grid-state))
                                    (not ((:selected-rows @grid-state) row-idx)))
                           (swap! grid-state dissoc :selected-rows))
-             :on-key-down #(handle-key-nav grid-state col-idx row-idx %)
+             :on-key-down #(handle-key-nav rows col-idx row-idx %)
              :on-change #(update-cell grid-state row-idx col-idx (.. % -target -value))}]))
 
 (defn grid-component [grid-state]
+  (prn :grid-component)
   (let [rows (-> @grid-state :rows)
         context-menu (r/cursor app/state [:context-menu])]
     [:div {:on-click #(when (:visible? @context-menu)
