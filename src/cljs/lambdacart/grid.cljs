@@ -165,6 +165,14 @@
 
 (defonce root (atom nil))
 
+(def types {:int {:pred integer?
+                  :from-str js/parseInt
+                  :to-str str}
+            :str {:pred string?
+                  :from-str str
+                  :to-str str}}
+  )
+
 (defn mount-grid []
   (when-let [container (.getElementById js/document "app")]
     (when-not @root
@@ -172,9 +180,9 @@
       (swap! app/state assoc :grid
              {:rows (vec (for [i (range 50)]
                            [(rand-int 100) (rand-int 100) (rand-int 100)]))
-              :columns [{:name "Tour Name" :type :string}
-                        {:name "Description" :type :string}
-                        {:name "Image" :type :string}]
+              :columns [{:name "Tour Name" :type (:int types)}
+                        {:name "Description" :type (:int types)}
+                        {:name "Image" :type (:int types)}]
               :selected-rows (sorted-set)
               :sort-col nil
               :sort-dir :asc})
