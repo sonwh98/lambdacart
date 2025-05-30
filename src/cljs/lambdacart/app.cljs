@@ -7,5 +7,5 @@
     (add-watch :logger
                (fn [_key _ref old-state new-state]
                  (prn "State changed:"
-                      {:old old-state
-                       :new new-state})))))
+                      #_{:old old-state
+                         :new new-state})))))
