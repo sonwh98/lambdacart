@@ -66,18 +66,20 @@
            [:span {:style {:margin-left "8px"}}
             (if (= sort-dir :asc) "▲" "▼")])])))])
 
-(defn handle-key-nav [rows-state current-idx current-row e]
-  (let [key->direction {"ArrowLeft" [-1 0]
+(defn handle-key-nav [row-idx col-idx e]
+  (let [rows (-> @app/state :grid :rows)
+        row (nth rows col-idx)
+        key->direction {"ArrowLeft" [-1 0]
                         "ArrowRight" [1 0]
                         "ArrowUp" [0 -1]
                         "ArrowDown" [0 1]}
         [dx dy] (get key->direction (.-key e))
-        num-of-cols (-> @rows-state first count)
-        num-of-rows (count @rows-state)]
+        num-of-rows (count rows)
+        num-of-cols (count row)]
     (when (and dx dy)
       (.preventDefault e)
-      (let [next-idx (+ current-idx dx)
-            next-row (+ current-row dy)
+      (let [next-idx (+ col-idx dx)
+            next-row (+ row-idx dy)
             next-el (when (and (>= next-idx 0)
                                (< next-idx num-of-cols)
                                (>= next-row 0)
@@ -87,31 +89,35 @@
         (when next-el
           (.focus next-el))))))
 
-(defn update-cell [grid-state row-idx col-idx value]
-  (swap! grid-state assoc-in [:rows row-idx col-idx] value))
+(defn update-cell [row-idx col-idx value]
+  (swap! app/state assoc-in [:grid :rows row-idx col-idx] value))
 
-(defn cell-component [grid-state row-idx col-idx]
-  (let [value (get-in @grid-state [:rows row-idx col-idx])
-        rows (r/cursor grid-state [:rows])]
-    [:input {:type "text"
-             :value value
-             :data-row row-idx
-             :data-col col-idx
-             :style {:flex "1"
-                     :padding "8px"
-                     :border "none"
-                     :background :inherit
-                     :border-bottom "1px solid #eee"
-                     :border-right "1px solid #f9f9f9"}
-             :on-focus #(when (and (seq (:selected-rows @grid-state))
-                                   (not ((:selected-rows @grid-state) row-idx)))
-                          (swap! grid-state dissoc :selected-rows))
-             :on-key-down #(handle-key-nav rows col-idx row-idx %)
-             :on-change #(update-cell grid-state row-idx col-idx (.. % -target -value))}]))
+(defn cell-component [cell-value row-idx col-idx]
+  (prn :cell-component cell-value)
+  [:input {:type "text"
+           :value cell-value
+           :data-row row-idx
+           :data-col col-idx
+           :style {:flex "1"
+                   :padding "8px"
+                   :border "none"
+                   :background :inherit
+                   :border-bottom "1px solid #eee"
+                   :border-right "1px solid #f9f9f9"}
+           :on-focus #(when (and (-> @app/state :grid :selected-rows seq)
+                                 (not (= (-> @app/state :grid :selected-rows)
+                                         row-idx)))
+                        (swap! app/state assoc-in [:grid :selected-rows] nil))
+           :on-key-down #(handle-key-nav row-idx col-idx %)
+           :on-change #(update-cell row-idx col-idx (.. % -target -value))}])
 
 (defn grid-component [grid-state]
   (prn :grid-component)
   (let [rows (-> @grid-state :rows)
+        num-of-rows (count rows)
+        rows-state (for [i (range num-of-rows)]
+                     (r/cursor grid-state [:rows i]))
+
         context-menu (r/cursor app/state [:context-menu])]
     [:div {:on-click #(when (:visible? @context-menu)
                         (swap! context-menu assoc :visible? false))
@@ -126,7 +132,8 @@
                     :font-size "14px"
                     :position "relative"}}
       (doall
-       (for [[i _row] (map-indexed vector rows)]
+       (for [i (range num-of-rows)
+             :let [row-state (nth rows-state i)]]
          [:div {:style {:display "flex"
                         :background (when (contains? (:selected-rows @grid-state) i)
                                       "#e8f2ff")}
@@ -151,10 +158,9 @@
                                        (disj selected i)
                                        (conj (or selected (sorted-set)) i))))}
            (inc i)]
-          [:<>
-           [cell-component grid-state i 0]
-           [cell-component grid-state i 1]
-           [cell-component grid-state i 2]]]))]]))
+          (doall
+           (for [j (range (count @row-state))]
+             ^{:key (str "cell-" i "-" j)} [cell-component (nth @row-state j) i j]))]))]]))
 
 (defonce root (atom nil))
 
