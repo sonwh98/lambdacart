@@ -90,8 +90,12 @@
         (when next-el
           (.focus next-el))))))
 
-(defn update-cell [row-idx col-idx value]
-  (swap! app/state assoc-in [:grid :rows row-idx col-idx] value))
+(defn update-cell [row-idx col-idx str-value]
+  (let [column-type (get-in @app/state [:grid :columns col-idx :type])
+        {:keys [pred from-str]} column-type
+        value (from-str str-value)]
+    (when (pred value)
+      (swap! app/state assoc-in [:grid :rows row-idx col-idx] value))))
 
 (defn cell-component [cell-value row-idx col-idx]
   (prn :cell-component cell-value)
@@ -170,8 +174,7 @@
                   :to-str str}
             :str {:pred string?
                   :from-str str
-                  :to-str str}}
-  )
+                  :to-str str}})
 
 (defn mount-grid []
   (when-let [container (.getElementById js/document "app")]
@@ -179,9 +182,9 @@
       (reset! root (rdc/create-root container))
       (swap! app/state assoc :grid
              {:rows (vec (for [i (range 50)]
-                           [(rand-int 100) (rand-int 100) (rand-int 100)]))
+                           [(rand-int 100) (str (rand-int 100)) (rand-int 100)]))
               :columns [{:name "Tour Name" :type (:int types)}
-                        {:name "Description" :type (:int types)}
+                        {:name "Description" :type (:str types)}
                         {:name "Image" :type (:int types)}]
               :selected-rows (sorted-set)
               :sort-col nil
