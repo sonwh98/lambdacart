@@ -171,7 +171,7 @@
       (reset! root (rdc/create-root container))
       (swap! app/state assoc :grid
              {:rows (vec (for [i (range 50)]
-                           (mapv str [(rand-int 100) (rand-int 100) (rand-int 100)])))
+                           [(rand-int 100) (rand-int 100) (rand-int 100)]))
               :columns [{:name "Tour Name" :type :string}
                         {:name "Description" :type :string}
                         {:name "Image" :type :string}]
