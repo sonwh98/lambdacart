@@ -27,6 +27,7 @@
             :on-click #(delete-selected-rows grid-state context-menu)}
       "Delete"]]))
 
+;; Update header function to use columns
 (defn header [grid-state]
   [:div {:style {:display "flex"
                  :position "sticky"
@@ -38,13 +39,13 @@
                  :border-bottom "1px solid #ccc"}}
 
    [:div {:style {:width "20px" :height "20px" :padding "10px" :border-right "1px solid #ddd"}} ""]
-   (let [header (-> @grid-state :header)
+   (let [columns (-> @grid-state :columns)
          sort-col (-> @grid-state :sort-col)
          sort-dir (-> @grid-state :sort-dir)
          style {:flex "1" :padding "10px" :border-right "1px solid #ddd"}]
      (doall
-      (for [[i h] (map-indexed vector header)]
-        [:div {:key (str "h-" h)
+      (for [[i column] (map-indexed vector columns)]
+        [:div {:key (str "h-" (:name column))
                :style (merge style
                              {:display "flex"
                               :justify-content "space-between"
@@ -61,7 +62,7 @@
                                     :rows sorted-rows
                                     :sort-col i
                                     :sort-dir new-dir)))}
-         [:span h]
+         [:span (:name column)]
          (when (= i sort-col)
            [:span {:style {:margin-left "8px"}}
             (if (= sort-dir :asc) "▲" "▼")])])))])
@@ -171,7 +172,9 @@
       (swap! app/state assoc :grid
              {:rows (vec (for [i (range 50)]
                            (mapv str [(rand-int 100) (rand-int 100) (rand-int 100)])))
-              :header ["Tour Name" "Description" "Image"]
+              :columns [{:name "Tour Name" :type :string}
+                        {:name "Description" :type :string}
+                        {:name "Image" :type :string}]
               :selected-rows (sorted-set)
               :sort-col nil
               :sort-dir :asc})
