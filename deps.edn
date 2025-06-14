@@ -1,5 +1,7 @@
 {:deps {org.clojure/core.async {:mvn/version "1.8.741"}
-        ring/ring {:mvn/version "1.14.1"}}
+        ring/ring {:mvn/version "1.14.1"}
+        com.datomic/peer {:mvn/version "1.0.7364"}
+        org.postgresql/postgresql {:mvn/version "42.7.3"}}
  :paths ["src/clj" "src/cljc"]
  :aliases {:test {:extra-paths ["test"]
                   :extra-deps {io.github.cognitect-labs/test-runner {:git/tag "v0.5.1" :git/sha "dfb30dd"}}
