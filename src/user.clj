@@ -3,7 +3,7 @@
             [datomic.db]
             [datomic.function]
             [datomic.codec]
-            #_[clojure.edn :as edn]))
+            [clojure.edn :as edn]))
 
 (def schema
   [{:db/ident       :tour/name
@@ -38,8 +38,11 @@
 
 
 (def uri "datomic:mem://people-db")
-(def db-uri
+#_(def db-uri
   "datomic:sql://lambdacart?jdbc:postgresql://localhost:5432/datomic?user=datomic&password=datomic")
+
+(def db-uri "datomic:dev://localhost:4334/lambdacart")
+
 
 (def datomic-readers
   {'db/id  datomic.db/id-literal
@@ -58,22 +61,40 @@
   
   ;; Transact the schema
   @(d/transact conn schema)
+  ;; Transact the sample data
   @(d/transact conn sample-data)
-
-  ;; Add data
-  @(d/transact conn [{:person/name "Alice" :person/age 30}
-                     {:person/name "Bob" :person/age 25}])
 
   (def db (d/db conn))
 
-  (def results
-    (d/q '[:find ?name
-           :where
-           [?e :person/age ?age]
-           [(> ?age 27)]
-           [?e :person/name ?name]]
-         db))
-
-  (prn results)) 
+  (prn results)
+    ; Query all tour names
+  (d/q '[:find ?name
+         :where [_ :tour/name ?name]]
+       db)
+  
+  ; Query a specific tour by exact name
+  (d/q '[:find ?e ?price ?desc
+         :where 
+         [?e :tour/name "Ha Long Bay Cruise"]
+         [?e :tour/price ?price]
+         [?e :tour/description ?desc]]
+       db)
+  
+  ; Query tours with names containing "Tour"
+  (d/q '[:find ?name ?price
+         :where
+         [?e :tour/name ?name]
+         [?e :tour/price ?price]
+         [(clojure.string/includes? ?name "Tour")]]
+       db)
+  
+  ; Query full tour entity with its images
+  (d/q '[:find (pull ?e [:tour/name 
+                         :tour/price 
+                         :tour/description
+                         {:tour/images [:image/url :image/alt]}])
+         :where [?e :tour/name "Ha Long Bay Cruise"]]
+       db)
+  ) 
 
 

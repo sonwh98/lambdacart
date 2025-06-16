@@ -1,76 +1,76 @@
 [
- {:db/id #db/id[:db.part/user "tour1"]
+ {:db/id #db/id[:db.part/user -1000]
   :tour/name "Ha Long Bay Cruise"
   :tour/description "Explore the stunning limestone islands of Ha Long Bay by boat."
   :tour/price 1500000
-  :tour/images [#db/id[:db.part/user "halong1"]
-                #db/id[:db.part/user "halong2"]]}
+  :tour/images [#db/id[:db.part/user -1001]
+                #db/id[:db.part/user -1002]]}
 
- {:db/id #db/id[:db.part/user "halong1"]
+ {:db/id #db/id[:db.part/user -1001]
   :image/url "/images/halong1.jpg"
   :image/alt "Boats among limestone karsts"}
 
- {:db/id #db/id[:db.part/user "halong2"]
+ {:db/id #db/id[:db.part/user -1002]
   :image/url "/images/halong2.jpg"
   :image/alt "Sunset on Ha Long Bay"}
 
- {:db/id #db/id[:db.part/user "tour2"]
+ {:db/id #db/id[:db.part/user -2000]
   :tour/name "Hoi An Ancient Town Walk"
   :tour/description "A walking tour through the lantern-lit streets of Hoi An."
   :tour/price 700000
-  :tour/images [#db/id[:db.part/user "hoian1"]
-                #db/id[:db.part/user "hoian2"]]}
+  :tour/images [#db/id[:db.part/user -2001]
+                #db/id[:db.part/user -2002]]}
 
- {:db/id #db/id[:db.part/user "hoian1"]
+ {:db/id #db/id[:db.part/user -2001]
   :image/url "/images/hoian1.jpg"
   :image/alt "Lanterns over Hoi An street"}
 
- {:db/id #db/id[:db.part/user "hoian2"]
+ {:db/id #db/id[:db.part/user -2002]
   :image/url "/images/hoian2.jpg"
   :image/alt "Traditional yellow buildings in Hoi An"}
 
- {:db/id #db/id[:db.part/user "tour3"]
+ {:db/id #db/id[:db.part/user -3000]
   :tour/name "Sapa Mountain Trek"
   :tour/description "Hike through the misty mountains and rice terraces of Sapa."
   :tour/price 1200000
-  :tour/images [#db/id[:db.part/user "sapa1"]
-                #db/id[:db.part/user "sapa2"]]}
+  :tour/images [#db/id[:db.part/user -3001]
+                #db/id[:db.part/user -3002]]}
 
- {:db/id #db/id[:db.part/user "sapa1"]
+ {:db/id #db/id[:db.part/user -3001]
   :image/url "/images/sapa1.jpg"
   :image/alt "Terraced rice fields in Sapa"}
 
- {:db/id #db/id[:db.part/user "sapa2"]
+ {:db/id #db/id[:db.part/user -3002]
   :image/url "/images/sapa2.jpg"
   :image/alt "H'mong guide walking in Sapa trails"}
 
- {:db/id #db/id[:db.part/user "tour4"]
+ {:db/id #db/id[:db.part/user -4000]
   :tour/name "Cu Chi Tunnels Tour"
   :tour/description "Discover the underground network used during the Vietnam War."
   :tour/price 500000
-  :tour/images [#db/id[:db.part/user "cuchi1"]
-                #db/id[:db.part/user "cuchi2"]]}
+  :tour/images [#db/id[:db.part/user -4001]
+                #db/id[:db.part/user -4002]]}
 
- {:db/id #db/id[:db.part/user "cuchi1"]
+ {:db/id #db/id[:db.part/user -4001]
   :image/url "/images/cuchi1.jpg"
   :image/alt "Tunnel entrance hidden in forest"}
 
- {:db/id #db/id[:db.part/user "cuchi2"]
+ {:db/id #db/id[:db.part/user -4002]
   :image/url "/images/cuchi2.jpg"
   :image/alt "Tourists crawling inside Cu Chi tunnels"}
 
- {:db/id #db/id[:db.part/user "tour5"]
+ {:db/id #db/id[:db.part/user -5000]
   :tour/name "Mekong Delta Boat Ride"
   :tour/description "A scenic boat tour through the lush waterways of the Mekong Delta."
   :tour/price 900000
-  :tour/images [#db/id[:db.part/user "mekong1"]
-                #db/id[:db.part/user "mekong2"]]}
+  :tour/images [#db/id[:db.part/user -5001]
+                #db/id[:db.part/user -5002]]}
 
- {:db/id #db/id[:db.part/user "mekong1"]
+ {:db/id #db/id[:db.part/user -5001]
   :image/url "/images/mekong1.jpg"
   :image/alt "Traditional boat in narrow canal"}
 
- {:db/id #db/id[:db.part/user "mekong2"]
+ {:db/id #db/id[:db.part/user -5002]
   :image/url "/images/mekong2.jpg"
   :image/alt "Floating market on the Mekong"}
 ]
