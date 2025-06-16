@@ -1,5 +1,9 @@
 (ns user
-  (:require [datomic.api :as d]))
+  (:require [datomic.api :as d]
+            [datomic.db]
+            [datomic.function]
+            [datomic.codec]
+            #_[clojure.edn :as edn]))
 
 (def schema
   [{:db/ident       :tour/name
@@ -37,6 +41,11 @@
 (def db-uri
   "datomic:sql://lambdacart?jdbc:postgresql://localhost:5432/datomic?user=datomic&password=datomic")
 
+(def datomic-readers
+  {'db/id  datomic.db/id-literal
+   'db/fn  datomic.function/construct
+   'base64 datomic.codec/base-64-literal})
+
 (comment
   ;; Create a new database
   (d/create-database db-uri)
@@ -44,9 +53,12 @@
   
   ;; Connect to the database
   (def conn (d/connect db-uri))
+  (def sample-data (->> "resources/tours.edn" slurp (edn/read-string  {:readers datomic-readers})))
 
+  
   ;; Transact the schema
   @(d/transact conn schema)
+  @(d/transact conn sample-data)
 
   ;; Add data
   @(d/transact conn [{:person/name "Alice" :person/age 30}
