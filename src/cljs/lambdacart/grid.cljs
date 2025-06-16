@@ -223,7 +223,7 @@
 
 (defn init! []
   (mount-grid)
-  (let [ws-channel (open-websocket "ws://localhost:3002")]
+  (let [ws-channel (open-websocket "ws://localhost:3001")]
     (swap! app/state assoc :ws-channel ws-channel)))
 
 
