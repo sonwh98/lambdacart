@@ -82,7 +82,6 @@
             :on-click #(delete-selected-rows grid-state context-menu)}
       "Delete"]]))
 
-;; Update header function to use columns
 (defn header [grid-state]
   [:div {:style {:display "flex"
                  :position "sticky"
@@ -256,5 +255,4 @@
 (comment
   (-> @app/state :wss)
   (write (-> @app/state :wss) "123" {})
-  (write (-> @app/state :wss) ["123" 45 6] {})
-  )
+  (write (-> @app/state :wss) ["123" 45 6] {}))
