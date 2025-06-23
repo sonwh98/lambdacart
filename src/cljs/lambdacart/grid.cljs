@@ -4,6 +4,12 @@
             [lambdacart.app :as app]
             [cljs.core.async :refer [chan put! <! >! close! timeout] :as async]))
 
+(defprotocol Stream
+  (open [this opts] "Open the stream with options.")
+  (read [this] "Read data from the stream.")
+  (write [this data] "Write data to the stream.")
+  (close [this] "Close the stream."))
+
 (defn delete-selected-rows [grid-state context-menu]
   (let [selected (-> @grid-state :selected-rows)
         rows (-> @grid-state :rows)]
@@ -192,40 +198,41 @@
       (swap! app/state assoc :context-menu {:visible? false :x 0 :y 0}))
     (rdc/render @root [grid-component (r/cursor app/state [:grid])])))
 
-(defn open-streams [{:keys [url]}]
-  (let [ws (js/WebSocket. url)
-        in (chan 10)
-        out (chan 10)]
-    (set! (.-onopen ws)
-          (fn [_]
-            (js/console.log "WebSocket connection opened")))
-
-    (set! (.-onmessage ws)
-          (fn [event]
-            (put! in (.-data event))))
-
-    (set! (.-onclose ws)
-          (fn [_]
-            (js/console.log "WebSocket connection closed")
-            (close! in)
-            (close! out)))
-
-    (set! (.-onerror ws)
-          (fn [error]
-            (js/console.error "WebSocket error:" error)
-            (close! in)
-            (close! out)))
-
-    ;; Handle outgoing messages
-    (async/go-loop []
-      (prn "loop")
-      (when-let [msg (<! out)]
-        (prn "sending " msg)
-        (.send ws msg)
-        (recur))
-      (prn "loop-exit"))
-
-    {:in in :out out}))
+(defrecord WebSocketStream [url]
+  Stream
+  (open [this _]
+    (let [ws (js/WebSocket. url)
+          in (chan 10)
+          out (chan 10)]
+      (set! (.-onopen ws)
+            (fn [_] (js/console.log "WebSocket connection opened")))
+      (set! (.-onmessage ws)
+            (fn [event] (put! in (.-data event))))
+      (set! (.-onclose ws)
+            (fn [_]
+              (js/console.log "WebSocket connection closed")
+              (close! in)
+              (close! out)))
+      (set! (.-onerror ws)
+            (fn [error]
+              (js/console.error "WebSocket error:" error)
+              (close! in)
+              (close! out)))
+      (async/go-loop []
+        (when-let [msg (<! out)]
+          (when (= (.-readyState ws) 1)
+            (.send ws msg))
+          (recur)))
+      {:ws ws :in in :out out :url url}))
+  (read [this]
+    (:in this))
+  (write [this data]
+    (put! (:out this) data))
+  (close [this]
+    (when-let [ws (:ws this)]
+      (.close ws))
+    (close! (:in this))
+    (close! (:out this))))
 
 (defn init! []
   (mount-grid)
@@ -237,6 +244,6 @@
 (comment
   (put! (-> @app/state :ws-io-channel :out) "ping")
   (close! (-> @app/state :ws-channel))
-  (put! (:ws-channel @app/state) "ping")
+  (put! (:ws-channel @app.state) "ping")
   (.send ws2 "pong")
   )
