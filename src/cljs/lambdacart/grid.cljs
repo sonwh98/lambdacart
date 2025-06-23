@@ -255,4 +255,6 @@
 
 (comment
   (-> @app/state :wss)
-  (write (-> @app/state :wss) "123" {}))
+  (write (-> @app/state :wss) "123" {})
+  (write (-> @app/state :wss) ["123" 45 6] {})
+  )
