@@ -7,7 +7,7 @@
 (defprotocol Stream
   (open [this opts] "Open the stream with options.")
   (read [this opts] "Read from the stream with options like {:as :channel/:value, :timeout-ms 1000}.")
-  (write [this data opts] "Write data to the stream with options like {:callback fn}.")
+  (write [this opts data] "Write data to the stream with options like {:callback fn}.")
   (close [this] "Close the stream."))
 
 (defrecord WebSocketStream [url ws in out]
@@ -47,8 +47,9 @@
                      (when (= port in-stream) val))
                    (<! in-stream))))))
   
-  (write [this data {:keys [callback] :or {callback nil}}]
-    (let [out-stream (:out this)]
+  (write [this opts data]
+    (let [out-stream (:out this)
+          {:keys [callback] :or {callback nil}} opts]
       (if callback
         (put! out-stream data callback)
         (put! out-stream data))))
