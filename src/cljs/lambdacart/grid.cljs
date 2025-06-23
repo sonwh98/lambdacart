@@ -192,38 +192,51 @@
       (swap! app/state assoc :context-menu {:visible? false :x 0 :y 0}))
     (rdc/render @root [grid-component (r/cursor app/state [:grid])])))
 
-(defn open-websocket [url]
+(defn open-streams [{:keys [url]}]
   (let [ws (js/WebSocket. url)
-        ch (chan)]
-
+        in (chan 10)
+        out (chan 10)]
     (set! (.-onopen ws)
           (fn [_]
             (js/console.log "WebSocket connection opened")))
 
     (set! (.-onmessage ws)
           (fn [event]
-            (put! ch (.-data event))))
+            (put! in (.-data event))))
 
     (set! (.-onclose ws)
           (fn [_]
             (js/console.log "WebSocket connection closed")
-            (close! ch)))
+            (close! in)
+            (close! out)))
 
     (set! (.-onerror ws)
           (fn [error]
-            (js/console.error "WebSocket error:" error)))
+            (js/console.error "WebSocket error:" error)
+            (close! in)
+            (close! out)))
 
     ;; Handle outgoing messages
     (async/go-loop []
-      (when-let [msg (<! ch)]
+      (prn "loop")
+      (when-let [msg (<! out)]
+        (prn "sending " msg)
         (.send ws msg)
-        (recur)))
+        (recur))
+      (prn "loop-exit"))
 
-    ch))
+    {:in in :out out}))
 
 (defn init! []
   (mount-grid)
-  (let [ws-channel (open-websocket "ws://localhost:3001")]
-    (swap! app/state assoc :ws-channel ws-channel)))
+  (let [ws-io-channel (open-streams {:url "ws://localhost:3002"})]
+    (swap! app/state assoc :ws-io-channel ws-io-channel)))
 
 
+
+(comment
+  (put! (-> @app/state :ws-io-channel :out) "ping")
+  (close! (-> @app/state :ws-channel))
+  (put! (:ws-channel @app/state) "ping")
+  (.send ws2 "pong")
+  )
