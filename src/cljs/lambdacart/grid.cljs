@@ -4,14 +4,14 @@
             [lambdacart.app :as app]
             [cljs.core.async :refer [chan put! <! >! close! timeout] :as async]))
 
-(defprotocol StreamFactory
+(defprotocol Stream
   (open [this opts] "Open the stream with options.")
-  (get-input-stream [this] "Return the input stream/channel for reading.")
-  (get-output-stream [this] "Return the output stream/channel for writing.")
+  (read [this opts] "Read from the stream with options like {:as :channel/:value, :timeout-ms 1000}.")
+  (write [this data opts] "Write data to the stream with options like {:callback fn}.")
   (close [this] "Close the stream."))
 
 (defrecord WebSocketStream [url ws in out]
-  StreamFactory
+  Stream
   (open [this _]
     (let [ws (js/WebSocket. url)
           in (chan 10)
@@ -36,8 +36,23 @@
             (.send ws msg))
           (recur)))
       (assoc this :ws ws :in in :out out)))
-  (get-input-stream [this] (:in this))
-  (get-output-stream [this] (:out this))
+  
+  (read [this {:keys [as timeout-ms] :or {as :channel}}]
+    (let [in-stream (:in this)]
+      (case as
+        :channel in-stream
+        :value (async/go
+                 (if timeout-ms
+                   (let [[val port] (async/alts! [in-stream (async/timeout timeout-ms)])]
+                     (when (= port in-stream) val))
+                   (<! in-stream))))))
+  
+  (write [this data {:keys [callback] :or {callback nil}}]
+    (let [out-stream (:out this)]
+      (if callback
+        (put! out-stream data callback)
+        (put! out-stream data))))
+  
   (close [this]
     (when-let [ws (:ws this)] (.close ws))
     (close! (:in this))
