@@ -4,10 +4,10 @@
             [lambdacart.app :as app]
             [cljs.core.async :refer [chan put! <! >! close! timeout] :as async]))
 
-(defprotocol Stream
+(defprotocol StreamFactory
   (open [this opts] "Open the stream with options.")
-  (read [this] "Read data from the stream.")
-  (write [this data] "Write data to the stream.")
+  (get-input-stream [this] "Return the input stream/channel for reading.")
+  (get-output-stream [this] "Return the output stream/channel for writing.")
   (close [this] "Close the stream."))
 
 (defn delete-selected-rows [grid-state context-menu]
@@ -199,7 +199,7 @@
     (rdc/render @root [grid-component (r/cursor app/state [:grid])])))
 
 (defrecord WebSocketStream [url]
-  Stream
+  StreamFactory
   (open [this _]
     (let [ws (js/WebSocket. url)
           in (chan 10)
@@ -224,10 +224,10 @@
             (.send ws msg))
           (recur)))
       {:ws ws :in in :out out :url url}))
-  (read [this]
+  (get-input-stream [this]
     (:in this))
-  (write [this data]
-    (put! (:out this) data))
+  (get-output-stream [this]
+    (:out this))
   (close [this]
     (when-let [ws (:ws this)]
       (.close ws))
@@ -239,11 +239,8 @@
   (let [ws-io-channel (open-streams {:url "ws://localhost:3002"})]
     (swap! app/state assoc :ws-io-channel ws-io-channel)))
 
-
-
 (comment
   (put! (-> @app/state :ws-io-channel :out) "ping")
   (close! (-> @app/state :ws-channel))
   (put! (:ws-channel @app.state) "ping")
-  (.send ws2 "pong")
-  )
+  (.send ws2 "pong"))
