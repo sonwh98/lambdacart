@@ -10,6 +10,39 @@
   (get-output-stream [this] "Return the output stream/channel for writing.")
   (close [this] "Close the stream."))
 
+(defrecord WebSocketStream [url ws in out]
+  StreamFactory
+  (open [this _]
+    (let [ws (js/WebSocket. url)
+          in (chan 10)
+          out (chan 10)]
+      (set! (.-onopen ws)
+            (fn [_] (js/console.log "WebSocket connection opened")))
+      (set! (.-onmessage ws)
+            (fn [event] (put! in (.-data event))))
+      (set! (.-onclose ws)
+            (fn [_]
+              (js/console.log "WebSocket connection closed")
+              (close! in)
+              (close! out)))
+      (set! (.-onerror ws)
+            (fn [error]
+              (js/console.error "WebSocket error:" error)
+              (close! in)
+              (close! out)))
+      (async/go-loop []
+        (when-let [msg (<! out)]
+          (when (= (.-readyState ws) 1)
+            (.send ws msg))
+          (recur)))
+      (assoc this :ws ws :in in :out out)))
+  (get-input-stream [this] (:in this))
+  (get-output-stream [this] (:out this))
+  (close [this]
+    (when-let [ws (:ws this)] (.close ws))
+    (close! (:in this))
+    (close! (:out this))))
+
 (defn delete-selected-rows [grid-state context-menu]
   (let [selected (-> @grid-state :selected-rows)
         rows (-> @grid-state :rows)]
@@ -198,45 +231,10 @@
       (swap! app/state assoc :context-menu {:visible? false :x 0 :y 0}))
     (rdc/render @root [grid-component (r/cursor app/state [:grid])])))
 
-(defrecord WebSocketStream [url]
-  StreamFactory
-  (open [this _]
-    (let [ws (js/WebSocket. url)
-          in (chan 10)
-          out (chan 10)]
-      (set! (.-onopen ws)
-            (fn [_] (js/console.log "WebSocket connection opened")))
-      (set! (.-onmessage ws)
-            (fn [event] (put! in (.-data event))))
-      (set! (.-onclose ws)
-            (fn [_]
-              (js/console.log "WebSocket connection closed")
-              (close! in)
-              (close! out)))
-      (set! (.-onerror ws)
-            (fn [error]
-              (js/console.error "WebSocket error:" error)
-              (close! in)
-              (close! out)))
-      (async/go-loop []
-        (when-let [msg (<! out)]
-          (when (= (.-readyState ws) 1)
-            (.send ws msg))
-          (recur)))
-      {:ws ws :in in :out out :url url}))
-  (get-input-stream [this]
-    (:in this))
-  (get-output-stream [this]
-    (:out this))
-  (close [this]
-    (when-let [ws (:ws this)]
-      (.close ws))
-    (close! (:in this))
-    (close! (:out this))))
-
 (defn init! []
   (mount-grid)
-  (let [ws-io-channel (open-streams {:url "ws://localhost:3002"})]
+  (let [wss (map->WebSocketStream {:url "ws://localhost:3002"})
+        ws-io-channel (open wss {})]
     (swap! app/state assoc :ws-io-channel ws-io-channel)))
 
 (comment
