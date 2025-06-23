@@ -36,7 +36,7 @@
             (.send ws msg))
           (recur)))
       (assoc this :ws ws :in in :out out)))
-  
+
   (read [this {:keys [as timeout-ms] :or {as :channel}}]
     (let [in-stream (:in this)]
       (case as
@@ -46,14 +46,14 @@
                    (let [[val port] (async/alts! [in-stream (async/timeout timeout-ms)])]
                      (when (= port in-stream) val))
                    (<! in-stream))))))
-  
+
   (write [this opts data]
     (let [out-stream (:out this)
           {:keys [callback] :or {callback nil}} opts]
       (if callback
         (put! out-stream data callback)
         (put! out-stream data))))
-  
+
   (close [this]
     (when-let [ws (:ws this)] (.close ws))
     (close! (:in this))
@@ -250,11 +250,9 @@
 (defn init! []
   (mount-grid)
   (let [wss (map->WebSocketStream {:url "ws://localhost:3002"})
-        ws-io-channel (open wss {})]
-    (swap! app/state assoc :ws-io-channel ws-io-channel)))
+        wss (open wss {})]
+    (swap! app/state assoc :wss wss)))
 
 (comment
-  (put! (-> @app/state :ws-io-channel :out) "ping")
-  (close! (-> @app/state :ws-channel))
-  (put! (:ws-channel @app.state) "ping")
-  (.send ws2 "pong"))
+  (-> @app/state :wss)
+  (write (-> @app/state :wss) {} "123"))
