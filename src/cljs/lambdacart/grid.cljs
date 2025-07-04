@@ -44,7 +44,7 @@
         :value (async/go
                  (if timeout-ms
                    (let [[val port] (async/alts! [in-stream (async/timeout timeout-ms)])]
-                     (if (= port in-stream) 
+                     (if (= port in-stream)
                        val
                        (do
                          (js/console.log "Stream read timeout after" timeout-ms "ms")
@@ -252,7 +252,7 @@
 
 (defn init! []
   (mount-grid)
-  (let [wss (map->WebSocketStream {:url "ws://localhost:3002"})
+  (let [wss (map->WebSocketStream {:url "ws://localhost:3001/ws"})
         wss (open wss {})]
     (swap! app/state assoc :wss wss)))
 
@@ -260,22 +260,22 @@
   (-> @app/state :wss)
   (write (-> @app/state :wss) "123" {})
   (write (-> @app/state :wss) ["123" 45 6] {})
-  
+
   ;; Reading examples:
   ;; Get the raw channel for manual handling
   (read (-> @app/state :wss) {:as :channel})
-  
+
   ;; Read a single value (returns a go block with the value)
   (read (-> @app/state :wss) {:as :value})
-  
+
   ;; Read with timeout (returns nil if timeout exceeded)
   (read (-> @app/state :wss) {:as :value :timeout-ms 5000})
-  
+
   ;; Example of consuming messages in a go block
   (async/go
     (let [message (<! (read (-> @app/state :wss) {:as :value}))]
       (js/console.log "Received:" message)))
-  
+
   ;; Example of continuous reading
   (async/go-loop []
     (when-let [message (<! (read (-> @app/state :wss) {:as :value}))]
