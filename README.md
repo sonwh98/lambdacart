@@ -7,18 +7,18 @@
 
 then open browser http://localhost:3001/grid.chp
 
-#copy files to container without redeploying
+# copy files to container without redeploying
 ```bash
 % docker cp public/. <container-name>:/app/public 
 % docker cp public/. mai:/app/public
 ```
 
-#start bash shell in docker
+# start bash shell in docker
 ```bash
 % docker exec -it lambdakids /bin/sh 
 ```
 
-#deps.edn scripts
+# deps.edn scripts
 ```bash
 
 #run nREPL
