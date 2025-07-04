@@ -266,8 +266,11 @@
   (read (-> @app/state :wss) {:as :channel})
 
   ;; Read a single value (returns a go block with the value)
-  (read (-> @app/state :wss) {:as :value})
-
+  (def data (read (-> @app/state :wss) {:as :value}))
+  (async/take! data
+               (fn [msg]
+                 (prn "got " msg)))
+  
   ;; Read with timeout (returns nil if timeout exceeded)
   (read (-> @app/state :wss) {:as :value :timeout-ms 5000})
 
