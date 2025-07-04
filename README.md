@@ -1,10 +1,3 @@
-# run the start script
-
-```bash
-% npx shadow-cljs release lambdacart
-% ./scripts/start.sh
-```
-
 # run in Docker
 ```bash
 % docker build -t lambdacart .
