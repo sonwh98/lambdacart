@@ -15,6 +15,14 @@
                       (prn "add-client! " %)
                       (conj % channel)))))
 
+(defn broadcast [msg]
+  (doseq [client @clients]
+    (try
+      (http/send! client msg)
+      (catch Exception e
+        (println "Failed to send message to client:" (.getMessage e))
+        (swap! clients #(remove #{client} %))))))
+
 (defn ws-handler [req]
   (http/with-channel req channel
     (when (http/websocket? channel)
@@ -25,7 +33,8 @@
                          (http/send! channel (str "Echo: " data))))
       (http/on-close channel
                      (fn [status]
-                       (println "Channel closed:" status))))))
+                       (println "Channel closed:" status)
+                       (swap! clients #(remove #{channel} %)))))))
 
 (defn create-app []
   (let [routes (c/config :bidi-routes)
@@ -42,11 +51,30 @@
         (ws-handler req)
         (app req)))))
 
-(defn -main []
+(defonce server (atom nil))
+
+(defn start-server []
   (println "Loading configuration in" (System/getProperty "config"))
   (c/reload)
-  (let [port (c/config :port)]
-    (http/run-server (create-app) {:port port})
-    (println (format "Server running on http://localhost:%s with WebSocket at ws://localhost:%s/ws", port port))))
+  (let [port (c/config :port)
+        s (http/run-server (create-app) {:port port})]
+    (reset! server s)
+    (println (format "Server running on http://localhost:%s with WebSocket at ws://localhost:%s/ws" port port))))
 
-(comment)
+(defn stop-server []
+  (when @server
+    (println "Stopping server...")
+    (@server)  ; Call the server function to stop it
+    (reset! server nil)
+    (reset! clients [])  ; Clear all connected clients
+    (println "Server stopped.")))
+
+(defn -main []
+  (start-server))
+
+(comment
+  (start-server)
+  (stop-server)
+  (broadcast "wassup")
+  (count @clients)
+  )
