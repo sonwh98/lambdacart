@@ -15,7 +15,7 @@ then open browser http://localhost:3001/grid.chp
 
 # start bash shell in docker
 ```bash
-% docker exec -it lambdakids /bin/sh 
+% docker exec -it lambdacart /bin/sh 
 ```
 
 # deps.edn scripts
