@@ -5,9 +5,9 @@
             [cljs.core.async :refer [chan put! <! >! close! timeout] :as async]))
 
 (defprotocol Stream
-  (open [this opts] "Open the stream with options.")
-  (read [this opts] "Read from the stream with options like {:as :channel/:value, :timeout-ms 1000}.")
-  (write [this data opts] "Write data to the stream with options like {:callback fn}.")
+  (open [this params] "Open the stream with param which has only 1 mandatory key :path to a resource in a graph")
+  (read [this params] "Read from the stream with params")
+  (write [this data params] "Write data to the stream with")
   (close [this] "Close the stream."))
 
 (defrecord WebSocketStream [url ws in out]
@@ -44,12 +44,16 @@
         :value (async/go
                  (if timeout-ms
                    (let [[val port] (async/alts! [in-stream (async/timeout timeout-ms)])]
-                     (when (= port in-stream) val))
+                     (if (= port in-stream) 
+                       val
+                       (do
+                         (js/console.log "Stream read timeout after" timeout-ms "ms")
+                         ::timeout))) ; Return a keyword to indicate timeout
                    (<! in-stream))))))
 
-  (write [this data opts]
+  (write [this data params]
     (let [out-stream (:out this)
-          {:keys [callback] :or {callback nil}} opts]
+          {:keys [callback] :or {callback nil}} params]
       (if callback
         (put! out-stream data callback)
         (put! out-stream data))))
@@ -255,4 +259,25 @@
 (comment
   (-> @app/state :wss)
   (write (-> @app/state :wss) "123" {})
-  (write (-> @app/state :wss) ["123" 45 6] {}))
+  (write (-> @app/state :wss) ["123" 45 6] {})
+  
+  ;; Reading examples:
+  ;; Get the raw channel for manual handling
+  (read (-> @app/state :wss) {:as :channel})
+  
+  ;; Read a single value (returns a go block with the value)
+  (read (-> @app/state :wss) {:as :value})
+  
+  ;; Read with timeout (returns nil if timeout exceeded)
+  (read (-> @app/state :wss) {:as :value :timeout-ms 5000})
+  
+  ;; Example of consuming messages in a go block
+  (async/go
+    (let [message (<! (read (-> @app/state :wss) {:as :value}))]
+      (js/console.log "Received:" message)))
+  
+  ;; Example of continuous reading
+  (async/go-loop []
+    (when-let [message (<! (read (-> @app/state :wss) {:as :value}))]
+      (js/console.log "Got message:" message)
+      (recur))))
