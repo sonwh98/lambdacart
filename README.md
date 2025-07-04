@@ -12,7 +12,7 @@
 ```
 
 
-then open browser http://localhost:3001
+then open browser http://localhost:3001/grid.chp
 
 #copy files to container without redeploying
 ```bash
@@ -34,16 +34,13 @@ then open browser http://localhost:3001
 #format code
 % clj -M:fmt
 
-k#recompiles cljs to js on change
-% clj -M:cljs watch app
-
 #recompiles cljs to js on change
-% clj -M:cljs -m shadow.cljs.devtools.cli watch app
+% clj -M:cljs -m shadow.cljs.devtools.cli watch grid
 
 #compile cljs
 % clj -M:cljs -m shadow.cljs.devtools.cli compile app
 
-# starts chp web-server
-% clj -M:chp 
+# starts CHP and websocket server
+% clj -M:server
 
 ```
