@@ -38,10 +38,10 @@
 
 
 (def uri "datomic:mem://people-db")
-#_(def db-uri
+(def db-uri
   "datomic:sql://lambdacart?jdbc:postgresql://localhost:5432/datomic?user=datomic&password=datomic")
 
-(def db-uri "datomic:dev://localhost:4334/lambdacart")
+#_(def db-uri "datomic:dev://localhost:4334/lambdacart")
 
 
 (def datomic-readers
@@ -66,13 +66,12 @@
 
   (def db (d/db conn))
 
-  (prn results)
     ; Query all tour names
   (d/q '[:find ?name
          :where [_ :tour/name ?name]]
        db)
   
-  ; Query a specific tour by exact name
+  ; Query a specific tour by exact name 
   (d/q '[:find ?e ?price ?desc
          :where 
          [?e :tour/name "Ha Long Bay Cruise"]

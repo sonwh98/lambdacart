@@ -47,7 +47,7 @@
                 ring.middleware.params/wrap-params
                 (ring.middleware.content-type/wrap-content-type {:mime-types mime-types}))]
     (fn [req]
-      (if (= (:uri req) "/ws")
+      (if (= (:uri req) "/wsstream")
         (ws-handler req)
         (app req)))))
 

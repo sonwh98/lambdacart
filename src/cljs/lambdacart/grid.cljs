@@ -163,7 +163,7 @@
       (swap! app/state assoc-in [:grid :rows row-idx col-idx] value))))
 
 (defn cell-component [cell-value row-idx col-idx]
-  (prn :cell-component cell-value)
+  #_(prn :cell-component cell-value)
   [:input {:type "text"
            :value cell-value
            :data-row row-idx
@@ -182,7 +182,7 @@
            :on-change #(update-cell row-idx col-idx (.. % -target -value))}])
 
 (defn grid-component [grid-state]
-  (prn :grid-component)
+  #_(prn :grid-component)
   (let [rows (-> @grid-state :rows)
         num-of-rows (count rows)
         rows-state (for [i (range num-of-rows)]
@@ -259,7 +259,7 @@
 
 (defn init! []
   (mount-grid)
-  (let [wss (map->WebSocketStream {:url "/ws"}) 
+  (let [wss (map->WebSocketStream {:url "/wsstream"})
         wss (open wss {})]
     (swap! app/state assoc :wss wss)))
 

@@ -1,8 +1,8 @@
 ;; shadow-cljs configuration
 {:source-paths
  ["src/cljs"
-  "src/cljc"]
-
+  "src/cljc"
+  "src/dev"]
  :builds {:app {:target :browser
                 :output-dir "public/js"
                 :modules {:tourism {:init-fn lambdacart.tourism/init}}}
@@ -10,6 +10,12 @@
           :grid {:target :browser
                  :output-dir "public/js"
                  :modules {:grid {:init-fn lambdacart.grid/init!}}
-                 :devtools {:after-load lambdacart.grid/mount-grid}}}}
+                 :devtools {:http-host "0.0.0.0"
+                            :http-port 9630
+                            :ws-host "vn.bumble.fish"    ;; the domain the browser uses
+                            :connect-url "wss://vn.bumble.fish/ws"
+                            :after-load lambdacart.grid/mount-grid
+                            :preloads [lambdacart.patches]}
+                 }}}
 
 ;; npx shadow-cljs clj-repl
