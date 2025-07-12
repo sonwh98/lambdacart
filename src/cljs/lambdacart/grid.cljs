@@ -13,7 +13,14 @@
 (defrecord WebSocketStream [url ws in out]
   Stream
   (open [this _]
-    (let [ws (js/WebSocket. url)
+    (let [full-url (if (re-matches #"^wss?://.*" url)
+                     url  ; Already has protocol
+                     (let [protocol (if (= (.-protocol js/location) "https:")
+                                      "wss:"
+                                      "ws:")
+                           host (.-host js/location)]
+                       (str protocol "//" host url)))
+          ws (js/WebSocket. full-url)
           in (chan 10)
           out (chan 10)]
       (set! (.-onopen ws)
@@ -252,7 +259,7 @@
 
 (defn init! []
   (mount-grid)
-  (let [wss (map->WebSocketStream {:url "ws://localhost:3001/ws"})
+  (let [wss (map->WebSocketStream {:url "/ws"}) 
         wss (open wss {})]
     (swap! app/state assoc :wss wss)))
 
