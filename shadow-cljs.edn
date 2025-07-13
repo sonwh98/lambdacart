@@ -10,8 +10,14 @@
           :grid {:target :browser
                  :output-dir "public/js"
                  :modules {:grid {:init-fn lambdacart.grid/init!}}
-                 :devtools {:devtools-url "/shadow-cljs"
-                            :after-load lambdacart.grid/mount-grid
-                            :preloads [lambdacart.patches]}}}}
+                 :devtools {:after-load lambdacart.grid/mount-grid
+                            :preloads [lambdacart.patches]}}
+          
+          :grid-remote {:target :browser
+                        :output-dir "public/js"
+                        :modules {:grid {:init-fn lambdacart.grid/init!}}
+                        :devtools {:devtools-url "/shadow-cljs" ;;behind nginx reverse proxy
+                                   :after-load lambdacart.grid/mount-grid
+                                   :preloads [lambdacart.patches]}}}}
 
 ;; npx shadow-cljs clj-repl

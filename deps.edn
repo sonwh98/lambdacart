@@ -32,6 +32,11 @@
 ;; clj -M:nREPL
 ;; clj -M:fmt
 ;; clj -M:cljs -m shadow.cljs.devtools.cli watch app
-;; clj -M:cljs -m shadow.cljs.devtools.cli watch grid
 ;; clj -M:cljs -m shadow.cljs.devtools.cli compile app
 ;; clj -M:server
+
+;; clj -M:cljs -m shadow.cljs.devtools.cli watch grid
+;; use grid-remote for remote shadow-cljs
+;; clj -M:cljs -m shadow.cljs.devtools.cli watch grid-remote
+
+
