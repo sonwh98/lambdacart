@@ -10,12 +10,8 @@
           :grid {:target :browser
                  :output-dir "public/js"
                  :modules {:grid {:init-fn lambdacart.grid/init!}}
-                 :devtools {:http-host "0.0.0.0"
-                            :http-port 9630
-                            :ws-host "vn.bumble.fish"    ;; the domain the browser uses
-                            :connect-url "wss://vn.bumble.fish/ws"
+                 :devtools {:devtools-url "/shadow-cljs"
                             :after-load lambdacart.grid/mount-grid
-                            :preloads [lambdacart.patches]}
-                 }}}
+                            :preloads [lambdacart.patches]}}}}
 
 ;; npx shadow-cljs clj-repl
