@@ -59,14 +59,14 @@
   (let [port (c/config :port)
         s (http/run-server (create-app) {:port port})]
     (reset! server s)
-    (println (format "Server running on http://localhost:%s with WebSocket at ws://localhost:%s/ws" port port))))
+    (println (format "Server running on http://localhost:%s with WebSocket at ws://localhost:%s/wsstream" port port))))
 
 (defn stop-server []
   (when @server
     (println "Stopping server...")
-    (@server)  ; Call the server function to stop it
+    (@server) ; Call the server function to stop it
     (reset! server nil)
-    (reset! clients [])  ; Clear all connected clients
+    (reset! clients []) ; Clear all connected clients
     (println "Server stopped.")))
 
 (defn -main []
@@ -76,5 +76,4 @@
   (start-server)
   (stop-server)
   (broadcast "wassup")
-  (count @clients)
-  )
+  (count @clients))

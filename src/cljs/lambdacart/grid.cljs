@@ -14,7 +14,7 @@
   Stream
   (open [this _]
     (let [full-url (if (re-matches #"^wss?://.*" url)
-                     url  ; Already has protocol
+                     url ; Already has protocol
                      (let [protocol (if (= (.-protocol js/location) "https:")
                                       "wss:"
                                       "ws:")
@@ -277,7 +277,7 @@
   (async/take! data
                (fn [msg]
                  (prn "got " msg)))
-  
+
   ;; Read with timeout (returns nil if timeout exceeded)
   (read (-> @app/state :wss) {:as :value :timeout-ms 5000})
 
