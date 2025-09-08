@@ -24,9 +24,12 @@
           in (chan 10)
           out (chan 10)]
       (set! (.-onopen ws)
-            (fn [_] (js/console.log "WebSocket connection opened")))
+            (fn [_]
+              (js/console.log "WebSocket connection opened")))
       (set! (.-onmessage ws)
-            (fn [event] (put! in (.-data event))))
+            (fn [event]
+              (prn "on-message")
+              (put! in (.-data event))))
       (set! (.-onclose ws)
             (fn [_]
               (js/console.log "WebSocket connection closed")
