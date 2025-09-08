@@ -1,9 +1,9 @@
 [
  {:db/id #db/id[:db.part/user -1000]
-  :tour/name "Ha Long Bay Cruise"
-  :tour/description "Explore the stunning limestone islands of Ha Long Bay by boat."
-  :tour/price 1500000
-  :tour/images [#db/id[:db.part/user -1001]
+  :item/name "Ha Long Bay Cruise"
+  :item/description "Explore the stunning limestone islands of Ha Long Bay by boat."
+  :item/price 1500000
+  :item/images [#db/id[:db.part/user -1001]
                 #db/id[:db.part/user -1002]]}
 
  {:db/id #db/id[:db.part/user -1001]
@@ -15,10 +15,10 @@
   :image/alt "Sunset on Ha Long Bay"}
 
  {:db/id #db/id[:db.part/user -2000]
-  :tour/name "Hoi An Ancient Town Walk"
-  :tour/description "A walking tour through the lantern-lit streets of Hoi An."
-  :tour/price 700000
-  :tour/images [#db/id[:db.part/user -2001]
+  :item/name "Hoi An Ancient Town Walk"
+  :item/description "A walking tour through the lantern-lit streets of Hoi An."
+  :item/price 700000
+  :item/images [#db/id[:db.part/user -2001]
                 #db/id[:db.part/user -2002]]}
 
  {:db/id #db/id[:db.part/user -2001]
@@ -30,10 +30,10 @@
   :image/alt "Traditional yellow buildings in Hoi An"}
 
  {:db/id #db/id[:db.part/user -3000]
-  :tour/name "Sapa Mountain Trek"
-  :tour/description "Hike through the misty mountains and rice terraces of Sapa."
-  :tour/price 1200000
-  :tour/images [#db/id[:db.part/user -3001]
+  :item/name "Sapa Mountain Trek"
+  :item/description "Hike through the misty mountains and rice terraces of Sapa."
+  :item/price 1200000
+  :item/images [#db/id[:db.part/user -3001]
                 #db/id[:db.part/user -3002]]}
 
  {:db/id #db/id[:db.part/user -3001]
@@ -45,10 +45,10 @@
   :image/alt "H'mong guide walking in Sapa trails"}
 
  {:db/id #db/id[:db.part/user -4000]
-  :tour/name "Cu Chi Tunnels Tour"
-  :tour/description "Discover the underground network used during the Vietnam War."
-  :tour/price 500000
-  :tour/images [#db/id[:db.part/user -4001]
+  :item/name "Cu Chi Tunnels Tour"
+  :item/description "Discover the underground network used during the Vietnam War."
+  :item/price 500000
+  :item/images [#db/id[:db.part/user -4001]
                 #db/id[:db.part/user -4002]]}
 
  {:db/id #db/id[:db.part/user -4001]
@@ -60,10 +60,10 @@
   :image/alt "Tourists crawling inside Cu Chi tunnels"}
 
  {:db/id #db/id[:db.part/user -5000]
-  :tour/name "Mekong Delta Boat Ride"
-  :tour/description "A scenic boat tour through the lush waterways of the Mekong Delta."
-  :tour/price 900000
-  :tour/images [#db/id[:db.part/user -5001]
+  :item/name "Mekong Delta Boat Ride"
+  :item/description "A scenic boat tour through the lush waterways of the Mekong Delta."
+  :item/price 900000
+  :item/images [#db/id[:db.part/user -5001]
                 #db/id[:db.part/user -5002]]}
 
  {:db/id #db/id[:db.part/user -5001]

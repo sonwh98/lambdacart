@@ -6,22 +6,22 @@
             [clojure.edn :as edn]))
 
 (def schema
-  [{:db/ident       :tour/name
+  [{:db/ident       :item/name
     :db/valueType   :db.type/string
     :db/cardinality :db.cardinality/one
     :db.install/_attribute :db.part/db}
 
-   {:db/ident       :tour/description
+   {:db/ident       :item/description
     :db/valueType   :db.type/string
     :db/cardinality :db.cardinality/one
     :db.install/_attribute :db.part/db}
 
-   {:db/ident       :tour/price
+   {:db/ident       :item/price
     :db/valueType   :db.type/long
     :db/cardinality :db.cardinality/one
     :db.install/_attribute :db.part/db}
 
-   {:db/ident       :tour/images
+   {:db/ident       :item/images
     :db/valueType   :db.type/ref
     :db/cardinality :db.cardinality/many
     :db/doc         "References to image entities associated with the tour"}
@@ -38,8 +38,7 @@
 
 
 (def uri "datomic:mem://people-db")
-(def db-uri
-  "datomic:sql://lambdacart?jdbc:postgresql://localhost:5432/datomic?user=datomic&password=datomic")
+
 
 #_(def db-uri "datomic:dev://localhost:4334/lambdacart")
 
@@ -68,31 +67,31 @@
 
     ; Query all tour names
   (d/q '[:find ?name
-         :where [_ :tour/name ?name]]
+         :where [_ :item/name ?name]]
        db)
   
   ; Query a specific tour by exact name 
   (d/q '[:find ?e ?price ?desc
          :where 
-         [?e :tour/name "Ha Long Bay Cruise"]
-         [?e :tour/price ?price]
-         [?e :tour/description ?desc]]
+         [?e :item/name "Ha Long Bay Cruise"]
+         [?e :item/price ?price]
+         [?e :item/description ?desc]]
        db)
   
   ; Query tours with names containing "Tour"
   (d/q '[:find ?name ?price
          :where
-         [?e :tour/name ?name]
-         [?e :tour/price ?price]
+         [?e :item/name ?name]
+         [?e :item/price ?price]
          [(clojure.string/includes? ?name "Tour")]]
        db)
   
   ; Query full tour entity with its images
-  (d/q '[:find (pull ?e [:tour/name 
-                         :tour/price 
-                         :tour/description
-                         {:tour/images [:image/url :image/alt]}])
-         :where [?e :tour/name "Ha Long Bay Cruise"]]
+  (d/q '[:find (pull ?e [:item/name 
+                         :item/price 
+                         :item/description
+                         {:item/images [:image/url :image/alt]}])
+         :where [?e :item/name "Ha Long Bay Cruise"]]
        db)
   ) 
 
