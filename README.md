@@ -37,4 +37,7 @@ then open browser http://localhost:3001/grid.chp
 # starts CHP and websocket server
 % clj -M:server
 
+## start datomic
+% ./bin/transactor config/postgres-transactor.properties
+
 ```
