@@ -1,3 +1,15 @@
+(require '[datomic.api :as d]
+         '[datomic.db])
+
+(def datomic-user (System/getenv "DATOMIC_USER"))
+(def datomic-password (System/getenv "DATOMIC_PASSWORD"))
+
+(def db-uri
+  (format "datomic:sql://lambdacart?jdbc:postgresql://localhost:5432/datomic?user=%s&password=%s"
+          datomic-user datomic-password))
+(def conn (d/connect db-uri))
+(def db (d/db conn))
+
 [:html {:lang "en"}
  [:head
   [:meta {:charset "UTF-8"}]
@@ -19,10 +31,12 @@
      [:button.tab "Transportation"]]]]
 
   [:div.card-grid
-   (let [tours (-> "data.edn" slurp read-string)]
+   (let [tours (d/q '[:find [(pull ?e [* {:item/images [*]}]) ...] 
+                      :where [?e :item/name _]]
+                    db)]
      (for [t tours]
        [:div.card
-        [:img {:src (:image-url t)}]
+        [:img {:src (-> t :item/images first :image/url)}]
         [:div.card-content
-         [:h3 (:tour-name t)]
-         [:p (:description t)]]]))]]]
+         [:h3 (:item/name t)]
+         [:p (:item/description t)]]]))]]]
