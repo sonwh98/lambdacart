@@ -18,7 +18,9 @@
 (defn broadcast [msg]
   (doseq [client @clients]
     (try
+      (prn "broadcast " msg)
       (http/send! client msg)
+      (prn "broadcast2 " msg)
       (catch Exception e
         (println "Failed to send message to client:" (.getMessage e))
         (swap! clients #(remove #{client} %))))))
