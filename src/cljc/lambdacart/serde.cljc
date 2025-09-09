@@ -100,7 +100,7 @@
   (println "Deserialized:" deserialized)
   (= sample-map deserialized)
 
-  (defn roundtrip [x]n
+  (defn roundtrip [x]
     (let [w (transit/writer :json)
           r (transit/reader :json)]
       (transit/read r (transit/write w x))))
