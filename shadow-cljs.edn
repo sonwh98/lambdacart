@@ -3,7 +3,7 @@
  ["src/cljs"
   "src/cljc"
   "src/dev"]
- :builds {:app {:closure-defines {lambdacart.app/BUILD_ID "app"}
+ :builds {:app {:compiler-options {:closure-defines {lambdacart.app/BUILD_ID "app"}}
                 :target :browser
                 :output-dir "public/js"
                 :modules {:tourism {:init-fn lambdacart.tourism/init}}}
