@@ -1,8 +1,6 @@
 (ns lambdacart.app
   (:require [reagent.core :as r]))
 
-(goog-define BUILD_ID "")
-
 (defonce state
   (doto (r/atom {:grid {:rows []}
                  :context-menu {:visible? false :x 0 :y 0}})
