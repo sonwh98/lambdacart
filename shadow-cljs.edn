@@ -3,17 +3,20 @@
  ["src/cljs"
   "src/cljc"
   "src/dev"]
- :builds {:app {:target :browser
+ :builds {:app {:closure-defines {lambdacart.app/BUILD_ID "app"}
+                :target :browser
                 :output-dir "public/js"
                 :modules {:tourism {:init-fn lambdacart.tourism/init}}}
 
-          :grid {:target :browser
+          :grid {:closure-defines {lambdacart.app/BUILD_ID "grid"}
+                 :target :browser
                  :output-dir "public/js"
                  :modules {:grid {:init-fn lambdacart.grid/init!}}
                  :devtools {:after-load lambdacart.grid/mount-grid
                             :preloads [lambdacart.patches]}}
           
-          :grid-remote {:target :browser
+          :grid-remote {:closure-defines {lambdacart.app/BUILD_ID "grid-remote"}
+                        :target :browser
                         :output-dir "public/js"
                         :modules {:grid {:init-fn lambdacart.grid/init!}}
                         :devtools {:devtools-url "/shadow-cljs" ;;behind nginx reverse proxy
