@@ -40,4 +40,7 @@ then open browser http://localhost:3001/grid.chp
 ## start datomic
 % ./bin/transactor config/postgres-transactor.properties
 
+## start cljs repl
+(shadow/repl :grid-remote)
+
 ```
