@@ -8,14 +8,14 @@
                 :output-dir "public/js"
                 :modules {:tourism {:init-fn lambdacart.tourism/init}}}
 
-          :grid {:closure-defines {lambdacart.app/BUILD_ID "grid"}
+          :grid {:compiler-options {:closure-defines {lambdacart.app/BUILD_ID "grid"}}
                  :target :browser
                  :output-dir "public/js"
                  :modules {:grid {:init-fn lambdacart.grid/init!}}
                  :devtools {:after-load lambdacart.grid/mount-grid
                             :preloads [lambdacart.patches]}}
           
-          :grid-remote {:closure-defines {lambdacart.app/BUILD_ID "grid-remote"}
+          :grid-remote {:compiler-options {:closure-defines {lambdacart.app/BUILD_ID "grid-remote"}}
                         :target :browser
                         :output-dir "public/js"
                         :modules {:grid {:init-fn lambdacart.grid/init!}}
