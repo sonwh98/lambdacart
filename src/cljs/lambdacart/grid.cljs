@@ -262,10 +262,7 @@
 
 (defn init! []
   (mount-grid)
-  (let [wss (map->WebSocketStream {:url (if (= lambdacart.app/BUILD_ID
-                                               "grid-remote")
-                                          "/shadow-cljs/wsstream"
-                                          "/wsstream")})
+  (let [wss (map->WebSocketStream {:url "/wsstream"})
         wss (open wss {})]
     (swap! app/state assoc :wss wss)))
 
