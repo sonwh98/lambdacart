@@ -1,5 +1,6 @@
 (ns lambdacart.grid
-  (:require [reagent.core :as r]
+  (:require [lambdacart.serde :as serde]
+            [reagent.core :as r]
             [reagent.dom.client :as rdc]
             [lambdacart.app :as app]
             [cljs.core.async :refer [chan put! <! >! close! timeout] :as async]))
@@ -61,12 +62,13 @@
                          ::timeout))) ; Return a keyword to indicate timeout
                    (<! in-stream))))))
 
-  (write [this data params]
+  (write [this edn-data params]
     (let [out-stream (:out this)
-          {:keys [callback] :or {callback nil}} params]
+          {:keys [callback] :or {callback nil}} params
+          transit-data (serde/edn->transit edn-data)]
       (if callback
-        (put! out-stream data callback)
-        (put! out-stream data))))
+        (put! out-stream transit-data callback)
+        (put! out-stream transit-data))))
 
   (close [this]
     (when-let [ws (:ws this)] (.close ws))
@@ -266,31 +268,59 @@
         wss (open wss {})]
     (swap! app/state assoc :wss wss)))
 
+(defn invoke [fn-name & args]
+  (let [wss (-> @app/state :wss)
+        fn-call (cons fn-name args)]
+    (if wss
+      (do
+        (js/console.log "Invoking remote function:" fn-name "with args:" args)
+        (write wss fn-call {}))
+      (js/console.error "WebSocket not available. Make sure to call init! first."))))
+
+;; Optional: Version that returns a promise/channel for the response
+(defn invoke-async [fn-name & args]
+  (let [wss (-> @app/state :wss)
+        fn-call (cons fn-name args)]
+    (if wss
+      (do
+        (js/console.log "Invoking remote function (async):" fn-name "with args:" args)
+        (write wss fn-call {})
+        ;; Return a go block that will contain the response
+        (read wss {:as :value}))
+      (do
+        (js/console.error "WebSocket not available. Make sure to call init! first.")
+        (async/go nil)))))
+
 (comment
-  (-> @app/state :wss)
-  (write (-> @app/state :wss) "123" {})
-  (write (-> @app/state :wss) ["123" 45 6] {})
-  (write (-> @app/state :wss) {:first-name "Sonny" :last-name "T"} {})
-  ;; Reading examples:
-  ;; Get the raw channel for manual handling
-  (read (-> @app/state :wss) {:as :channel})
-
-  ;; Read a single value (returns a go block with the value)
-  (def data (read (-> @app/state :wss) {:as :value}))
-  (async/take! data
-               (fn [msg]
-                 (prn "got " msg)))
-
-  ;; Read with timeout (returns nil if timeout exceeded)
-  (read (-> @app/state :wss) {:as :value :timeout-ms 5000})
-
-  ;; Example of consuming messages in a go block
+  ;; Basic invoke (fire-and-forget)
+  (invoke 'ping "hello" "world")
+  (invoke 'echo "Hello from client!")
+  (invoke 'update-cell 5 2 "New Value")
+  (invoke 'broadcast-message "Hello everyone!")
+  (invoke 'query-tours {:price-range [100 500]} {:page 1 :size 20})
+  
+  ;; Async invoke (wait for response)
   (async/go
-    (let [message (<! (read (-> @app/state :wss) {:as :value}))]
-      (js/console.log "Received:" message)))
-
-  ;; Example of continuous reading
-  (async/go-loop []
-    (when-let [message (<! (read (-> @app/state :wss) {:as :value}))]
-      (js/console.log "Got message:" message)
-      (recur))))
+    (let [response (<! (invoke-async 'ping "test"))]
+      (js/console.log "Server responded:" response)))
+  
+  (async/go
+    (let [tour-results (<! (invoke-async 'query-tours {:location "Vietnam"}))]
+      (js/console.log "Got tours:" tour-results)
+      ;; Update UI with the results
+      (swap! app/state assoc-in [:tours] (:tours tour-results))))
+  
+  ;; Chain multiple async calls
+  (async/go
+    (let [auth-result (<! (invoke-async 'authenticate "secret-key-123"))]
+      (if (= (:type auth-result) :auth-success)
+        (let [data (<! (invoke-async 'get-user-data))]
+          (js/console.log "User data:" data))
+        (js/console.error "Authentication failed"))))
+  
+  ;; Error handling with timeout
+  (async/go
+    (let [result (<! (invoke-async 'slow-function))]
+      (if (= result ::timeout)
+        (js/console.log "Function call timed out")
+        (js/console.log "Function result:" result)))))

@@ -26,9 +26,8 @@
         (println "Failed to send message to client:" (.getMessage e))
         (swap! clients #(remove #{client} %))))))
 
-(defn dispatch [data]
-  (println "Received:" {:data data
-                        :type (type data)}))
+(defn invoke [data]
+  (println "invoke " data))
 
 (defn ws-handler [req]
   (http/with-channel req channel
@@ -36,8 +35,10 @@
       (add-client! channel)
       (http/on-receive channel
                        (fn [transit-data]
-                         (let [edn-data (serde/transit->edn transit-data)]
-                           (dispatch edn-data)
+                         (let [_ (prn "transit-data" transit-data)
+                               edn-data (serde/transit->edn transit-data)
+                               _ (prn "foobar")]
+                           (invoke edn-data)
                            (http/send! channel (str "Echo: " edn-data)))))
       (http/on-close channel
                      (fn [status]
