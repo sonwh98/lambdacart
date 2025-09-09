@@ -1,5 +1,6 @@
 (ns lambdacart.server
-  (:require [org.httpkit.server :as http]
+  (:require [lambdacart.serde :as serde]
+            [org.httpkit.server :as http]
             [stigmergy.server]
             [stigmergy.chp]
             [stigmergy.config :as c]
@@ -25,14 +26,19 @@
         (println "Failed to send message to client:" (.getMessage e))
         (swap! clients #(remove #{client} %))))))
 
+(defn dispatch [data]
+  (println "Received:" {:data data
+                        :type (type data)}))
+
 (defn ws-handler [req]
   (http/with-channel req channel
     (when (http/websocket? channel)
       (add-client! channel)
       (http/on-receive channel
-                       (fn [data]
-                         (println "Received:" data)
-                         (http/send! channel (str "Echo: " data))))
+                       (fn [transit-data]
+                         (let [edn-data (serde/transit->edn transit-data)]
+                           (dispatch edn-data)
+                           (http/send! channel (str "Echo: " edn-data)))))
       (http/on-close channel
                      (fn [status]
                        (println "Channel closed:" status)

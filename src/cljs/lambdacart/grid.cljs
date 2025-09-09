@@ -270,7 +270,7 @@
   (-> @app/state :wss)
   (write (-> @app/state :wss) "123" {})
   (write (-> @app/state :wss) ["123" 45 6] {})
-
+  (write (-> @app/state :wss) {:first-name "Sonny" :last-name "T"} {})
   ;; Reading examples:
   ;; Get the raw channel for manual handling
   (read (-> @app/state :wss) {:as :channel})
