@@ -1,7 +1,7 @@
 (ns lambdacart.app
   (:require [reagent.core :as r]))
 
-(def ^string BUILD_ID "")
+(goog-define BUILD_ID "")
 
 (defonce state
   (doto (r/atom {:grid {:rows []}
