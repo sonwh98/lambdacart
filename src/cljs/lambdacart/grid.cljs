@@ -5,6 +5,8 @@
             [lambdacart.app :as app]
             [cljs.core.async :refer [chan put! <! >! close! timeout] :as async]))
 
+(defonce pending-requests (atom {}))
+
 (defprotocol Stream
   (open [this params] "Open the stream with param which has only 1 mandatory key :path to a resource in a graph")
   (read [this params] "Read from the stream with params")
@@ -29,8 +31,17 @@
               (js/console.log "WebSocket connection opened")))
       (set! (.-onmessage ws)
             (fn [event]
-              (prn "on-message")
-              (put! in (.-data event))))
+              (try
+                ;; Parse the transit data before putting it in the channel
+                (let [raw-data (.-data event)
+                      edn-data (serde/transit->edn raw-data)]
+                  (js/console.log "Received and parsed message:" edn-data)
+                  (put! in edn-data))
+                (catch js/Error e
+                  (js/console.error "Error parsing transit message:" e)
+                  (js/console.log "Raw data was:" (.-data event))
+                  ;; Put raw data as fallback
+                  (put! in (.-data event))))))
       (set! (.-onclose ws)
             (fn [_]
               (js/console.log "WebSocket connection closed")
@@ -262,11 +273,47 @@
       (swap! app/state assoc :context-menu {:visible? false :x 0 :y 0}))
     (rdc/render @root [grid-component (r/cursor app/state [:grid])])))
 
+;; Updated response handler
+(defn handle-broadcast [response]
+  (case (:type response)
+    :cell-updated (do
+                    (js/console.log "Cell updated broadcast")
+                    (swap! app/state assoc-in [:grid :rows (:row response) (:col response)] (:value response)))
+    :broadcast (js/console.log "Broadcast:" (:message response))
+    (js/console.log "Unhandled broadcast:" response)))
+
+
+(defn start-response-handler [wss]
+  (js/console.log "Starting response handler...")
+  (async/go-loop []
+    (js/console.log "Waiting for response...")
+    (when-let [response (<! (read wss {:as :value}))]
+      (js/console.log "Response handler received:" response)
+      (js/console.log "Response type:" (type response))
+      (js/console.log "Request ID in response:" (:request-id response))
+      (js/console.log "Pending requests:" @pending-requests)
+      
+      (if-let [request-id (:request-id response)]
+        ;; Handle correlated response
+        (if-let [response-chan (get @pending-requests request-id)]
+          (do
+            (js/console.log "Found matching request, sending response")
+            (put! response-chan response)
+            (swap! pending-requests dissoc request-id))
+          (js/console.warn "No pending request for ID:" request-id))
+        ;; Handle broadcasts and notifications
+        (do
+          (js/console.log "Handling as broadcast")
+          (handle-broadcast response)))
+      (recur))))
+
 (defn init! []
   (mount-grid)
   (let [wss (map->WebSocketStream {:url "/wsstream"})
         wss (open wss {})]
-    (swap! app/state assoc :wss wss)))
+    (swap! app/state assoc :wss wss)
+    ;; Start the response handler - THIS IS IMPORTANT!
+    (start-response-handler wss)))
 
 (defn invoke [fn-name & args]
   (let [wss (-> @app/state :wss)
@@ -291,36 +338,114 @@
         (js/console.error "WebSocket not available. Make sure to call init! first.")
         (async/go nil)))))
 
+;; Enhanced version with request correlation
+
+
+(defn generate-request-id []
+  (str (random-uuid)))
+
+(defn invoke-with-response [fn-name & args]
+  (let [wss (-> @app/state :wss)
+        request-id (generate-request-id)
+        fn-call {:request-id request-id
+                 :function fn-name
+                 :args (vec args)}
+        response-chan (chan 1)]
+    (if wss
+      (do
+        (js/console.log "Invoking function with ID:" fn-name request-id)
+        (swap! pending-requests assoc request-id response-chan)
+        (write wss fn-call {})
+        response-chan)
+      (do
+        (js/console.error "WebSocket not available")
+        (async/go nil)))))
+
+
+;; Enhanced debugging version
+
+
 (comment
-  ;; Basic invoke (fire-and-forget)
-  (invoke 'ping "hello" "world")
-  (invoke 'echo "Hello from client!")
-  (invoke 'update-cell 5 2 "New Value")
-  (invoke 'broadcast-message "Hello everyone!")
-  (invoke 'query-tours {:price-range [100 500]} {:page 1 :size 20})
+  ;; Test step by step
   
-  ;; Async invoke (wait for response)
-  (async/go
-    (let [response (<! (invoke-async 'ping "test"))]
-      (js/console.log "Server responded:" response)))
+  ;; 1. Check if WebSocket is connected
+  (js/console.log "WebSocket state:" (-> @app/state :wss))
   
-  (async/go
-    (let [tour-results (<! (invoke-async 'query-tours {:location "Vietnam"}))]
-      (js/console.log "Got tours:" tour-results)
-      ;; Update UI with the results
-      (swap! app/state assoc-in [:tours] (:tours tour-results))))
+  ;; 2. Test basic invoke first
+  (invoke 'ping "test")
   
-  ;; Chain multiple async calls
+  ;; 3. Test with response
   (async/go
-    (let [auth-result (<! (invoke-async 'authenticate "secret-key-123"))]
-      (if (= (:type auth-result) :auth-success)
-        (let [data (<! (invoke-async 'get-user-data))]
-          (js/console.log "User data:" data))
-        (js/console.error "Authentication failed"))))
+    (js/console.log "About to call invoke-with-response")
+    (let [response-chan (invoke-with-response 'ping "test")]
+      (js/console.log "Got response channel:" response-chan)
+      (js/console.log "Waiting for response...")
+      (let [response (<! response-chan)]
+        (prn "foo " response)
+        (js/console.log "Finally got response:" response))))
   
-  ;; Error handling with timeout
+  ;; 4. Check pending requests
+  (js/console.log "Pending requests:" @pending-requests))
+
+(comment
+  ;; Basic query - find all items
   (async/go
-    (let [result (<! (invoke-async 'slow-function))]
-      (if (= result ::timeout)
-        (js/console.log "Function call timed out")
-        (js/console.log "Function result:" result)))))
+    (let [response (<! (invoke-with-response 'q '[:find ?name ?price 
+                                                  :where 
+                                                  [?e :item/name ?name]
+                                                  [?e :item/price ?price]]))]
+      (prn "Query results:" (:results response))))
+
+  (async/go
+    (let [response (<! (invoke-with-response 'q '[:find [?e ...] 
+                                                  :where 
+                                                  [?e :item/name _]
+                                                  ]))]
+      (prn "Query results:" (:results response))))
+  
+  ;; Query with parameters - items above a price
+  (async/go
+    (let [response (<! (invoke-with-response 'q 
+                                             '[:find ?name ?price 
+                                               :in $ ?min-price 
+                                               :where 
+                                               [?e :item/name ?name] 
+                                               [?e :item/price ?price] 
+                                               [(>= ?price ?min-price)]] 
+                                             100))]
+      (js/console.log "Expensive items:" (:results response))))
+  
+  ;; Pull specific entity
+  (async/go
+    (let [response (<! (invoke-with-response 'pull 
+                                           '[:item/name :item/price :item/description] 
+                                           123))]
+      (js/console.log "Item details:" (:result response))))
+  
+  ;; Complex query with pull
+  (async/go
+    (let [response (<! (invoke-with-response 'q 
+                                           '[:find (pull ?e [:item/name 
+                                                           :item/price 
+                                                           {:item/images [:image/url :image/alt]}])
+                                             :where [?e :item/name]]))]
+      (js/console.log "All items with details:" (:results response))))
+  
+  ;; Count query
+  (async/go
+    (let [response (<! (invoke-with-response 'q '[:find (count ?e) 
+                                                  :where [?e :item/name]]))]
+      (js/console.log "Total items:" (ffirst (:results response)))))
+  
+  ;; Query with multiple conditions
+  (async/go
+    (let [response (<! (invoke-with-response 'q 
+                                           '[:find ?name 
+                                             :in $ ?search-term 
+                                             :where 
+                                             [?e :item/name ?name] 
+                                             [(clojure.string/includes? ?name ?search-term)]] 
+                                           "cruise"))]
+      (js/console.log "Items matching 'cruise':" (:results response)))))
+
+

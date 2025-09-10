@@ -1,5 +1,7 @@
 (ns lambdacart.server
-  (:require [lambdacart.serde :as serde]
+  (:require [datomic.api :as d]
+            [lambdacart.datomic :as datomic]
+            [lambdacart.serde :as serde]
             [org.httpkit.server :as http]
             [stigmergy.server]
             [stigmergy.chp]
@@ -59,16 +61,6 @@
     (broadcast {:type :rows-deleted :rows row-indices})
     {:type :delete-success :rows row-indices}))
 
-(register-function! 'query-data 
-  (fn [filters & [pagination]]
-    (println "Querying data with filters:" filters "pagination:" pagination)
-    ;; Here you would query your database
-    {:type :query-results 
-     :data []  ; Replace with actual query results
-     :total-count 0
-     :filters filters
-     :pagination pagination}))
-
 (register-function! 'broadcast-message
   (fn [message]
     (println "Broadcasting message:" message)
@@ -85,37 +77,39 @@
 (defn send-response [channel response]
   (when response
     (let [response-data (serde/edn->transit response)
-          response-bytes (.getBytes response-data "UTF-8")]
-      (http/send! channel response-bytes))))
+          ;;response-bytes (.getBytes response-data "UTF-8")
+          ]
+      (http/send! channel response-data #_response-bytes))))
 
-(defn send-error [channel message]
-  (let [error-response {:type :error :message message}
+(defn send-error [channel message & [request-id]]
+  (let [error-response (cond-> {:type :error :message message}
+                         request-id (assoc :request-id request-id))
         error-data (serde/edn->transit error-response)
         error-bytes (.getBytes error-data "UTF-8")]
     (http/send! channel error-bytes)))
 
 (defn invoke [data channel]
   (try
-    (if (and (sequential? data) (not (empty? data)))
-      (let [fn-name (first data)
-            args (rest data)
-            fn-impl (get @available-functions fn-name)]
+    (if (map? data)
+      ;; Handle new format with request ID
+      (let [{:keys [request-id function args]} data
+            fn-impl (get @available-functions function)]
         (if fn-impl
-          (do
-            (println "Calling function:" fn-name "with args:" args)
+          (let [result (apply fn-impl args)
+                response (assoc result :request-id request-id)]
+            (send-response channel response))
+          (send-error channel (str "Unknown function: " function) request-id)))
+      ;; Handle old format (list)
+      (if (and (sequential? data) (not (empty? data)))
+        (let [fn-name (first data)
+              args (rest data)
+              fn-impl (get @available-functions fn-name)]
+          (if fn-impl
             (let [result (apply fn-impl args)]
-              (prn "sending result to client " result)
-              (send-response channel result)))
-          (do
-            (println "Unknown function:" fn-name)
-            (send-error channel (str "Unknown function: " fn-name ". Available: " 
-                                    (keys @available-functions))))))
-      (do
-        (println "Invalid message format. Expected (fn-name arg1 arg2 ...), got:" data)
-        (send-error channel "Invalid message format. Expected (fn-name arg1 arg2 ...)")))
+              (send-response channel result))
+            (send-error channel (str "Unknown function: " fn-name))))
+        (send-error channel "Invalid message format")))
     (catch Exception e
-      (println "Error invoking function:" (.getMessage e))
-      (.printStackTrace e)
       (send-error channel (str "Server error: " (.getMessage e))))))
 
 (defn ws-handler [req]
@@ -158,9 +152,78 @@
 
 (defonce server (atom nil))
 
+
+;; Register the Datomic query function
+(register-function! 'q
+  (fn [query & inputs]
+    (println "Executing Datomic query:" query "with inputs:" inputs)
+    (try
+      (let [db (datomic/get-db)]
+        (if db
+          (let [query-args (cons db inputs)
+                results (apply d/q query query-args)]
+            {:type :query-results
+             :query query
+             :inputs inputs
+             :results results
+             :count (count results)
+             :timestamp (java.util.Date.)})
+          {:type :error :message "Database not available"}))
+      (catch Exception e
+        ( .. e printStackTrace)
+        {:type :error 
+         :message (str "Query error: " (.getMessage e))
+         :query query
+         :inputs inputs}))))
+
+;; Helper function for pull queries
+(register-function! 'pull
+  (fn [pattern entity-id]
+    (println "Executing Datomic pull:" pattern "for entity:" entity-id)
+    (try
+      (let [db (datomic/get-db)]
+        (if db
+          (let [result (d/pull db pattern entity-id)]
+            {:type :pull-result
+             :pattern pattern
+             :entity-id entity-id
+             :result result
+             :timestamp (java.util.Date.)})
+          {:type :error :message "Database not available"}))
+      (catch Exception e
+        (println "Error executing Datomic pull:" (.getMessage e))
+        {:type :error 
+         :message (str "Pull error: " (.getMessage e))
+         :pattern pattern
+         :entity-id entity-id}))))
+
+;; Helper function for pull-many queries
+(register-function! 'pull-many
+  (fn [pattern entity-ids]
+    (println "Executing Datomic pull-many:" pattern "for entities:" entity-ids)
+    (try
+      (let [db (datomic/get-db)]
+        (if db
+          (let [results (d/pull-many db pattern entity-ids)]
+            {:type :pull-many-result
+             :pattern pattern
+             :entity-ids entity-ids
+             :results results
+             :count (count results)
+             :timestamp (java.util.Date.)})
+          {:type :error :message "Database not available"}))
+      (catch Exception e
+        (println "Error executing Datomic pull-many:" (.getMessage e))
+        {:type :error 
+         :message (str "Pull-many error: " (.getMessage e))
+         :pattern pattern
+         :entity-ids entity-ids}))))
+
+;; Update start-server to initialize Datomic
 (defn start-server []
   (println "Loading configuration in" (System/getProperty "config"))
   (c/reload)
+  (datomic/init-datomic!) ; Initialize Datomic connection
   (let [port (c/config :port)
         s (http/run-server (create-app) {:port port})]
     (reset! server s)
@@ -195,4 +258,6 @@
   
   (register-function! 'get-time
     (fn []
-      {:type :time-response :time (java.util.Date.)})))
+      {:type :time-response :time (java.util.Date.)}))
+  (serde/edn->transit [17592186045427 17592186045430 17592186045418 17592186045421 17592186045424])
+  )
