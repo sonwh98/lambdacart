@@ -1,5 +1,6 @@
 (ns lambdacart.grid
   (:require [lambdacart.serde :as serde]
+            [lambdacart.stream :as stream]
             [reagent.core :as r]
             [reagent.dom.client :as rdc]
             [lambdacart.app :as app]
@@ -7,92 +8,13 @@
 
 (defonce pending-requests (atom {}))
 
-(defprotocol Stream
-  (open [this params] "Open the stream with param which has only 1 mandatory key :path to a resource in a graph")
-  (read [this params] "Read from the stream with params")
-  (write [this data params] "Write data to the stream with")
-  (close [this] "Close the stream."))
-
-(defrecord WebSocketStream [url ws in out]
-  Stream
-  (open [this _]
-    (let [full-url (if (re-matches #"^wss?://.*" url)
-                     url ; Already has protocol
-                     (let [protocol (if (= (.-protocol js/location) "https:")
-                                      "wss:"
-                                      "ws:")
-                           host (.-host js/location)]
-                       (str protocol "//" host url)))
-          ws (js/WebSocket. full-url)
-          in (chan 10)
-          out (chan 10)]
-      (set! (.-onopen ws)
-            (fn [_]
-              (js/console.log "WebSocket connection opened")))
-      (set! (.-onmessage ws)
-            (fn [event]
-              (try
-                ;; Parse the transit data before putting it in the channel
-                (let [raw-data (.-data event)
-                      edn-data (serde/transit->edn raw-data)]
-                  (js/console.log "Received and parsed message:" edn-data)
-                  (put! in edn-data))
-                (catch js/Error e
-                  (js/console.error "Error parsing transit message:" e)
-                  (js/console.log "Raw data was:" (.-data event))
-                  ;; Put raw data as fallback
-                  (put! in (.-data event))))))
-      (set! (.-onclose ws)
-            (fn [_]
-              (js/console.log "WebSocket connection closed")
-              (close! in)
-              (close! out)))
-      (set! (.-onerror ws)
-            (fn [error]
-              (js/console.error "WebSocket error:" error)
-              (close! in)
-              (close! out)))
-      (async/go-loop []
-        (when-let [msg (<! out)]
-          (when (= (.-readyState ws) 1)
-            (.send ws msg))
-          (recur)))
-      (assoc this :ws ws :in in :out out)))
-
-  (read [this {:keys [as timeout-ms] :or {as :channel}}]
-    (let [in-stream (:in this)]
-      (case as
-        :channel in-stream
-        :value (async/go
-                 (if timeout-ms
-                   (let [[val port] (async/alts! [in-stream (async/timeout timeout-ms)])]
-                     (if (= port in-stream)
-                       val
-                       (do
-                         (js/console.log "Stream read timeout after" timeout-ms "ms")
-                         ::timeout))) ; Return a keyword to indicate timeout
-                   (<! in-stream))))))
-
-  (write [this edn-data params]
-    (let [out-stream (:out this)
-          {:keys [callback] :or {callback nil}} params
-          transit-data (serde/edn->transit edn-data)]
-      (if callback
-        (put! out-stream transit-data callback)
-        (put! out-stream transit-data))))
-
-  (close [this]
-    (when-let [ws (:ws this)] (.close ws))
-    (close! (:in this))
-    (close! (:out this))))
-
 (defn invoke [fn-name & args]
   (let [wss (-> @app/state :wss)
         fn-call (cons fn-name args)]
     (if wss
       (do
         (js/console.log "Invoking remote function:" fn-name "with args:" args)
-        (write wss fn-call {}))
+        (stream/write wss fn-call {}))
       (js/console.error "WebSocket not available. Make sure to call init! first."))))
 
 ;; Optional: Version that returns a promise/channel for the response
@@ -102,9 +24,9 @@
     (if wss
       (do
         (js/console.log "Invoking remote function (async):" fn-name "with args:" args)
-        (write wss fn-call {})
+        (stream/write wss fn-call {})
         ;; Return a go block that will contain the response
-        (read wss {:as :value}))
+        (stream/read wss {:as :value}))
       (do
         (js/console.error "WebSocket not available. Make sure to call init! first.")
         (async/go nil)))))
@@ -123,7 +45,7 @@
       (do
         (js/console.log "Invoking function with ID:" fn-name request-id)
         (swap! pending-requests assoc request-id response-chan)
-        (write wss fn-call {})
+        (stream/write wss fn-call {})
         response-chan)
       (do
         (js/console.error "WebSocket not available")
@@ -349,7 +271,7 @@
   (js/console.log "Starting response handler...")
   (async/go-loop []
     (js/console.log "Waiting for response...")
-    (when-let [response (<! (read wss {:as :value}))]
+    (when-let [response (<! (stream/read wss {:as :value}))]
       (js/console.log "Response handler received:" response)
       (js/console.log "Response type:" (type response))
       (js/console.log "Request ID in response:" (:request-id response))
@@ -371,8 +293,8 @@
 
 (defn init! []
   (mount-grid)                  ; Mount the grid first with empty data
-  (let [wss (map->WebSocketStream {:url "/wsstream"})
-        wss (open wss {})]
+  (let [wss (stream/map->WebSocketStream {:url "/wsstream"})
+        wss (stream/open wss {})]
     (swap! app/state assoc :wss wss)
     ;; Start the response handler
     (start-response-handler wss)
