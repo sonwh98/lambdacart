@@ -306,37 +306,35 @@
       (reset! root (rdc/create-root container)))
     
     (swap! app/state assoc :context-menu {:visible? false :x 0 :y 0})
-    (async/go
-      (let [response (<! (invoke-with-response 'q '[:find [(pull ?e [*]) ...] 
-                                                    :where 
-                                                    [?e :item/name _]
-                                                    ]))
-            rows (:results response)]
-        (cljs.pprint/pprint {:sonny-rows rows})
-        (swap! app/state assoc :grid
-               {:rows rows #_(vec (for [i (range 50)]
-                             [(rand-int 100) (str (rand-int 100)) (rand-int 100)]))
-                :columns (let [row0 (first rows)
-                               headers (keys row0)]
-                           [{:name (nth headers 0) :type (:str types)}
-                            {:name (nth headers 1) :type (:str types)}
-                            {:name (nth headers 2) :type (:str types)}
-                            {:name (nth headers 3) :type (:int types)}
-                            {:name (nth headers 4) :type (:str types)}])
-                :selected-rows (sorted-set)
-                :sort-col nil
-                :sort-dir :asc}))) 
+    
+    ;; Initialize with empty grid first
+    (swap! app/state assoc :grid
+           {:rows []
+            :columns []
+            :selected-rows (sorted-set)
+            :sort-col nil
+            :sort-dir :asc})
+    
+    ;; Render the empty grid immediately
     (rdc/render @root [grid-component (r/cursor app/state [:grid])])))
 
-;; Updated response handler
-(defn handle-broadcast [response]
-  (case (:type response)
-    :cell-updated (do
-                    (js/console.log "Cell updated broadcast")
-                    (swap! app/state assoc-in [:grid :rows (:row response) (:col response)] (:value response)))
-    :broadcast (js/console.log "Broadcast:" (:message response))
-    (js/console.log "Unhandled broadcast:" response)))
-
+(defn load-grid-data []
+  (async/go
+    (let [response (<! (invoke-with-response 'q '[:find [(pull ?e [*]) ...] 
+                                                  :where 
+                                                  [?e :item/name _]]))
+          rows (:results response)]
+      (js/console.log "Loaded grid data:" rows)
+      (when (seq rows)
+        (let [row0 (first rows)
+              headers (keys row0)]
+          (swap! app/state update :grid assoc
+                 :rows rows
+                 :columns [{:name (str (nth headers 0)) :type (:str types)}
+                           {:name (str (nth headers 1)) :type (:str types)}
+                           {:name (str (nth headers 2)) :type (:str types)}
+                           {:name (str (nth headers 3)) :type (:int types)}
+                           {:name (str (nth headers 4)) :type (:str types)}]))))))
 
 (defn start-response-handler [wss]
   (js/console.log "Starting response handler...")
@@ -363,100 +361,29 @@
       (recur))))
 
 (defn init! []
-  (mount-grid)
+  (mount-grid)                  ; Mount the grid first with empty data
   (let [wss (map->WebSocketStream {:url "/wsstream"})
         wss (open wss {})]
     (swap! app/state assoc :wss wss)
-    ;; Start the response handler - THIS IS IMPORTANT!
-    (start-response-handler wss)))
+    ;; Start the response handler
+    (start-response-handler wss)
+    ;; Give WebSocket time to connect, then load data
+    (async/go
+      (<! (async/timeout 100))   ; Wait 100ms for WebSocket to connect
+      (js/console.log "Loading grid data after WebSocket delay...")
+      (<! (load-grid-data)))))
+
+;; Handle broadcast messages
+(defn handle-broadcast [response]
+  (case (:type response)
+    :cell-updated (do
+                    (js/console.log "Cell updated broadcast")
+                    (swap! app/state assoc-in [:grid :rows (:row response) (:col response)] (:value response)))
+    :broadcast (js/console.log "Broadcast:" (:message response))
+    (js/console.log "Unhandled broadcast:" response)))
+
+;; Start response handler
 
 
-
-
-;; Enhanced debugging version
-
-
-(comment
-  ;; Test step by step
-  
-  ;; 1. Check if WebSocket is connected
-  (js/console.log "WebSocket state:" (-> @app/state :wss))
-  
-  ;; 2. Test basic invoke first
-  (invoke 'ping "test")
-  
-  ;; 3. Test with response
-  (async/go
-    (js/console.log "About to call invoke-with-response")
-    (let [response-chan (invoke-with-response 'ping "test")]
-      (js/console.log "Got response channel:" response-chan)
-      (js/console.log "Waiting for response...")
-      (let [response (<! response-chan)]
-        (prn "foo " response)
-        (js/console.log "Finally got response:" response))))
-  
-  ;; 4. Check pending requests
-  (js/console.log "Pending requests:" @pending-requests))
-
-(comment
-  ;; Basic query - find all items
-  (async/go
-    (let [response (<! (invoke-with-response 'q '[:find ?name ?price 
-                                                  :where 
-                                                  [?e :item/name ?name]
-                                                  [?e :item/price ?price]]))]
-      (prn "Query results:" (:results response))))
-
-  (async/go
-    (let [response (<! (invoke-with-response 'q '[:find [(pull ?e [*]) ...] 
-                                                  :where 
-                                                  [?e :item/name _]
-                                                  ]))]
-      (prn "Query results:" (:results response))))
-  
-  ;; Query with parameters - items above a price
-  (async/go
-    (let [response (<! (invoke-with-response 'q 
-                                             '[:find ?name ?price 
-                                               :in $ ?min-price 
-                                               :where 
-                                               [?e :item/name ?name] 
-                                               [?e :item/price ?price] 
-                                               [(>= ?price ?min-price)]] 
-                                             100))]
-      (js/console.log "Expensive items:" (:results response))))
-  
-  ;; Pull specific entity
-  (async/go
-    (let [response (<! (invoke-with-response 'pull 
-                                           '[:item/name :item/price :item/description] 
-                                           123))]
-      (js/console.log "Item details:" (:result response))))
-  
-  ;; Complex query with pull
-  (async/go
-    (let [response (<! (invoke-with-response 'q 
-                                           '[:find (pull ?e [:item/name 
-                                                           :item/price 
-                                                           {:item/images [:image/url :image/alt]}])
-                                             :where [?e :item/name]]))]
-      (js/console.log "All items with details:" (:results response))))
-  
-  ;; Count query
-  (async/go
-    (let [response (<! (invoke-with-response 'q '[:find (count ?e) 
-                                                  :where [?e :item/name]]))]
-      (js/console.log "Total items:" (ffirst (:results response)))))
-  
-  ;; Query with multiple conditions
-  (async/go
-    (let [response (<! (invoke-with-response 'q 
-                                           '[:find ?name 
-                                             :in $ ?search-term 
-                                             :where 
-                                             [?e :item/name ?name] 
-                                             [(clojure.string/includes? ?name ?search-term)]] 
-                                           "cruise"))]
-      (js/console.log "Items matching 'cruise':" (:results response)))))
 
 
