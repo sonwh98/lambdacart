@@ -31,44 +31,86 @@
       "Delete"]]))
 
 (defn header [grid-state]
-  [:div {:style {:display "flex"
-                 :position "sticky"
-                 :top "0"
-                 :cursor "pointer"
-                 :background "#f0f0f0"
-                 :z-index "1"
-                 :font-weight "bold"
-                 :border-bottom "1px solid #ccc"}}
+  (let [columns (-> @grid-state :columns)
+        sort-col (-> @grid-state :sort-col)
+        sort-dir (-> @grid-state :sort-dir)]
+    [:div {:style {:display "flex"
+                   :position "sticky"
+                   :top "0"
+                   :cursor "pointer"
+                   :background "#f0f0f0"
+                   :z-index "1"
+                   :font-weight "bold"
+                   :border-bottom "1px solid #ccc"}}
 
-   [:div {:style {:width "20px" :height "20px" :padding "10px" :border-right "1px solid #ddd"}} ""]
-   (let [columns (-> @grid-state :columns)
-         sort-col (-> @grid-state :sort-col)
-         sort-dir (-> @grid-state :sort-dir)
-         style {:flex "1" :padding "10px" :border-right "1px solid #ddd"}]
+     [:div {:style {:width "20px" :height "20px" :padding "10px" :border-right "1px solid #ddd"}} ""]
      (doall
       (for [[i column] (map-indexed vector columns)]
         [:div {:key (str "h-" (:name column))
-               :style (merge style
-                             {:display "flex"
-                              :justify-content "space-between"
-                              :align-items "center"})
-               :on-click (fn [_]
-                           (let [rows (-> @grid-state :rows)
-                                 column-key (keyword (:name column))
-                                 new-dir (if (= i sort-col)
-                                           (if (= sort-dir :asc) :desc :asc)
-                                           :asc)
-                                 sorted-rows (vec (sort-by #(get % column-key)
-                                                           (if (= new-dir :desc) #(compare %2 %1) compare)
-                                                           rows))]
-                             (swap! grid-state assoc
-                                    :rows sorted-rows
-                                    :sort-col i
-                                    :sort-dir new-dir)))}
+               :style (if (:width column)
+                        ;; Column has been manually resized - use fixed width
+                        {:width (str (:width column) "px")
+                         :min-width "50px"
+                         :padding "10px"
+                         :border-right "1px solid #ddd"
+                         :display "flex"
+                         :justify-content "space-between"
+                         :align-items "center"
+                         :position "relative"
+                         :box-sizing "border-box"}
+                        ;; Column uses default sizing - flex to fill space
+                        {:flex "1"
+                         :min-width "50px"
+                         :padding "10px"
+                         :border-right "1px solid #ddd"
+                         :display "flex"
+                         :justify-content "space-between"
+                         :align-items "center"
+                         :position "relative"
+                         :box-sizing "border-box"})
+               :on-click (fn [e]
+                           ;; Only sort if not clicking on resize handle
+                           (when-not (= (.-target e) (.-currentTarget e))
+                             (let [rows (-> @grid-state :rows)
+                                   column-key (keyword (:name column))
+                                   new-dir (if (= i sort-col)
+                                             (if (= sort-dir :asc) :desc :asc)
+                                             :asc)
+                                   sorted-rows (vec (sort-by #(get % column-key)
+                                                             (if (= new-dir :desc) #(compare %2 %1) compare)
+                                                             rows))]
+                               (swap! grid-state assoc
+                                      :rows sorted-rows
+                                      :sort-col i
+                                      :sort-dir new-dir))))}
          [:span (str (:name column))]
          (when (= i sort-col)
            [:span {:style {:margin-left "8px"}}
-            (if (= sort-dir :asc) "▲" "▼")])])))])
+            (if (= sort-dir :asc) "▲" "▼")])
+         ;; Resize handle
+         [:div {:style {:position "absolute"
+                        :right "0"
+                        :top "0"
+                        :bottom "0"
+                        :width "4px"
+                        :cursor "col-resize"
+                        :background "transparent"
+                        :z-index 10}
+                :on-mouse-down (fn [e]
+                                 (.preventDefault e)
+                                 (.stopPropagation e)
+                                 (let [start-x (.-clientX e)
+                                       header-element (.-parentElement (.-currentTarget e))
+                                       start-width (.-offsetWidth header-element)]
+                                   (letfn [(handle-mouse-move [move-e]
+                                             (let [delta (- (.-clientX move-e) start-x)
+                                                   new-width (max 50 (+ start-width delta))]
+                                               (swap! grid-state assoc-in [:columns i :width] new-width)))
+                                           (handle-mouse-up [_]
+                                             (.removeEventListener js/document "mousemove" handle-mouse-move)
+                                             (.removeEventListener js/document "mouseup" handle-mouse-up))]
+                                     (.addEventListener js/document "mousemove" handle-mouse-move)
+                                     (.addEventListener js/document "mouseup" handle-mouse-up))))}]]))]))
 
 (defn handle-key-nav [row-idx col-idx e]
   (let [rows (-> @app/state :grid :rows)
@@ -108,12 +150,13 @@
            :value (str cell-value)
            :data-row row-idx
            :data-col col-idx
-           :style {:flex "1"
+           :style {:width "100%"
                    :padding "8px"
                    :border "none"
                    :background :inherit
                    :border-bottom "1px solid #eee"
-                   :border-right "1px solid #f9f9f9"}
+                   :box-sizing "border-box"
+                   :outline "none"}
            :on-focus #(when (and (-> @app/state :grid :selected-rows seq)
                                  (not (= (-> @app/state :grid :selected-rows)
                                          row-idx)))
@@ -121,8 +164,9 @@
            :on-key-down #(handle-key-nav row-idx col-idx %)
            :on-change #(update-cell row-idx col-idx (.. % -target -value))}])
 
-(defn grid-component [grid-state]
-  (let [rows (-> @grid-state :rows)
+(defn grid-component []
+  (let [grid-state (r/cursor app/state [:grid])
+        rows (-> @grid-state :rows)
         columns (-> @grid-state :columns)
         num-of-rows (count rows)
         context-menu (r/cursor app/state [:context-menu])]
@@ -170,7 +214,18 @@
                  :let [column-key (keyword (:name column))
                        cell-value (get row column-key)]]
              ^{:key (str "cell-" i "-" j)}
-             [cell-component cell-value i j]))]))]]))
+             [:div {:style (if (:width column)
+                             ;; Column has been manually resized - use fixed width
+                             {:width (str (:width column) "px")
+                              :min-width "50px"
+                              :border-right "1px solid #f9f9f9"
+                              :box-sizing "border-box"}
+                             ;; Column uses default sizing - flex to fill space
+                             {:flex "1"
+                              :min-width "50px"
+                              :border-right "1px solid #f9f9f9"
+                              :box-sizing "border-box"})}
+              [cell-component cell-value i j]]))]))]]))
 
 (defonce root (atom nil))
 
@@ -196,8 +251,8 @@
             :sort-col nil
             :sort-dir :asc})
 
-    ;; Render the empty grid immediately
-    (rdc/render @root [grid-component (r/cursor app/state [:grid])])))
+    ;; Render without passing cursor as parameter
+    (rdc/render @root [grid-component])))
 
 (defn process-grid-data [response]
   "Process RPC response and update grid state"
