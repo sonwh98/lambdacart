@@ -336,6 +336,14 @@
                            {:name (str (nth headers 3)) :type (:int types)}
                            {:name (str (nth headers 4)) :type (:str types)}]))))))
 
+(defn handle-broadcast [response]
+  (case (:type response)
+    :cell-updated (do
+                    (js/console.log "Cell updated broadcast")
+                    (swap! app/state assoc-in [:grid :rows (:row response) (:col response)] (:value response)))
+    :broadcast (js/console.log "Broadcast:" (:message response))
+    (js/console.log "Unhandled broadcast:" response)))
+
 (defn start-response-handler [wss]
   (js/console.log "Starting response handler...")
   (async/go-loop []
@@ -372,18 +380,5 @@
       (<! (async/timeout 100))   ; Wait 100ms for WebSocket to connect
       (js/console.log "Loading grid data after WebSocket delay...")
       (<! (load-grid-data)))))
-
-;; Handle broadcast messages
-(defn handle-broadcast [response]
-  (case (:type response)
-    :cell-updated (do
-                    (js/console.log "Cell updated broadcast")
-                    (swap! app/state assoc-in [:grid :rows (:row response) (:col response)] (:value response)))
-    :broadcast (js/console.log "Broadcast:" (:message response))
-    (js/console.log "Unhandled broadcast:" response)))
-
-;; Start response handler
-
-
 
 
