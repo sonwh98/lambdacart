@@ -1,6 +1,7 @@
+;; filepath: /Users/sto/workspace/lambdacart/src/cljs/lambdacart/stream.cljs
 (ns lambdacart.stream
   (:require [lambdacart.serde :as serde]
-            [cljs.core.async :refer [chan put! <! >! close! timeout] :as async]) )
+            [cljs.core.async :refer [chan put! <! >! close! timeout] :as async]))
 
 (defprotocol Stream
   (open [this params] "Open the stream with param which has only 1 mandatory key :path to a resource in a graph")
