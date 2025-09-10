@@ -1,55 +1,11 @@
 (ns lambdacart.grid
   (:require [lambdacart.serde :as serde]
             [lambdacart.stream :as stream]
+            [lambdacart.rpc :as rpc]
             [reagent.core :as r]
             [reagent.dom.client :as rdc]
             [lambdacart.app :as app]
             [cljs.core.async :refer [chan put! <! >! close! timeout] :as async]))
-
-(defonce pending-requests (atom {}))
-
-(defn invoke [fn-name & args]
-  (let [wss (-> @app/state :wss)
-        fn-call (cons fn-name args)]
-    (if wss
-      (do
-        (js/console.log "Invoking remote function:" fn-name "with args:" args)
-        (stream/write wss fn-call {}))
-      (js/console.error "WebSocket not available. Make sure to call init! first."))))
-
-;; Optional: Version that returns a promise/channel for the response
-(defn invoke-async [fn-name & args]
-  (let [wss (-> @app/state :wss)
-        fn-call (cons fn-name args)]
-    (if wss
-      (do
-        (js/console.log "Invoking remote function (async):" fn-name "with args:" args)
-        (stream/write wss fn-call {})
-        ;; Return a go block that will contain the response
-        (stream/read wss {:as :value}))
-      (do
-        (js/console.error "WebSocket not available. Make sure to call init! first.")
-        (async/go nil)))))
-
-(defn generate-request-id []
-  (str (random-uuid)))
-
-(defn invoke-with-response [fn-name & args]
-  (let [wss (-> @app/state :wss)
-        request-id (generate-request-id)
-        fn-call {:request-id request-id
-                 :function fn-name
-                 :args (vec args)}
-        response-chan (chan 1)]
-    (if wss
-      (do
-        (js/console.log "Invoking function with ID:" fn-name request-id)
-        (swap! pending-requests assoc request-id response-chan)
-        (stream/write wss fn-call {})
-        response-chan)
-      (do
-        (js/console.error "WebSocket not available")
-        (async/go nil)))))
 
 (defn delete-selected-rows [grid-state context-menu]
   (let [selected (-> @grid-state :selected-rows)
@@ -98,7 +54,7 @@
                               :align-items "center"})
                :on-click (fn [_]
                            (let [rows (-> @grid-state :rows)
-                                 column-key (:name column)
+                                 column-key (keyword (:name column))
                                  new-dir (if (= i sort-col)
                                            (if (= sort-dir :asc) :desc :asc)
                                            :asc)
@@ -109,21 +65,21 @@
                                     :rows sorted-rows
                                     :sort-col i
                                     :sort-dir new-dir)))}
-         [:span (:name column)]
+         [:span (str (:name column))]
          (when (= i sort-col)
            [:span {:style {:margin-left "8px"}}
             (if (= sort-dir :asc) "▲" "▼")])])))])
 
 (defn handle-key-nav [row-idx col-idx e]
   (let [rows (-> @app/state :grid :rows)
-        row (nth rows col-idx)
+        columns (-> @app/state :grid :columns)
         key->direction {"ArrowLeft" [-1 0]
                         "ArrowRight" [1 0]
                         "ArrowUp" [0 -1]
                         "ArrowDown" [0 1]}
         [dx dy] (get key->direction (.-key e))
         num-of-rows (count rows)
-        num-of-cols (count row)]
+        num-of-cols (count columns)]
     (when (and dx dy)
       (.preventDefault e)
       (let [next-idx (+ col-idx dx)
@@ -138,15 +94,18 @@
           (.focus next-el))))))
 
 (defn update-cell [row-idx col-idx str-value]
-  (let [column-type (get-in @app/state [:grid :columns col-idx :type])
+  (let [columns (get-in @app/state [:grid :columns])
+        column (nth columns col-idx)
+        column-key (keyword (:name column))
+        column-type (:type column)
         {:keys [pred from-str]} column-type
         value (from-str str-value)]
     (when (pred value)
-      (swap! app/state assoc-in [:grid :rows row-idx col-idx] value))))
+      (swap! app/state assoc-in [:grid :rows row-idx column-key] value))))
 
 (defn cell-component [cell-value row-idx col-idx]
   [:input {:type "text"
-           :value cell-value
+           :value (str cell-value)
            :data-row row-idx
            :data-col col-idx
            :style {:flex "1"
@@ -164,10 +123,8 @@
 
 (defn grid-component [grid-state]
   (let [rows (-> @grid-state :rows)
+        columns (-> @grid-state :columns)
         num-of-rows (count rows)
-        rows-state (for [i (range num-of-rows)]
-                     (r/cursor grid-state [:rows i]))
-
         context-menu (r/cursor app/state [:context-menu])]
     [:div {:on-click #(when (:visible? @context-menu)
                         (swap! context-menu assoc :visible? false))
@@ -183,7 +140,7 @@
                     :position "relative"}}
       (doall
        (for [i (range num-of-rows)
-             :let [row-state (nth rows-state i)]]
+             :let [row (nth rows i)]]
          [:div {:style {:display "flex"
                         :background (when (contains? (:selected-rows @grid-state) i)
                                       "#e8f2ff")}
@@ -209,10 +166,11 @@
                                        (conj (or selected (sorted-set)) i))))}
            (inc i)]
           (doall
-           (for [k (keys @row-state)
-                 :let [cell-value (@row-state k)]]
-             ^{:key (str "cell-" i "-" k)}
-             [cell-component cell-value i k]))]))]])) 
+           (for [[j column] (map-indexed vector columns)
+                 :let [column-key (keyword (:name column))
+                       cell-value (get row column-key)]]
+             ^{:key (str "cell-" i "-" j)}
+             [cell-component cell-value i j]))]))]]))
 
 (defonce root (atom nil))
 
@@ -241,67 +199,39 @@
     ;; Render the empty grid immediately
     (rdc/render @root [grid-component (r/cursor app/state [:grid])])))
 
-(defn load-grid-data []
-  (async/go
-    (let [response (<! (invoke-with-response 'q '[:find [(pull ?e [*]) ...] 
-                                                  :where 
-                                                  [?e :item/name _]]))
-          rows (:results response)]
-      (js/console.log "Loaded grid data:" rows)
-      (when (seq rows)
-        (let [row0 (first rows)
-              headers (keys row0)]
-          (swap! app/state update :grid assoc
-                 :rows rows
-                 :columns [{:name (nth headers 0) :type (:str types)}
-                           {:name (nth headers 1) :type (:str types)}
-                           {:name (nth headers 2) :type (:str types)}
-                           {:name (nth headers 3) :type (:int types)}
-                           {:name (nth headers 4) :type (:str types)}]))))))
+(defn process-grid-data [response]
+  "Process RPC response and update grid state"
+  (let [rows (:results response)]
+    (js/console.log "Loaded grid data:" rows)
+    (when (seq rows)
+      (let [row0 (first rows)
+            headers (keys row0)]
 
-(defn handle-broadcast [response]
-  (case (:type response)
-    :cell-updated (do
-                    (js/console.log "Cell updated broadcast")
-                    (swap! app/state assoc-in [:grid :rows (:row response) (:col response)] (:value response)))
-    :broadcast (js/console.log "Broadcast:" (:message response))
-    (js/console.log "Unhandled broadcast:" response)))
-
-(defn start-response-handler [wss]
-  (js/console.log "Starting response handler...")
-  (async/go-loop []
-    (js/console.log "Waiting for response...")
-    (when-let [response (<! (stream/read wss {:as :value}))]
-      (js/console.log "Response handler received:" response)
-      (js/console.log "Response type:" (type response))
-      (js/console.log "Request ID in response:" (:request-id response))
-      (js/console.log "Pending requests:" @pending-requests)
-      
-      (if-let [request-id (:request-id response)]
-        ;; Handle correlated response
-        (if-let [response-chan (get @pending-requests request-id)]
-          (do
-            (js/console.log "Found matching request, sending response")
-            (put! response-chan response)
-            (swap! pending-requests dissoc request-id))
-          (js/console.warn "No pending request for ID:" request-id))
-        ;; Handle broadcasts and notifications
-        (do
-          (js/console.log "Handling as broadcast")
-          (handle-broadcast response)))
-      (recur))))
+        (swap! app/state update :grid assoc
+               :rows rows
+               :columns (mapv (fn [header-kw]
+                                {:name header-kw
+                                 :type (:str types)})
+                              headers))))))
 
 (defn init! []
-  (mount-grid)                  ; Mount the grid first with empty data
+  (mount-grid)
   (let [wss (stream/map->WebSocketStream {:url "/wsstream"})
         wss (stream/open wss {})]
     (swap! app/state assoc :wss wss)
     ;; Start the response handler
-    (start-response-handler wss)
+    (rpc/start-response-handler wss)
     ;; Give WebSocket time to connect, then load data
     (async/go
-      (<! (async/timeout 100))   ; Wait 100ms for WebSocket to connect
+      (<! (async/timeout 100))
       (js/console.log "Loading grid data after WebSocket delay...")
-      (<! (load-grid-data)))))
+      (let [response (<! (rpc/load-grid-data))]
+        (process-grid-data response)))))
 
 
+(comment
+
+  (-> @app/state keys)
+  
+  (get-in @app/state [:grid :columns])
+  )
