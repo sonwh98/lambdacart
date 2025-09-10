@@ -37,42 +37,42 @@
   (swap! available-functions assoc fn-name fn-impl))
 
 ;; Register some example functions
-(register-function! 'ping 
-  (fn [& args]
-    (println "Ping called with args:" args)
-    {:type :pong :timestamp (java.util.Date.) :args args}))
+(register-function! 'ping
+                    (fn [& args]
+                      (println "Ping called with args:" args)
+                      {:type :pong :timestamp (java.util.Date.) :args args}))
 
-(register-function! 'echo 
-  (fn [message]
-    (println "Echo called with:" message)
-    {:type :echo-response :message message}))
+(register-function! 'echo
+                    (fn [message]
+                      (println "Echo called with:" message)
+                      {:type :echo-response :message message}))
 
-(register-function! 'update-cell 
-  (fn [row col value]
-    (println "Updating cell" row col "to" value)
+(register-function! 'update-cell
+                    (fn [row col value]
+                      (println "Updating cell" row col "to" value)
     ;; Broadcast the change to all connected clients
-    (broadcast {:type :cell-updated :row row :col col :value value})
-    {:type :update-success :row row :col col :value value}))
+                      (broadcast {:type :cell-updated :row row :col col :value value})
+                      {:type :update-success :row row :col col :value value}))
 
 (register-function! 'delete-rows
-  (fn [row-indices]
-    (println "Deleting rows:" row-indices)
+                    (fn [row-indices]
+                      (println "Deleting rows:" row-indices)
     ;; Broadcast the deletion to all connected clients
-    (broadcast {:type :rows-deleted :rows row-indices})
-    {:type :delete-success :rows row-indices}))
+                      (broadcast {:type :rows-deleted :rows row-indices})
+                      {:type :delete-success :rows row-indices}))
 
 (register-function! 'broadcast-message
-  (fn [message]
-    (println "Broadcasting message:" message)
-    (broadcast {:type :broadcast :message message :timestamp (java.util.Date.)})
-    {:type :broadcast-sent}))
+                    (fn [message]
+                      (println "Broadcasting message:" message)
+                      (broadcast {:type :broadcast :message message :timestamp (java.util.Date.)})
+                      {:type :broadcast-sent}))
 
 (register-function! 'get-stats
-  (fn []
-    {:type :stats-response 
-     :connected-clients (count @clients)
-     :available-functions (keys @available-functions)
-     :server-time (java.util.Date.)}))
+                    (fn []
+                      {:type :stats-response
+                       :connected-clients (count @clients)
+                       :available-functions (keys @available-functions)
+                       :server-time (java.util.Date.)}))
 
 (defn send-response [channel response]
   (when response
@@ -152,72 +152,71 @@
 
 (defonce server (atom nil))
 
-
 ;; Register the Datomic query function
 (register-function! 'q
-  (fn [query & inputs]
-    (println "Executing Datomic query:" query "with inputs:" inputs)
-    (try
-      (let [db (datomic/get-db)]
-        (if db
-          (let [query-args (cons db inputs)
-                results (apply d/q query query-args)]
-            {:type :query-results
-             :query query
-             :inputs inputs
-             :results results
-             :count (count results)
-             :timestamp (java.util.Date.)})
-          {:type :error :message "Database not available"}))
-      (catch Exception e
-        ( .. e printStackTrace)
-        {:type :error 
-         :message (str "Query error: " (.getMessage e))
-         :query query
-         :inputs inputs}))))
+                    (fn [query & inputs]
+                      (println "Executing Datomic query:" query "with inputs:" inputs)
+                      (try
+                        (let [db (datomic/get-db)]
+                          (if db
+                            (let [query-args (cons db inputs)
+                                  results (apply d/q query query-args)]
+                              {:type :query-results
+                               :query query
+                               :inputs inputs
+                               :results results
+                               :count (count results)
+                               :timestamp (java.util.Date.)})
+                            {:type :error :message "Database not available"}))
+                        (catch Exception e
+                          (.. e printStackTrace)
+                          {:type :error
+                           :message (str "Query error: " (.getMessage e))
+                           :query query
+                           :inputs inputs}))))
 
 ;; Helper function for pull queries
 (register-function! 'pull
-  (fn [pattern entity-id]
-    (println "Executing Datomic pull:" pattern "for entity:" entity-id)
-    (try
-      (let [db (datomic/get-db)]
-        (if db
-          (let [result (d/pull db pattern entity-id)]
-            {:type :pull-result
-             :pattern pattern
-             :entity-id entity-id
-             :result result
-             :timestamp (java.util.Date.)})
-          {:type :error :message "Database not available"}))
-      (catch Exception e
-        (println "Error executing Datomic pull:" (.getMessage e))
-        {:type :error 
-         :message (str "Pull error: " (.getMessage e))
-         :pattern pattern
-         :entity-id entity-id}))))
+                    (fn [pattern entity-id]
+                      (println "Executing Datomic pull:" pattern "for entity:" entity-id)
+                      (try
+                        (let [db (datomic/get-db)]
+                          (if db
+                            (let [result (d/pull db pattern entity-id)]
+                              {:type :pull-result
+                               :pattern pattern
+                               :entity-id entity-id
+                               :result result
+                               :timestamp (java.util.Date.)})
+                            {:type :error :message "Database not available"}))
+                        (catch Exception e
+                          (println "Error executing Datomic pull:" (.getMessage e))
+                          {:type :error
+                           :message (str "Pull error: " (.getMessage e))
+                           :pattern pattern
+                           :entity-id entity-id}))))
 
 ;; Helper function for pull-many queries
 (register-function! 'pull-many
-  (fn [pattern entity-ids]
-    (println "Executing Datomic pull-many:" pattern "for entities:" entity-ids)
-    (try
-      (let [db (datomic/get-db)]
-        (if db
-          (let [results (d/pull-many db pattern entity-ids)]
-            {:type :pull-many-result
-             :pattern pattern
-             :entity-ids entity-ids
-             :results results
-             :count (count results)
-             :timestamp (java.util.Date.)})
-          {:type :error :message "Database not available"}))
-      (catch Exception e
-        (println "Error executing Datomic pull-many:" (.getMessage e))
-        {:type :error 
-         :message (str "Pull-many error: " (.getMessage e))
-         :pattern pattern
-         :entity-ids entity-ids}))))
+                    (fn [pattern entity-ids]
+                      (println "Executing Datomic pull-many:" pattern "for entities:" entity-ids)
+                      (try
+                        (let [db (datomic/get-db)]
+                          (if db
+                            (let [results (d/pull-many db pattern entity-ids)]
+                              {:type :pull-many-result
+                               :pattern pattern
+                               :entity-ids entity-ids
+                               :results results
+                               :count (count results)
+                               :timestamp (java.util.Date.)})
+                            {:type :error :message "Database not available"}))
+                        (catch Exception e
+                          (println "Error executing Datomic pull-many:" (.getMessage e))
+                          {:type :error
+                           :message (str "Pull-many error: " (.getMessage e))
+                           :pattern pattern
+                           :entity-ids entity-ids}))))
 
 ;; Update start-server to initialize Datomic
 (defn start-server []
@@ -247,17 +246,16 @@
   (broadcast "wassup")
   (broadcast {:type :notification :message "Hello all clients!"})
   (count @clients)
-  
+
   ;; Check available functions
   @available-functions
-  
+
   ;; Register new functions at runtime
   (register-function! 'add
-    (fn [a b]
-      {:type :math-result :operation :add :result (+ a b)}))
-  
+                      (fn [a b]
+                        {:type :math-result :operation :add :result (+ a b)}))
+
   (register-function! 'get-time
-    (fn []
-      {:type :time-response :time (java.util.Date.)}))
-  (serde/edn->transit [17592186045427 17592186045430 17592186045418 17592186045421 17592186045424])
-  )
+                      (fn []
+                        {:type :time-response :time (java.util.Date.)}))
+  (serde/edn->transit [17592186045427 17592186045430 17592186045418 17592186045421 17592186045424]))

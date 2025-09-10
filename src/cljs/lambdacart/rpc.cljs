@@ -64,7 +64,7 @@
       (js/console.log "Response type:" (type response))
       (js/console.log "Request ID in response:" (:request-id response))
       (js/console.log "Pending requests:" @pending-requests)
-      
+
       (if-let [request-id (:request-id response)]
         ;; Handle correlated response
         (if-let [response-chan (get @pending-requests request-id)]
@@ -81,6 +81,6 @@
 
 (defn load-grid-data []
   "Load grid data via RPC and return the response channel"
-  (invoke-with-response 'q '[:find [(pull ?e [*]) ...] 
-                             :where 
+  (invoke-with-response 'q '[:find [(pull ?e [*]) ...]
+                             :where
                              [?e :item/name _]]))

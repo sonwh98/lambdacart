@@ -185,9 +185,9 @@
   (when-let [container (.getElementById js/document "app")]
     (when-not @root
       (reset! root (rdc/create-root container)))
-    
+
     (swap! app/state assoc :context-menu {:visible? false :x 0 :y 0})
-    
+
     ;; Initialize with empty grid first
     (swap! app/state assoc :grid
            {:rows []
@@ -195,7 +195,7 @@
             :selected-rows (sorted-set)
             :sort-col nil
             :sort-dir :asc})
-    
+
     ;; Render the empty grid immediately
     (rdc/render @root [grid-component (r/cursor app/state [:grid])])))
 
@@ -228,10 +228,8 @@
       (let [response (<! (rpc/load-grid-data))]
         (process-grid-data response)))))
 
-
 (comment
 
   (-> @app/state keys)
-  
-  (get-in @app/state [:grid :columns])
-  )
+
+  (get-in @app/state [:grid :columns]))
