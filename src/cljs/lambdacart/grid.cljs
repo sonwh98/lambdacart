@@ -176,7 +176,7 @@
                               :align-items "center"})
                :on-click (fn [_]
                            (let [rows (-> @grid-state :rows)
-                                 column-key (keyword (:name column))
+                                 column-key (:name column)
                                  new-dir (if (= i sort-col)
                                            (if (= sort-dir :asc) :desc :asc)
                                            :asc)
@@ -331,11 +331,11 @@
               headers (keys row0)]
           (swap! app/state update :grid assoc
                  :rows rows
-                 :columns [{:name (str (nth headers 0)) :type (:str types)}
-                           {:name (str (nth headers 1)) :type (:str types)}
-                           {:name (str (nth headers 2)) :type (:str types)}
-                           {:name (str (nth headers 3)) :type (:int types)}
-                           {:name (str (nth headers 4)) :type (:str types)}]))))))
+                 :columns [{:name (nth headers 0) :type (:str types)}
+                           {:name (nth headers 1) :type (:str types)}
+                           {:name (nth headers 2) :type (:str types)}
+                           {:name (nth headers 3) :type (:int types)}
+                           {:name (nth headers 4) :type (:str types)}]))))))
 
 (defn handle-broadcast [response]
   (case (:type response)
