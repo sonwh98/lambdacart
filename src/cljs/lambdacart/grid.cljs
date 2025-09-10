@@ -176,10 +176,11 @@
                               :align-items "center"})
                :on-click (fn [_]
                            (let [rows (-> @grid-state :rows)
+                                 column-key (keyword (:name column))
                                  new-dir (if (= i sort-col)
                                            (if (= sort-dir :asc) :desc :asc)
                                            :asc)
-                                 sorted-rows (vec (sort-by #(nth % i)
+                                 sorted-rows (vec (sort-by #(get % column-key)
                                                            (if (= new-dir :desc) #(compare %2 %1) compare)
                                                            rows))]
                              (swap! grid-state assoc
