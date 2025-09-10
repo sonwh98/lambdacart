@@ -86,6 +86,49 @@
     (close! (:in this))
     (close! (:out this))))
 
+(defn invoke [fn-name & args]
+  (let [wss (-> @app/state :wss)
+        fn-call (cons fn-name args)]
+    (if wss
+      (do
+        (js/console.log "Invoking remote function:" fn-name "with args:" args)
+        (write wss fn-call {}))
+      (js/console.error "WebSocket not available. Make sure to call init! first."))))
+
+;; Optional: Version that returns a promise/channel for the response
+(defn invoke-async [fn-name & args]
+  (let [wss (-> @app/state :wss)
+        fn-call (cons fn-name args)]
+    (if wss
+      (do
+        (js/console.log "Invoking remote function (async):" fn-name "with args:" args)
+        (write wss fn-call {})
+        ;; Return a go block that will contain the response
+        (read wss {:as :value}))
+      (do
+        (js/console.error "WebSocket not available. Make sure to call init! first.")
+        (async/go nil)))))
+
+(defn generate-request-id []
+  (str (random-uuid)))
+
+(defn invoke-with-response [fn-name & args]
+  (let [wss (-> @app/state :wss)
+        request-id (generate-request-id)
+        fn-call {:request-id request-id
+                 :function fn-name
+                 :args (vec args)}
+        response-chan (chan 1)]
+    (if wss
+      (do
+        (js/console.log "Invoking function with ID:" fn-name request-id)
+        (swap! pending-requests assoc request-id response-chan)
+        (write wss fn-call {})
+        response-chan)
+      (do
+        (js/console.error "WebSocket not available")
+        (async/go nil)))))
+
 (defn delete-selected-rows [grid-state context-menu]
   (let [selected (-> @grid-state :selected-rows)
         rows (-> @grid-state :rows)]
@@ -179,7 +222,6 @@
       (swap! app/state assoc-in [:grid :rows row-idx col-idx] value))))
 
 (defn cell-component [cell-value row-idx col-idx]
-  #_(prn :cell-component cell-value)
   [:input {:type "text"
            :value cell-value
            :data-row row-idx
@@ -198,7 +240,6 @@
            :on-change #(update-cell row-idx col-idx (.. % -target -value))}])
 
 (defn grid-component [grid-state]
-  #_(prn :grid-component)
   (let [rows (-> @grid-state :rows)
         num-of-rows (count rows)
         rows-state (for [i (range num-of-rows)]
@@ -245,8 +286,10 @@
                                        (conj (or selected (sorted-set)) i))))}
            (inc i)]
           (doall
-           (for [j (range (count @row-state))]
-             ^{:key (str "cell-" i "-" j)} [cell-component (nth @row-state j) i j]))]))]]))
+           (for [k (keys @row-state)
+                 :let [cell-value (@row-state k)]]
+             ^{:key (str "cell-" i "-" k)}
+             [cell-component cell-value i k]))]))]])) 
 
 (defonce root (atom nil))
 
@@ -260,17 +303,29 @@
 (defn mount-grid []
   (when-let [container (.getElementById js/document "app")]
     (when-not @root
-      (reset! root (rdc/create-root container))
-      (swap! app/state assoc :grid
-             {:rows (vec (for [i (range 50)]
-                           [(rand-int 100) (str (rand-int 100)) (rand-int 100)]))
-              :columns [{:name "Tour Name" :type (:int types)}
-                        {:name "Description" :type (:str types)}
-                        {:name "Image" :type (:int types)}]
-              :selected-rows (sorted-set)
-              :sort-col nil
-              :sort-dir :asc})
-      (swap! app/state assoc :context-menu {:visible? false :x 0 :y 0}))
+      (reset! root (rdc/create-root container)))
+    
+    (swap! app/state assoc :context-menu {:visible? false :x 0 :y 0})
+    (async/go
+      (let [response (<! (invoke-with-response 'q '[:find [(pull ?e [*]) ...] 
+                                                    :where 
+                                                    [?e :item/name _]
+                                                    ]))
+            rows (:results response)]
+        (cljs.pprint/pprint {:sonny-rows rows})
+        (swap! app/state assoc :grid
+               {:rows rows #_(vec (for [i (range 50)]
+                             [(rand-int 100) (str (rand-int 100)) (rand-int 100)]))
+                :columns (let [row0 (first rows)
+                               headers (keys row0)]
+                           [{:name (nth headers 0) :type (:str types)}
+                            {:name (nth headers 1) :type (:str types)}
+                            {:name (nth headers 2) :type (:str types)}
+                            {:name (nth headers 3) :type (:int types)}
+                            {:name (nth headers 4) :type (:str types)}])
+                :selected-rows (sorted-set)
+                :sort-col nil
+                :sort-dir :asc}))) 
     (rdc/render @root [grid-component (r/cursor app/state [:grid])])))
 
 ;; Updated response handler
@@ -315,51 +370,7 @@
     ;; Start the response handler - THIS IS IMPORTANT!
     (start-response-handler wss)))
 
-(defn invoke [fn-name & args]
-  (let [wss (-> @app/state :wss)
-        fn-call (cons fn-name args)]
-    (if wss
-      (do
-        (js/console.log "Invoking remote function:" fn-name "with args:" args)
-        (write wss fn-call {}))
-      (js/console.error "WebSocket not available. Make sure to call init! first."))))
 
-;; Optional: Version that returns a promise/channel for the response
-(defn invoke-async [fn-name & args]
-  (let [wss (-> @app/state :wss)
-        fn-call (cons fn-name args)]
-    (if wss
-      (do
-        (js/console.log "Invoking remote function (async):" fn-name "with args:" args)
-        (write wss fn-call {})
-        ;; Return a go block that will contain the response
-        (read wss {:as :value}))
-      (do
-        (js/console.error "WebSocket not available. Make sure to call init! first.")
-        (async/go nil)))))
-
-;; Enhanced version with request correlation
-
-
-(defn generate-request-id []
-  (str (random-uuid)))
-
-(defn invoke-with-response [fn-name & args]
-  (let [wss (-> @app/state :wss)
-        request-id (generate-request-id)
-        fn-call {:request-id request-id
-                 :function fn-name
-                 :args (vec args)}
-        response-chan (chan 1)]
-    (if wss
-      (do
-        (js/console.log "Invoking function with ID:" fn-name request-id)
-        (swap! pending-requests assoc request-id response-chan)
-        (write wss fn-call {})
-        response-chan)
-      (do
-        (js/console.error "WebSocket not available")
-        (async/go nil)))))
 
 
 ;; Enhanced debugging version
@@ -397,7 +408,7 @@
       (prn "Query results:" (:results response))))
 
   (async/go
-    (let [response (<! (invoke-with-response 'q '[:find [?e ...] 
+    (let [response (<! (invoke-with-response 'q '[:find [(pull ?e [*]) ...] 
                                                   :where 
                                                   [?e :item/name _]
                                                   ]))]
