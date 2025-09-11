@@ -78,9 +78,3 @@
           (js/console.log "Handling as broadcast")
           (handle-broadcast response)))
       (recur))))
-
-(defn load-grid-data []
-  "Load grid data via RPC and return the response channel"
-  (invoke-with-response 'q '[:find [(pull ?e [*]) ...]
-                             :where
-                             [?e :item/name _]]))

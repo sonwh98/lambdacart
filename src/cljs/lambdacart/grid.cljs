@@ -177,6 +177,12 @@
           (catch js/Error e
             (js/console.error "Error saving cell value:" e)))))))
 
+(defn load-grid-data []
+  "Load grid data via RPC and return the response channel"
+  (rpc/invoke-with-response 'q '[:find [(pull ?e [*]) ...] 
+                                 :where 
+                                 [?e :item/name _]]))
+
 (defn cell-component [cell-value row-idx col-idx]
   (let [cell-key [row-idx col-idx]
         original-value (r/atom cell-value)
@@ -327,7 +333,7 @@
     (async/go
       (<! (async/timeout 100))
       (js/console.log "Loading grid data after WebSocket delay...")
-      (let [response (<! (rpc/load-grid-data))]
+      (let [response (<! (load-grid-data))]  ; Now using local function
         (process-grid-data response)))))
 
 (comment
