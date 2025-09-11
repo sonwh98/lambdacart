@@ -149,6 +149,11 @@
         column-type (:type column)
         {:keys [pred from-str]} column-type
         value (from-str str-value)]
+    (prn {:sonny-column column
+          :str-value str-value
+          :value value
+          :value-type (type value)
+          :pred (pred value)})
     (when (pred value)
       ;; Only update local state, don't save yet
       (swap! app/state assoc-in [:grid :rows row-idx column-key] value))))
@@ -273,7 +278,10 @@
                   :to-str str}
             :str {:pred string?
                   :from-str str
-                  :to-str str}})
+                  :to-str str}
+            :float {:pred float?
+                    :from-str js/parseFloat
+                    :to-str str}})
 
 (defn mount-grid []
   (when-let [container (.getElementById js/document "app")]
