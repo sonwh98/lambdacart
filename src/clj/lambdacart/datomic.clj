@@ -58,6 +58,10 @@
    'db/fn datomic.function/construct
    'base64 datomic.codec/base-64-literal})
 
+(defn get-connection []
+  "Returns the Datomic connection for transactions"
+  @conn)
+
 (comment
   (init-datomic!)
   (d/delete-database db-uri)

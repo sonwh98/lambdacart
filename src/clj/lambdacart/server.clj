@@ -24,8 +24,9 @@
       (if (string? msg)
         (http/send! client msg)
         (let [transit-data (serde/edn->transit msg)
-              bytes-data (.getBytes transit-data "UTF-8")]
-          (http/send! client bytes-data)))
+              ;;bytes-data (.getBytes transit-data "UTF-8")
+              ]
+          (http/send! client transit-data #_bytes-data)))
       (catch Exception e
         (println "Failed to send message to client:" (.getMessage e))
         (swap! clients #(remove #{client} %))))))
@@ -76,17 +77,16 @@
 
 (defn send-response [channel response]
   (when response
-    (let [response-data (serde/edn->transit response)
-          ;;response-bytes (.getBytes response-data "UTF-8")
-          ]
-      (http/send! channel response-data #_response-bytes))))
+    (let [response-data (serde/edn->transit response)]
+      (http/send! channel response-data))))
 
 (defn send-error [channel message & [request-id]]
   (let [error-response (cond-> {:type :error :message message}
                          request-id (assoc :request-id request-id))
         error-data (serde/edn->transit error-response)
-        error-bytes (.getBytes error-data "UTF-8")]
-    (http/send! channel error-bytes)))
+        ;;error-bytes (.getBytes error-data "UTF-8")
+        ]
+    (http/send! channel error-data)))
 
 (defn invoke [data channel]
   (try
@@ -217,6 +217,26 @@
                            :message (str "Pull-many error: " (.getMessage e))
                            :pattern pattern
                            :entity-ids entity-ids}))))
+
+;; Register the Datomic transact function
+(register-function! 'transact
+                    (fn [tx-data]
+                      (println "Executing Datomic transaction:" tx-data)
+                      (try
+                        (let [conn (datomic/get-connection)]
+                          (if conn
+                            (do
+                              @(d/transact conn tx-data)
+                              {:type :success
+                               :message "Transaction completed successfully"
+                               :tx-data tx-data
+                               :timestamp (java.util.Date.)})
+                            {:type :error :message "Database connection not available"}))
+                        (catch Exception e
+                          (println "Error executing transaction:" (.getMessage e))
+                          {:type :error
+                           :message (str "Transaction error: " (.getMessage e))
+                           :tx-data tx-data}))))
 
 ;; Update start-server to initialize Datomic
 (defn start-server []

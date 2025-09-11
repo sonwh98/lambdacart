@@ -135,6 +135,13 @@
         (when next-el
           (.focus next-el))))))
 
+(defonce save-timeouts (atom {}))
+
+(defn save-cell-value [entity-id attribute new-value]
+  "Save a cell value change to the backend via RPC"
+  (rpc/invoke-with-response 'transact
+                            [[:db/add entity-id attribute new-value]]))
+
 (defn update-cell [row-idx col-idx str-value]
   (let [columns (get-in @app/state [:grid :columns])
         column (nth columns col-idx)
@@ -143,26 +150,58 @@
         {:keys [pred from-str]} column-type
         value (from-str str-value)]
     (when (pred value)
+      ;; Only update local state, don't save yet
       (swap! app/state assoc-in [:grid :rows row-idx column-key] value))))
 
+(defn save-cell-on-blur [row-idx col-idx]
+  "Save cell value when focus is lost"
+  (let [row (get-in @app/state [:grid :rows row-idx])
+        columns (get-in @app/state [:grid :columns])
+        column (nth columns col-idx)
+        column-key (keyword (:name column))
+        entity-id (:db/id row)
+        cell-value (get row column-key)]
+    (when entity-id
+      (async/go
+        (try
+          (js/console.log "Saving cell value on blur:" entity-id column-key cell-value)
+          (let [response (<! (save-cell-value entity-id column-key cell-value))]
+            (if (:error response)
+              (js/console.error "Failed to save cell value:" (:error response))
+              (js/console.log "Cell value saved successfully")))
+          (catch js/Error e
+            (js/console.error "Error saving cell value:" e)))))))
+
 (defn cell-component [cell-value row-idx col-idx]
-  [:input {:type "text"
-           :value (str cell-value)
-           :data-row row-idx
-           :data-col col-idx
-           :style {:width "100%"
-                   :padding "8px"
-                   :border "none"
-                   :background :inherit
-                   :border-bottom "1px solid #eee"
-                   :box-sizing "border-box"
-                   :outline "none"}
-           :on-focus #(when (and (-> @app/state :grid :selected-rows seq)
-                                 (not (= (-> @app/state :grid :selected-rows)
-                                         row-idx)))
-                        (swap! app/state assoc-in [:grid :selected-rows] nil))
-           :on-key-down #(handle-key-nav row-idx col-idx %)
-           :on-change #(update-cell row-idx col-idx (.. % -target -value))}])
+  (let [cell-key [row-idx col-idx]
+        original-value (r/atom cell-value)
+        is-dirty? (not= cell-value @original-value)]
+    [:input {:type "text"
+             :value (str cell-value)
+             :data-row row-idx
+             :data-col col-idx
+             :style {:width "100%"
+                     :padding "8px"
+                     :border "none"
+                     :background (if is-dirty? "#fff3cd" :inherit) ; Yellow background for unsaved changes
+                     :border-bottom "1px solid #eee"
+                     :box-sizing "border-box"
+                     :outline "none"}
+             :on-focus #(do
+                          (reset! original-value cell-value) ; Store original value on focus
+                          (when (and (-> @app/state :grid :selected-rows seq)
+                                     (not (= (-> @app/state :grid :selected-rows)
+                                             row-idx)))
+                            (swap! app/state assoc-in [:grid :selected-rows] nil)))
+             :on-blur #(do
+                         (js/console.log "Cell lost focus, saving...")
+                         (save-cell-on-blur row-idx col-idx)
+                         (reset! original-value cell-value)) ; Reset dirty state
+             :on-key-down #(do
+                             (when (= (.-key %) "Enter")
+                               (.blur (.-target %))) ; Trigger save on Enter
+                             (handle-key-nav row-idx col-idx %))
+             :on-change #(update-cell row-idx col-idx (.. % -target -value))}]))
 
 (defn grid-component []
   (let [grid-state (r/cursor app/state [:grid])
