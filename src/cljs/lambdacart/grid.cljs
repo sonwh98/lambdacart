@@ -224,8 +224,8 @@
            ^{:key (str "img-" row-idx "-" col-idx "-" idx)}
            [:div {:style {:position "relative" :display "inline-block"}}
             [:img {:src image-url
-                   :style {:width "32px"
-                           :height "32px"
+                   :style {:width "100px"
+                           :height "100px"
                            :object-fit "cover"
                            :border-radius "4px"
                            :border "1px solid #ddd"}
