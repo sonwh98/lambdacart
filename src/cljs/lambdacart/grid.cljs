@@ -7,6 +7,8 @@
             [lambdacart.app :as app]
             [cljs.core.async :refer [chan put! <! >! close! timeout] :as async]))
 
+(defonce root (atom nil))
+
 (defn delete-selected-rows [grid-state context-menu]
   (let [selected (-> @grid-state :selected-rows)
         rows (-> @grid-state :rows)]
@@ -422,7 +424,6 @@
                         (swap! context-menu assoc :visible? false))
            :on-context-menu #(.preventDefault %)}
      [header grid-state]
-     [context-menu-component grid-state context-menu]
      [:div {:style {:width "100%"
                     :height "90%"
                     :border "1px solid #ccc"
@@ -474,8 +475,15 @@
                               :box-sizing "border-box"})}
               [cell-component i j]]))]))]]))
 
-(defonce root (atom nil))
+;; Create a top-level app component that includes both grid and context menu
+(defn app-component []
+  (let [grid-state (r/cursor app/state [:grid])
+        context-menu (r/cursor app/state [:context-menu])]
+    [:div
+     [grid-component grid-state]
+     [context-menu-component grid-state context-menu]]))
 
+;; Update mount-grid to render the app-component instead of grid-component directly
 (defn mount-grid []
   (when-let [container (.getElementById js/document "app")]
     (when-not @root
@@ -490,9 +498,8 @@
             :sort-dir :asc
             :dirty-cells #{}})
 
-    ;; Create the grid-state cursor and pass it to grid-component
-    (let [grid-state (r/cursor app/state [:grid])]
-      (rdc/render @root [grid-component grid-state]))))
+    ;; Render the top-level app component
+    (rdc/render @root [app-component])))
 
 (defn load-and-display-data []
   "Load grid data and update the display"
