@@ -445,13 +445,26 @@
                                              {:visible? true
                                               :x (.-clientX e)
                                               :y (.-clientY e)})))}
-          [:div {:style {:width "20px"
-                         :height "20px"
-                         :padding "10px"
+          [:div {:style {:width "40px"
                          :cursor "pointer"
                          :border-right "1px solid #ddd"
-                         :background "#f0f0f0"
-                         :font-weight "bold"}
+                         :background (if (contains? (:selected-rows @grid-state) i)
+                                       "#d4e6f1"  ; Darker blue when selected
+                                       "#f8f9fa")  ; Light gray when not selected
+                         :border "1px solid #dee2e6"
+                         :border-radius "3px"
+                         :font-weight "bold"
+                         :font-size "12px"
+                         :display "flex"
+                         :align-items "center"     ; Center vertically
+                         :justify-content "center" ; Center horizontally
+                         :box-sizing "border-box"
+                         :transition "all 0.1s ease"
+                         :box-shadow "0 1px 2px rgba(0,0,0,0.1)"
+                         :user-select "none"}
+                 :on-mouse-down #(set! (-> % .-target .-style .-transform) "translateY(1px)")
+                 :on-mouse-up #(set! (-> % .-target .-style .-transform) "translateY(0)")
+                 :on-mouse-leave #(set! (-> % .-target .-style .-transform) "translateY(0)")
                  :on-click #(swap! grid-state update :selected-rows
                                    (fn [selected]
                                      (if (contains? selected i)
