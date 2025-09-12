@@ -199,17 +199,17 @@
       (fn [this]
         (when-let [div @div-ref]
           (set! (.-textContent div) (str @cell-value-cursor))))
-      
+
       :component-did-update
       (fn [this old-argv]
         (let [old-cell-value (nth old-argv 1)
               new-cell-value @cell-value-cursor]
           ;; Only update if not focused and value actually changed
-          (when (and @div-ref 
+          (when (and @div-ref
                      (not @is-focused)
                      (not= old-cell-value new-cell-value))
             (set! (.-textContent @div-ref) (str new-cell-value)))))
-      
+
       :reagent-render
       (fn [cell-value-cursor row-idx col-idx]
         [:div {:ref #(reset! div-ref %)
@@ -293,11 +293,11 @@
                               :display "flex"
                               :align-items "center"
                               :justify-content "center"}
-                      :on-click #(let [new-images (vec (concat (take idx images) 
+                      :on-click #(let [new-images (vec (concat (take idx images)
                                                                (drop (inc idx) images)))]
                                    (update-cell row-idx col-idx new-images))}
              "×"]]))])
-     
+
      ;; Add new image input
      [:div {:style {:display "flex" :align-items "center" :gap "4px"}}
       [:input {:type "text"
@@ -311,7 +311,7 @@
                :on-key-down #(when (= (.-key %) "Enter")
                                (let [url (.. % -target -value)]
                                  (when (and (not (empty? url))
-                                           (re-matches #"^https?://.*\.(jpg|jpeg|png|gif|bmp|webp|svg)(\?.*)?$" url))
+                                            (re-matches #"^https?://.*\.(jpg|jpeg|png|gif|bmp|webp|svg)(\?.*)?$" url))
                                    (let [new-image {:image/url url}
                                          new-images (conj images new-image)]
                                      (update-cell row-idx col-idx new-images)
@@ -323,9 +323,9 @@
                         :cursor "pointer"
                         :font-size "12px"}
                 :on-click #(let [input (.-previousElementSibling (.-target %))
-                                url (.-value input)]
+                                 url (.-value input)]
                              (when (and (not (empty? url))
-                                       (re-matches #"^https?://.*\.(jpg|jpeg|png|gif|bmp|webp|svg)(\?.*)?$" url))
+                                        (re-matches #"^https?://.*\.(jpg|jpeg|png|gif|bmp|webp|svg)(\?.*)?$" url))
                                (let [new-image {:image/url url}
                                      new-images (conj images new-image)]
                                  (update-cell row-idx col-idx new-images)
@@ -355,9 +355,9 @@
                     :to-str str
                     :renderer text-cell-renderer}
             :image {:pred (fn [value]
-                           (and (string? value)
-                                (or (empty? value)
-                                    (re-matches #"^https?://.*\.(jpg|jpeg|png|gif|bmp|webp|svg)(\?.*)?$" value))))
+                            (and (string? value)
+                                 (or (empty? value)
+                                     (re-matches #"^https?://.*\.(jpg|jpeg|png|gif|bmp|webp|svg)(\?.*)?$" value))))
                     :from-str str
                     :to-str str
                     :renderer image-cell-renderer}
@@ -394,7 +394,7 @@
     (and (vector? sample-value)
          (every? #(and (map? %) (contains? % :image/url)) sample-value)) (:image types)
     ;; Check for single image URL string
-    (and (string? sample-value) 
+    (and (string? sample-value)
          (re-matches #"^https?://.*\.(jpg|jpeg|png|gif|bmp|webp|svg)(\?.*)?$" sample-value)) (:image types)
     (integer? sample-value) (:int types)
     (float? sample-value) (:float types)
@@ -417,8 +417,7 @@
 
 (defn grid-component [grid-state context-menu-state]
   (let [rows (-> @grid-state :rows)
-        columns (-> @grid-state :columns)
-        num-of-rows (count rows)]
+        columns (-> @grid-state :columns)]
     [:div {:on-click #(when (:visible? @context-menu-state)
                         (swap! context-menu-state assoc :visible? false))
            :on-context-menu #(.preventDefault %)}
@@ -431,8 +430,7 @@
                     :font-size "14px"
                     :position "relative"}}
       (doall
-       (for [i (range num-of-rows)
-             :let [row (nth rows i)]]
+       (for [[i row] (map-indexed vector rows)]
          [:div {:style {:display "flex"
                         :background (when (contains? (:selected-rows @grid-state) i)
                                       "#e8f2ff")}
@@ -448,14 +446,14 @@
                          :cursor "pointer"
                          :border-right "1px solid #ddd"
                          :background (if (contains? (:selected-rows @grid-state) i)
-                                       "#d4e6f1"  ; Darker blue when selected
-                                       "#f8f9fa")  ; Light gray when not selected
+                                       "#d4e6f1" ; Darker blue when selected
+                                       "#f8f9fa") ; Light gray when not selected
                          :border "1px solid #dee2e6"
                          :border-radius "3px"
                          :font-weight "bold"
                          :font-size "12px"
                          :display "flex"
-                         :align-items "center"     ; Center vertically
+                         :align-items "center" ; Center vertically
                          :justify-content "center" ; Center horizontally
                          :box-sizing "border-box"
                          :transition "all 0.1s ease"
@@ -522,13 +520,13 @@
       (js/console.log "Grid data loaded and displayed"))))
 
 (defn init! []
-  (mount-grid)  ; Mount the grid first
-  
+  (mount-grid) ; Mount the grid first
+
   (let [wss (stream/map->WebSocketStream {:url "/wsstream"})
         wss (stream/open wss {})]
     (swap! app/state assoc :wss wss)
     (rpc/start-response-handler wss)
-    
+
     ;; Wait for WebSocket to be ready, then load data
     (async/go
       (js/console.log "Waiting for WebSocket connection...")
