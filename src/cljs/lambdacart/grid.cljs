@@ -374,12 +374,14 @@
         dirty-cells (get-in @app/state [:grid :dirty-cells] #{})
         is-dirty? (contains? dirty-cells cell-key)
         is-db-id? (= column-key :db/id)
+        ;; Create a cursor for this specific cell
+        cell-value-cursor (r/cursor app/state [:grid :rows row-idx column-key])
         ;; Choose renderer based on column type or special cases
         renderer (cond
                    is-db-id? (:renderer (:readonly types))
                    :else (:renderer column-type))]
     [:div {:style {:background (when is-dirty? "#fff3cd")}} ; Yellow background for dirty cells
-     [renderer cell-value row-idx col-idx]]))
+     [renderer cell-value-cursor row-idx col-idx]]))
 
 ;; Update process-grid-data to detect column types and assign renderers
 (defn detect-column-type [column-key sample-value]
