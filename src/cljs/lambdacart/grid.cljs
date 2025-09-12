@@ -188,29 +188,74 @@
                                  :where
                                  [?e :item/name _]]))
 
-;; Add column-specific renderers
+;; Update text-cell-renderer to properly handle editing without overwriting user input
 (defn text-cell-renderer [cell-value row-idx col-idx]
-  [:input {:type "text"
-           :value (str cell-value)
-           :data-row row-idx
-           :data-col col-idx
-           :style {:width "100%"
-                   :padding "8px"
-                   :border "none"
-                   :background :inherit
-                   :border-bottom "1px solid #eee"
-                   :box-sizing "border-box"
-                   :outline "none"}
-           :on-focus #(when (and (-> @app/state :grid :selected-rows seq)
-                                 (not (= (-> @app/state :grid :selected-rows)
-                                         row-idx)))
-                        (swap! app/state assoc-in [:grid :selected-rows] nil))
-           :on-blur #(save-cell-on-blur row-idx col-idx)
-           :on-key-down #(do
-                           (when (= (.-key %) "Enter")
-                             (.blur (.-target %)))
-                           (handle-key-nav row-idx col-idx %))
-           :on-change #(update-cell row-idx col-idx (.. % -target -value))}])
+  (let [div-ref (r/atom nil)
+        is-focused (r/atom false)]
+    (r/create-class
+     {:component-did-mount
+      (fn [this]
+        (when-let [div @div-ref]
+          (set! (.-textContent div) (str cell-value))))
+      
+      :component-did-update
+      (fn [this old-argv]
+        (let [old-cell-value (nth old-argv 1)
+              new-cell-value cell-value]
+          ;; Only update if not focused and value actually changed
+          (when (and @div-ref 
+                     (not @is-focused)
+                     (not= old-cell-value new-cell-value))
+            (set! (.-textContent @div-ref) (str new-cell-value)))))
+      
+      :reagent-render
+      (fn [cell-value row-idx col-idx]
+        [:div {:ref #(reset! div-ref %)
+               :content-editable true
+               :data-row row-idx
+               :data-col col-idx
+               :style {:width "100%"
+                       :min-height "40px"
+                       :max-height "200px"
+                       :padding "8px"
+                       :border "none"
+                       :background :inherit
+                       :border-bottom "1px solid #eee"
+                       :box-sizing "border-box"
+                       :outline "none"
+                       :font-family "inherit"
+                       :font-size "inherit"
+                       :line-height "1.4"
+                       :white-space "pre-wrap"
+                       :word-wrap "break-word"
+                       :overflow-wrap "break-word"
+                       :overflow-y "auto"
+                       :cursor "text"}
+               :suppress-content-editable-warning true
+               :on-focus #(do
+                            (reset! is-focused true)
+                            (when (and (-> @app/state :grid :selected-rows seq)
+                                       (not (= (-> @app/state :grid :selected-rows)
+                                               row-idx)))
+                              (swap! app/state assoc-in [:grid :selected-rows] nil)))
+               :on-blur #(do
+                           (reset! is-focused false)
+                           ;; Get the text content from the editable div
+                           (let [text-content (.-textContent (.-target %))]
+                             (update-cell row-idx col-idx text-content))
+                           (save-cell-on-blur row-idx col-idx))
+               :on-key-down #(do
+                               ;; Use Ctrl+Enter to save and move to next cell
+                               (when (and (= (.-key %) "Enter") (.-ctrlKey %))
+                                 (.preventDefault %)
+                                 (.blur (.-target %)))
+                               ;; Allow normal Enter for line breaks
+                               (when (and (= (.-key %) "Enter") (not (.-ctrlKey %)))
+                                 ;; Let the default behavior happen (new line)
+                                 )
+                               (handle-key-nav row-idx col-idx %))
+               :on-input #(let [text-content (.-textContent (.-target %))]
+                            (update-cell row-idx col-idx text-content))}])})))
 
 (defn image-cell-renderer [cell-value row-idx col-idx]
   (let [images (if (vector? cell-value) cell-value [])]
