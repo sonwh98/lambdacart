@@ -366,26 +366,6 @@
                        :to-str str
                        :renderer readonly-cell-renderer}})
 
-;; Simplified cell-component that delegates to column renderer
-(defn cell-component [row-idx col-idx]
-  (let [columns (get-in @app/state [:grid :columns])
-        column (nth columns col-idx)
-        column-key (keyword (:name column))
-        column-type (:type column)
-        cell-key [row-idx col-idx]
-        dirty-cells (get-in @app/state [:grid :dirty-cells] #{})
-        is-dirty? (contains? dirty-cells cell-key)
-        is-db-id? (= column-key :db/id)
-        ;; Create a cursor for this specific cell
-        cell-value-cursor (r/cursor app/state [:grid :rows row-idx column-key])
-        ;; Choose renderer based on column type or special cases
-        renderer (cond
-                   is-db-id? (:renderer (:readonly types))
-                   :else (:renderer column-type))]
-    [:div {:style {:background (when is-dirty? "#fff3cd")}} ; Yellow background for dirty cells
-     [renderer cell-value-cursor row-idx col-idx]]))
-
-;; Update process-grid-data to detect column types and assign renderers
 (defn detect-column-type [column-key sample-value]
   "Detect column type based on column name and sample value"
   (cond
@@ -394,10 +374,10 @@
     (and (vector? sample-value)
          (every? #(and (map? %) (contains? % :image/url)) sample-value)) (:image types)
     ;; Check for single image URL string
-    (and (string? sample-value)
+    (and (string? sample-value) 
          (re-matches #"^https?://.*\.(jpg|jpeg|png|gif|bmp|webp|svg)(\?.*)?$" sample-value)) (:image types)
     (integer? sample-value) (:int types)
-    (float? sample-value) (:float types)
+    (number? sample-value) (:float types)
     :else (:str types)))
 
 (defn process-grid-data [response]
@@ -415,11 +395,31 @@
                                    :type (detect-column-type header-kw sample-value)}))
                               headers))))))
 
-(defn row-number-component [row-idx grid-state]
+;; Simplified cell-component that delegates to column renderer
+(defn cell-component [row-idx col-idx]
+  (let [columns-cursor (r/cursor app/state [:grid :columns])
+        dirty-cells-cursor (r/cursor app/state [:grid :dirty-cells])
+        column (nth @columns-cursor col-idx)
+        column-key (keyword (:name column))
+        column-type (:type column)
+        cell-key [row-idx col-idx]
+        is-dirty? (contains? @dirty-cells-cursor cell-key)
+        is-db-id? (= column-key :db/id)
+        ;; Create a cursor for this specific cell
+        cell-value-cursor (r/cursor app/state [:grid :rows row-idx column-key])
+        ;; Choose renderer based on column type or special cases
+        renderer (cond
+                   is-db-id? (:renderer (:readonly types))
+                   :else (:renderer column-type))]
+    [:div {:style {:background (when is-dirty? "#fff3cd")}} ; Yellow background for dirty cells
+     [renderer cell-value-cursor row-idx col-idx]]))
+
+;; Update row-number-component to take cursors as parameters
+(defn row-number-component [row-idx selected-rows-cursor]
   [:div {:style {:width "40px"
                  :cursor "pointer"
                  :border-right "1px solid #ddd"
-                 :background (if (contains? (:selected-rows @grid-state) row-idx)
+                 :background (if (contains? @selected-rows-cursor row-idx)
                                "#d4e6f1" ; Darker blue when selected
                                "#f8f9fa") ; Light gray when not selected
                  :border "1px solid #dee2e6"
@@ -436,48 +436,51 @@
          :on-mouse-down #(set! (-> % .-target .-style .-transform) "translateY(1px)")
          :on-mouse-up #(set! (-> % .-target .-style .-transform) "translateY(0)")
          :on-mouse-leave #(set! (-> % .-target .-style .-transform) "translateY(0)")
-         :on-click #(swap! grid-state update :selected-rows
+         :on-click #(swap! selected-rows-cursor
                            (fn [selected]
                              (if (contains? selected row-idx)
                                (disj selected row-idx)
                                (conj (or selected (sorted-set)) row-idx))))}
    (inc row-idx)])
 
-;; Add this function before grid-component
-(defn grid-row-component [row-idx row grid-state context-menu-state]
-  (let [columns (-> @grid-state :columns)]
-    [:div {:style {:display "flex"
-                   :background (when (contains? (:selected-rows @grid-state) row-idx)
-                                 "#e8f2ff")}
-           :key row-idx
-           :on-context-menu (fn [e]
-                              (.preventDefault e)
-                              (when (contains? (:selected-rows @grid-state) row-idx)
-                                (reset! context-menu-state
-                                        {:visible? true
-                                         :x (.-clientX e)
-                                         :y (.-clientY e)})))}
-     [row-number-component row-idx grid-state]
-     (doall
-      (for [[j column] (map-indexed vector columns)
-            :let [column-key (keyword (:name column))]]
-        ^{:key (str "cell-" row-idx "-" j)}
-        [:div {:style (if (:width column)
-                        ;; Column has been manually resized - use fixed width
-                        {:width (str (:width column) "px")
-                         :min-width "50px"
-                         :border-right "1px solid #f9f9f9"
-                         :box-sizing "border-box"}
-                        ;; Column uses default sizing - flex to fill space
-                        {:flex "1"
-                         :min-width "50px"
-                         :border-right "1px solid #f9f9f9"
-                         :box-sizing "border-box"})}
-         [cell-component row-idx j]]))]))
+;; Update grid-row-component to take specific cursors
+(defn grid-row-component [row-idx row-cursor columns-cursor selected-rows-cursor context-menu-cursor]
+  (prn {:sonny-idx row-idx})
+  (js/alert row-idx)
+  [:div {:style {:display "flex"
+                 :background (when (contains? @selected-rows-cursor row-idx)
+                               "#e8f2ff")}
+         :key row-idx
+         :on-context-menu (fn [e]
+                            (.preventDefault e)
+                            (when (contains? @selected-rows-cursor row-idx)
+                              (reset! context-menu-cursor
+                                      {:visible? true
+                                       :x (.-clientX e)
+                                       :y (.-clientY e)})))}
+   [row-number-component row-idx selected-rows-cursor]
+   (doall
+    (for [[j column] (map-indexed vector @columns-cursor)
+          :let [column-key (keyword (:name column))]]
+      ^{:key (str "cell-" row-idx "-" j)}
+      [:div {:style (if (:width column)
+                      ;; Column has been manually resized - use fixed width
+                      {:width (str (:width column) "px")
+                       :min-width "50px"
+                       :border-right "1px solid #f9f9f9"
+                       :box-sizing "border-box"}
+                      ;; Column uses default sizing - flex to fill space
+                      {:flex "1"
+                       :min-width "50px"
+                       :border-right "1px solid #f9f9f9"
+                       :box-sizing "border-box"})}
+       [cell-component row-idx j]]))])
 
-;; Update grid-component to use the extracted grid-row component
+;; Update grid-component to pass specific cursors
 (defn grid-component [grid-state context-menu-state]
-  (let [rows (-> @grid-state :rows)]
+  (let [rows (-> @grid-state :rows)
+        columns-cursor (r/cursor app/state [:grid :columns])
+        selected-rows-cursor (r/cursor app/state [:grid :selected-rows])]
     [:div {:on-click #(when (:visible? @context-menu-state)
                         (swap! context-menu-state assoc :visible? false))
            :on-context-menu #(.preventDefault %)}
@@ -491,8 +494,9 @@
                     :position "relative"}}
       (doall
        (for [[i row] (map-indexed vector rows)]
-         ^{:key (str "row-" i)}
-         [grid-row-component i row grid-state context-menu-state]))]]))
+         (let [row-cursor (r/cursor app/state [:grid :rows i])]
+           ^{:key (str "row-" i)}
+           [grid-row-component i row-cursor columns-cursor selected-rows-cursor context-menu-state])))]]))
 
 ;; Create a top-level app component that includes both grid and context menu
 (defn app-component []
