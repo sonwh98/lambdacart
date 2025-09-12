@@ -53,8 +53,9 @@ server {
       # HTTP-Kit WebSocket specific settings
       proxy_buffering off;
       proxy_cache off;
-      proxy_read_timeout 86400s;  # 24 hours
-      proxy_send_timeout 86400s;  # 24 hours
+      proxy_connect_timeout 7d;
+      proxy_send_timeout 7d;
+      proxy_read_timeout 7d;
       
       # Prevent nginx from interpreting the response
       proxy_redirect off;
