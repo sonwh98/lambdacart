@@ -365,7 +365,7 @@
                        :renderer readonly-cell-renderer}})
 
 ;; Simplified cell-component that delegates to column renderer
-(defn cell-component [cell-value row-idx col-idx]
+(defn cell-component [row-idx col-idx]
   (let [columns (get-in @app/state [:grid :columns])
         column (nth columns col-idx)
         column-key (keyword (:name column))
@@ -460,8 +460,7 @@
            (inc i)]
           (doall
            (for [[j column] (map-indexed vector columns)
-                 :let [column-key (keyword (:name column))
-                       cell-value (get row column-key)]]
+                 :let [column-key (keyword (:name column))]]
              ^{:key (str "cell-" i "-" j)}
              [:div {:style (if (:width column)
                              ;; Column has been manually resized - use fixed width
@@ -474,7 +473,7 @@
                               :min-width "50px"
                               :border-right "1px solid #f9f9f9"
                               :box-sizing "border-box"})}
-              [cell-component cell-value i j]]))]))]]))
+              [cell-component i j]]))]))]]))
 
 (defonce root (atom nil))
 
