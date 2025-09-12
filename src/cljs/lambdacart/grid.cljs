@@ -148,9 +148,16 @@
         column-key (keyword (:name column))
         column-type (:type column)
         {:keys [pred from-str]} column-type
-        value (from-str str-value)]
+        value (from-str str-value)
+        cell-key [row-idx col-idx]
+        original-value (get-in @app/state [:grid :rows row-idx column-key])]
     (when (pred value)
-      (swap! app/state assoc-in [:grid :rows row-idx column-key] value))))
+      (swap! app/state assoc-in [:grid :rows row-idx column-key] value)
+      (if (= value original-value)
+        ;; Value unchanged, remove from dirty cells
+        (swap! app/state update-in [:grid :dirty-cells] disj cell-key)
+        ;; Value changed, add to dirty cells
+        (swap! app/state update-in [:grid :dirty-cells] (fnil conj #{}) cell-key)))))
 
 (defn save-cell-on-blur [row-idx col-idx]
   "Save cell value when focus is lost"
@@ -159,7 +166,8 @@
         column (nth columns col-idx)
         column-key (keyword (:name column))
         entity-id (:db/id row)
-        cell-value (get row column-key)]
+        cell-value (get row column-key)
+        cell-key [row-idx col-idx]]
     (when entity-id
       (async/go
         (try
@@ -167,14 +175,17 @@
           (let [response (<! (save-cell-value entity-id column-key cell-value))]
             (if (:error response)
               (js/console.error "Failed to save cell value:" (:error response))
-              (js/console.log "Cell value saved successfully")))
+              (do
+                (js/console.log "Cell value saved successfully")
+                ;; Clear dirty state after successful save
+                (swap! app/state update-in [:grid :dirty-cells] disj cell-key))))
           (catch js/Error e
             (js/console.error "Error saving cell value:" e)))))))
 
 (defn load-grid-data []
   "Load grid data via RPC and return the response channel"
-  (rpc/invoke-with-response 'q '[:find [(pull ?e [*]) ...] 
-                                 :where 
+  (rpc/invoke-with-response 'q '[:find [(pull ?e [*]) ...]
+                                 :where
                                  [?e :item/name _]]))
 
 (defn cell-component [cell-value row-idx col-idx]
@@ -182,12 +193,10 @@
         column (nth columns col-idx)
         column-key (keyword (:name column))
         is-db-id? (= column-key :db/id)
-        ;; Get original value from app state for dirty check
-        original-value (get-in @app/state [:grid :rows row-idx column-key])
-        is-dirty? (not= cell-value original-value)]
-    (prn {:sonny-dirty? is-dirty?
-          :cell-value cell-value
-          :original original-value})
+        cell-key [row-idx col-idx]
+        ;; Check if this cell is dirty from the grid state
+        dirty-cells (get-in @app/state [:grid :dirty-cells] #{})
+        is-dirty? (contains? dirty-cells cell-key)]
     [:input {:type "text"
              :value (str cell-value)
              :data-row row-idx
@@ -197,7 +206,7 @@
                      :padding "8px"
                      :border "none"
                      :background (cond
-                                   is-db-id? "#f5f5f5" ; Gray for disabled :db/id
+                                   is-db-id? "#f5f5f5" ; Gray for disabled :db/id 
                                    is-dirty? "#fff3cd" ; Yellow for unsaved changes
                                    :else :inherit)
                      :border-bottom "1px solid #eee"
@@ -294,24 +303,6 @@
                     :from-str js/parseFloat
                     :to-str str}})
 
-(defn mount-grid []
-  (when-let [container (.getElementById js/document "app")]
-    (when-not @root
-      (reset! root (rdc/create-root container)))
-
-    (swap! app/state assoc :context-menu {:visible? false :x 0 :y 0})
-
-    ;; Initialize with empty grid first
-    (swap! app/state assoc :grid
-           {:rows []
-            :columns []
-            :selected-rows (sorted-set)
-            :sort-col nil
-            :sort-dir :asc})
-
-    ;; Render without passing cursor as parameter
-    (rdc/render @root [grid-component])))
-
 (defn process-grid-data [response]
   "Process RPC response and update grid state"
   (let [rows (:results response)]
@@ -327,19 +318,34 @@
                                  :type (:str types)})
                               headers))))))
 
-(defn init! []
-  (mount-grid)
-  (let [wss (stream/map->WebSocketStream {:url "/wsstream"})
-        wss (stream/open wss {})]
-    (swap! app/state assoc :wss wss)
-    ;; Start the response handler
-    (rpc/start-response-handler wss)
-    ;; Give WebSocket time to connect, then load data
+(defn mount-grid []
+  (when-let [container (.getElementById js/document "app")]
+    (when-not @root
+      (reset! root (rdc/create-root container)))
+
+    (swap! app/state assoc :context-menu {:visible? false :x 0 :y 0})
+    (swap! app/state assoc :grid
+           {:rows []
+            :columns []
+            :selected-rows (sorted-set)
+            :sort-col nil
+            :sort-dir :asc
+            :dirty-cells #{}})
+
     (async/go
       (<! (async/timeout 100))
       (js/console.log "Loading grid data after WebSocket delay...")
-      (let [response (<! (load-grid-data))]  ; Now using local function
-        (process-grid-data response)))))
+      (let [response (<! (load-grid-data))]
+        (process-grid-data response)))
+
+    (rdc/render @root [grid-component])))
+
+(defn init! []
+  (let [wss (stream/map->WebSocketStream {:url "/wsstream"})
+        wss (stream/open wss {})]
+    (swap! app/state assoc :wss wss)
+    (rpc/start-response-handler wss)
+    (mount-grid)))
 
 (comment
 
