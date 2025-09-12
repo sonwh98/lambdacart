@@ -149,13 +149,7 @@
         column-type (:type column)
         {:keys [pred from-str]} column-type
         value (from-str str-value)]
-    (prn {:sonny-column column
-          :str-value str-value
-          :value value
-          :value-type (type value)
-          :pred (pred value)})
     (when (pred value)
-      ;; Only update local state, don't save yet
       (swap! app/state assoc-in [:grid :rows row-idx column-key] value))))
 
 (defn save-cell-on-blur [row-idx col-idx]
@@ -184,35 +178,46 @@
                                  [?e :item/name _]]))
 
 (defn cell-component [cell-value row-idx col-idx]
-  (let [cell-key [row-idx col-idx]
-        original-value (r/atom cell-value)
-        is-dirty? (not= cell-value @original-value)]
+  (let [columns (get-in @app/state [:grid :columns])
+        column (nth columns col-idx)
+        column-key (keyword (:name column))
+        is-db-id? (= column-key :db/id)
+        ;; Get original value from app state for dirty check
+        original-value (get-in @app/state [:grid :rows row-idx column-key])
+        is-dirty? (not= cell-value original-value)]
+    (prn {:sonny-dirty? is-dirty?
+          :cell-value cell-value
+          :original original-value})
     [:input {:type "text"
              :value (str cell-value)
              :data-row row-idx
              :data-col col-idx
+             :disabled is-db-id?
              :style {:width "100%"
                      :padding "8px"
                      :border "none"
-                     :background (if is-dirty? "#fff3cd" :inherit) ; Yellow background for unsaved changes
+                     :background (cond
+                                   is-db-id? "#f5f5f5" ; Gray for disabled :db/id
+                                   is-dirty? "#fff3cd" ; Yellow for unsaved changes
+                                   :else :inherit)
                      :border-bottom "1px solid #eee"
                      :box-sizing "border-box"
-                     :outline "none"}
-             :on-focus #(do
-                          (reset! original-value cell-value) ; Store original value on focus
+                     :outline "none"
+                     :cursor (if is-db-id? "not-allowed" "text")}
+             :on-focus #(when-not is-db-id?
                           (when (and (-> @app/state :grid :selected-rows seq)
                                      (not (= (-> @app/state :grid :selected-rows)
                                              row-idx)))
                             (swap! app/state assoc-in [:grid :selected-rows] nil)))
-             :on-blur #(do
+             :on-blur #(when-not is-db-id?
                          (js/console.log "Cell lost focus, saving...")
-                         (save-cell-on-blur row-idx col-idx)
-                         (reset! original-value cell-value)) ; Reset dirty state
-             :on-key-down #(do
+                         (save-cell-on-blur row-idx col-idx))
+             :on-key-down #(when-not is-db-id?
                              (when (= (.-key %) "Enter")
-                               (.blur (.-target %))) ; Trigger save on Enter
+                               (.blur (.-target %)))
                              (handle-key-nav row-idx col-idx %))
-             :on-change #(update-cell row-idx col-idx (.. % -target -value))}]))
+             :on-change #(when-not is-db-id?
+                           (update-cell row-idx col-idx (.. % -target -value)))}]))
 
 (defn grid-component []
   (let [grid-state (r/cursor app/state [:grid])
@@ -339,5 +344,5 @@
 (comment
 
   (-> @app/state keys)
-
+  (cljs.pprint/pprint @app/state)
   (get-in @app/state [:grid :columns]))
