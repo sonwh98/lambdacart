@@ -414,50 +414,50 @@
     [:div {:style {:background (when is-dirty? "#fff3cd")}} ; Yellow background for dirty cells
      [renderer cell-value-cursor row-idx col-idx]]))
 
-;; Update row-number-component to take cursors as parameters
+;; Update row-number-component to create its own context-menu cursor
 (defn row-number-component [row-idx selected-rows-cursor]
-  [:div {:style {:width "40px"
-                 :cursor "pointer"
-                 :border-right "1px solid #ddd"
-                 :background (if (contains? @selected-rows-cursor row-idx)
-                               "#d4e6f1" ; Darker blue when selected
-                               "#f8f9fa") ; Light gray when not selected
-                 :border "1px solid #dee2e6"
-                 :border-radius "3px"
-                 :font-weight "bold"
-                 :font-size "12px"
-                 :display "flex"
-                 :align-items "center" ; Center vertically
-                 :justify-content "center" ; Center horizontally
-                 :box-sizing "border-box"
-                 :transition "all 0.1s ease"
-                 :box-shadow "0 1px 2px rgba(0,0,0,0.1)"
-                 :user-select "none"}
-         :on-mouse-down #(set! (-> % .-target .-style .-transform) "translateY(1px)")
-         :on-mouse-up #(set! (-> % .-target .-style .-transform) "translateY(0)")
-         :on-mouse-leave #(set! (-> % .-target .-style .-transform) "translateY(0)")
-         :on-click #(swap! selected-rows-cursor
-                           (fn [selected]
-                             (if (contains? selected row-idx)
-                               (disj selected row-idx)
-                               (conj (or selected (sorted-set)) row-idx))))}
-   (inc row-idx)])
+  (let [context-menu-cursor (r/cursor app/state [:context-menu])]
+    [:div {:style {:width "40px"
+                   :cursor "pointer"
+                   :border-right "1px solid #ddd"
+                   :background (if (contains? @selected-rows-cursor row-idx)
+                                 "#d4e6f1" ; Darker blue when selected
+                                 "#f8f9fa") ; Light gray when not selected
+                   :border "1px solid #dee2e6"
+                   :border-radius "3px"
+                   :font-weight "bold"
+                   :font-size "12px"
+                   :display "flex"
+                   :align-items "center" ; Center vertically
+                   :justify-content "center" ; Center horizontally
+                   :box-sizing "border-box"
+                   :transition "all 0.1s ease"
+                   :box-shadow "0 1px 2px rgba(0,0,0,0.1)"
+                   :user-select "none"}
+           :on-mouse-down #(set! (-> % .-target .-style .-transform) "translateY(1px)")
+           :on-mouse-up #(set! (-> % .-target .-style .-transform) "translateY(0)")
+           :on-mouse-leave #(set! (-> % .-target .-style .-transform) "translateY(0)")
+           :on-click #(swap! selected-rows-cursor
+                             (fn [selected]
+                               (if (contains? selected row-idx)
+                                 (disj selected row-idx)
+                                 (conj (or selected (sorted-set)) row-idx))))
+           :on-context-menu (fn [e]
+                              (.preventDefault e)
+                              (when (contains? @selected-rows-cursor row-idx)
+                                (reset! context-menu-cursor
+                                        {:visible? true
+                                         :x (.-clientX e)
+                                         :y (.-clientY e)})))}
+     (inc row-idx)]))
 
-;; Update grid-row-component to take specific cursors
-(defn grid-row-component [row-idx row-cursor columns-cursor selected-rows-cursor context-menu-cursor]
-  (prn {:sonny-idx row-idx})
-  (js/alert row-idx)
+;; Update grid-row-component to remove context-menu-cursor parameter
+(defn grid-row-component [row-idx row-cursor columns-cursor selected-rows-cursor]
+  (prn {:sonny-row-idx row-idx})
   [:div {:style {:display "flex"
                  :background (when (contains? @selected-rows-cursor row-idx)
                                "#e8f2ff")}
-         :key row-idx
-         :on-context-menu (fn [e]
-                            (.preventDefault e)
-                            (when (contains? @selected-rows-cursor row-idx)
-                              (reset! context-menu-cursor
-                                      {:visible? true
-                                       :x (.-clientX e)
-                                       :y (.-clientY e)})))}
+         :key row-idx}
    [row-number-component row-idx selected-rows-cursor]
    (doall
     (for [[j column] (map-indexed vector @columns-cursor)
@@ -476,7 +476,7 @@
                        :box-sizing "border-box"})}
        [cell-component row-idx j]]))])
 
-;; Update grid-component to pass specific cursors
+;; Update grid-component to not pass context-menu-state to grid-row-component
 (defn grid-component [grid-state context-menu-state]
   (let [rows (-> @grid-state :rows)
         columns-cursor (r/cursor app/state [:grid :columns])
@@ -496,7 +496,7 @@
        (for [[i row] (map-indexed vector rows)]
          (let [row-cursor (r/cursor app/state [:grid :rows i])]
            ^{:key (str "row-" i)}
-           [grid-row-component i row-cursor columns-cursor selected-rows-cursor context-menu-state])))]]))
+           [grid-row-component i row-cursor columns-cursor selected-rows-cursor])))]]))
 
 ;; Create a top-level app component that includes both grid and context menu
 (defn app-component []
