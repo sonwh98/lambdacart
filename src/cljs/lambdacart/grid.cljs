@@ -301,6 +301,12 @@
                   :to-str str}
             :float {:pred float?
                     :from-str js/parseFloat
+                    :to-str str}
+            :image {:pred (fn [value]
+                           (and (string? value)
+                                (or (empty? value) ; Allow empty strings
+                                    (re-matches #"^https?://.*\.(jpg|jpeg|png|gif|bmp|webp|svg)(\?.*)?$" value))))
+                    :from-str str
                     :to-str str}})
 
 (defn process-grid-data [response]
@@ -332,7 +338,6 @@
             :sort-dir :asc
             :dirty-cells #{}})
 
-    ;; Remove the timeout and async data loading
     (rdc/render @root [grid-component])))
 
 (defn load-and-display-data []
