@@ -1,3 +1,8 @@
+map $http_upgrade $connection_upgrade {
+    default upgrade;
+    '' close;
+}
+
 server{
     listen       80;
     server_name  vn.bumble.fish;	
@@ -34,22 +39,34 @@ server {
     location /wsstream {
       proxy_pass http://localhost:3001;
       proxy_http_version 1.1;
+      
+      # Critical WebSocket headers
       proxy_set_header Upgrade $http_upgrade;
-      proxy_set_header Connection "upgrade";
+      proxy_set_header Connection $connection_upgrade;  # Use the mapped variable
+      
+      # Standard proxy headers
       proxy_set_header Host $host;
       proxy_set_header X-Real-IP $remote_addr;
       proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+      proxy_set_header X-Forwarded-Proto $scheme;
+      
+      # HTTP-Kit WebSocket specific settings
+      proxy_buffering off;
+      proxy_cache off;
+      proxy_read_timeout 86400s;  # 24 hours
+      proxy_send_timeout 86400s;  # 24 hours
+      
+      # Prevent nginx from interpreting the response
+      proxy_redirect off;
     }
 
     location /shadow-cljs/  {
       proxy_pass http://localhost:9630/;
       proxy_http_version 1.1;
       proxy_set_header Upgrade $http_upgrade;
-      proxy_set_header Connection "upgrade";
+      proxy_set_header Connection $connection_upgrade;  # Use the mapped variable here too
       proxy_set_header Host $host;
       proxy_set_header X-Real-IP $remote_addr;
       proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     }
-
-
 }
