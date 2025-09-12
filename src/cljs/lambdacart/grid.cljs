@@ -415,6 +415,35 @@
                                    :type (detect-column-type header-kw sample-value)}))
                               headers))))))
 
+(defn row-number-component [row-idx grid-state]
+  [:div {:style {:width "40px"
+                 :cursor "pointer"
+                 :border-right "1px solid #ddd"
+                 :background (if (contains? (:selected-rows @grid-state) row-idx)
+                               "#d4e6f1" ; Darker blue when selected
+                               "#f8f9fa") ; Light gray when not selected
+                 :border "1px solid #dee2e6"
+                 :border-radius "3px"
+                 :font-weight "bold"
+                 :font-size "12px"
+                 :display "flex"
+                 :align-items "center" ; Center vertically
+                 :justify-content "center" ; Center horizontally
+                 :box-sizing "border-box"
+                 :transition "all 0.1s ease"
+                 :box-shadow "0 1px 2px rgba(0,0,0,0.1)"
+                 :user-select "none"}
+         :on-mouse-down #(set! (-> % .-target .-style .-transform) "translateY(1px)")
+         :on-mouse-up #(set! (-> % .-target .-style .-transform) "translateY(0)")
+         :on-mouse-leave #(set! (-> % .-target .-style .-transform) "translateY(0)")
+         :on-click #(swap! grid-state update :selected-rows
+                           (fn [selected]
+                             (if (contains? selected row-idx)
+                               (disj selected row-idx)
+                               (conj (or selected (sorted-set)) row-idx))))}
+   (inc row-idx)])
+
+;; Update grid-component to use the extracted function
 (defn grid-component [grid-state context-menu-state]
   (let [rows (-> @grid-state :rows)
         columns (-> @grid-state :columns)]
@@ -442,32 +471,7 @@
                                              {:visible? true
                                               :x (.-clientX e)
                                               :y (.-clientY e)})))}
-          [:div {:style {:width "40px"
-                         :cursor "pointer"
-                         :border-right "1px solid #ddd"
-                         :background (if (contains? (:selected-rows @grid-state) i)
-                                       "#d4e6f1" ; Darker blue when selected
-                                       "#f8f9fa") ; Light gray when not selected
-                         :border "1px solid #dee2e6"
-                         :border-radius "3px"
-                         :font-weight "bold"
-                         :font-size "12px"
-                         :display "flex"
-                         :align-items "center" ; Center vertically
-                         :justify-content "center" ; Center horizontally
-                         :box-sizing "border-box"
-                         :transition "all 0.1s ease"
-                         :box-shadow "0 1px 2px rgba(0,0,0,0.1)"
-                         :user-select "none"}
-                 :on-mouse-down #(set! (-> % .-target .-style .-transform) "translateY(1px)")
-                 :on-mouse-up #(set! (-> % .-target .-style .-transform) "translateY(0)")
-                 :on-mouse-leave #(set! (-> % .-target .-style .-transform) "translateY(0)")
-                 :on-click #(swap! grid-state update :selected-rows
-                                   (fn [selected]
-                                     (if (contains? selected i)
-                                       (disj selected i)
-                                       (conj (or selected (sorted-set)) i))))}
-           (inc i)]
+          [row-number-component i grid-state]
           (doall
            (for [[j column] (map-indexed vector columns)
                  :let [column-key (keyword (:name column))]]
