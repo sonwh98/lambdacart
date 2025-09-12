@@ -332,23 +332,43 @@
             :sort-dir :asc
             :dirty-cells #{}})
 
-    (async/go
-      (<! (async/timeout 100))
-      (js/console.log "Loading grid data after WebSocket delay...")
-      (let [response (<! (load-grid-data))]
-        (process-grid-data response)))
-
+    ;; Remove the timeout and async data loading
     (rdc/render @root [grid-component])))
 
+(defn load-and-display-data []
+  "Load grid data and update the display"
+  (async/go
+    (js/console.log "Loading grid data...")
+    (let [response (<! (load-grid-data))]
+      (process-grid-data response)
+      (js/console.log "Grid data loaded and displayed"))))
+
 (defn init! []
+  (mount-grid)  ; Mount the grid first
+  
   (let [wss (stream/map->WebSocketStream {:url "/wsstream"})
         wss (stream/open wss {})]
     (swap! app/state assoc :wss wss)
     (rpc/start-response-handler wss)
-    (mount-grid)))
+    
+    ;; Wait for WebSocket to be ready, then load data
+    (async/go
+      (js/console.log "Waiting for WebSocket connection...")
+      ;; Wait for the WebSocket to be in OPEN state
+      (loop [attempts 0]
+        (if (and (< attempts 50) ; Max 5 seconds
+                 (not= (.-readyState (:ws wss)) 1)) ; 1 = OPEN
+          (do
+            (<! (async/timeout 100))
+            (recur (inc attempts)))
+          (if (= (.-readyState (:ws wss)) 1)
+            (do
+              (js/console.log "WebSocket connected, loading data...")
+              (load-and-display-data))
+            (js/console.error "WebSocket failed to connect after 5 seconds")))))))
 
-(comment
-
-  (-> @app/state keys)
-  (cljs.pprint/pprint @app/state)
-  (get-in @app/state [:grid :columns]))
+;; Add reload function for development
+(defn ^:dev/after-load reload! []
+  "Called by shadow-cljs after code reload"
+  (js/console.log "Code reloaded, refreshing grid...")
+  (load-and-display-data))
