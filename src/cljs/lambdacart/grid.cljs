@@ -188,45 +188,139 @@
                                  :where
                                  [?e :item/name _]]))
 
+;; Add column-specific renderers
+(defn text-cell-renderer [cell-value row-idx col-idx]
+  [:input {:type "text"
+           :value (str cell-value)
+           :data-row row-idx
+           :data-col col-idx
+           :style {:width "100%"
+                   :padding "8px"
+                   :border "none"
+                   :background :inherit
+                   :border-bottom "1px solid #eee"
+                   :box-sizing "border-box"
+                   :outline "none"}
+           :on-focus #(when (and (-> @app/state :grid :selected-rows seq)
+                                 (not (= (-> @app/state :grid :selected-rows)
+                                         row-idx)))
+                        (swap! app/state assoc-in [:grid :selected-rows] nil))
+           :on-blur #(save-cell-on-blur row-idx col-idx)
+           :on-key-down #(do
+                           (when (= (.-key %) "Enter")
+                             (.blur (.-target %)))
+                           (handle-key-nav row-idx col-idx %))
+           :on-change #(update-cell row-idx col-idx (.. % -target -value))}])
+
+(defn image-cell-renderer [cell-value row-idx col-idx]
+  [:div {:style {:display "flex" :align-items "center" :gap "8px"}}
+   [:input {:type "text"
+            :value (str cell-value)
+            :data-row row-idx
+            :data-col col-idx
+            :placeholder "https://example.com/image.jpg"
+            :style {:flex "1"
+                    :padding "8px"
+                    :border "none"
+                    :background :inherit
+                    :border-bottom "1px solid #eee"
+                    :box-sizing "border-box"
+                    :outline "none"}
+            :on-focus #(when (and (-> @app/state :grid :selected-rows seq)
+                                  (not (= (-> @app/state :grid :selected-rows)
+                                          row-idx)))
+                         (swap! app/state assoc-in [:grid :selected-rows] nil))
+            :on-blur #(save-cell-on-blur row-idx col-idx)
+            :on-key-down #(do
+                            (when (= (.-key %) "Enter")
+                              (.blur (.-target %)))
+                            (handle-key-nav row-idx col-idx %))
+            :on-change #(update-cell row-idx col-idx (.. % -target -value))}]
+   ;; Show thumbnail if valid URL
+   (when (and (not (empty? (str cell-value)))
+              (re-matches #"^https?://.*\.(jpg|jpeg|png|gif|bmp|webp|svg)(\?.*)?$" (str cell-value)))
+     [:img {:src (str cell-value)
+            :style {:width "24px"
+                    :height "24px"
+                    :object-fit "cover"
+                    :border-radius "4px"}
+            :on-error #(set! (-> % .-target .-style .-display) "none")}])])
+
+(defn readonly-cell-renderer [cell-value row-idx col-idx]
+  [:div {:style {:padding "8px"
+                 :background "#f5f5f5"
+                 :color "#666"
+                 :border-bottom "1px solid #eee"
+                 :cursor "not-allowed"}}
+   (str cell-value)])
+
+;; Update the types definition to include renderers
+(def types {:int {:pred integer?
+                  :from-str js/parseInt
+                  :to-str str
+                  :renderer text-cell-renderer}
+            :str {:pred string?
+                  :from-str str
+                  :to-str str
+                  :renderer text-cell-renderer}
+            :float {:pred float?
+                    :from-str js/parseFloat
+                    :to-str str
+                    :renderer text-cell-renderer}
+            :image {:pred (fn [value]
+                           (and (string? value)
+                                (or (empty? value)
+                                    (re-matches #"^https?://.*\.(jpg|jpeg|png|gif|bmp|webp|svg)(\?.*)?$" value))))
+                    :from-str str
+                    :to-str str
+                    :renderer image-cell-renderer}
+            :readonly {:pred (constantly true)
+                       :from-str str
+                       :to-str str
+                       :renderer readonly-cell-renderer}})
+
+;; Simplified cell-component that delegates to column renderer
 (defn cell-component [cell-value row-idx col-idx]
   (let [columns (get-in @app/state [:grid :columns])
         column (nth columns col-idx)
         column-key (keyword (:name column))
-        is-db-id? (= column-key :db/id)
+        column-type (:type column)
         cell-key [row-idx col-idx]
-        ;; Check if this cell is dirty from the grid state
         dirty-cells (get-in @app/state [:grid :dirty-cells] #{})
-        is-dirty? (contains? dirty-cells cell-key)]
-    [:input {:type "text"
-             :value (str cell-value)
-             :data-row row-idx
-             :data-col col-idx
-             :disabled is-db-id?
-             :style {:width "100%"
-                     :padding "8px"
-                     :border "none"
-                     :background (cond
-                                   is-db-id? "#f5f5f5" ; Gray for disabled :db/id 
-                                   is-dirty? "#fff3cd" ; Yellow for unsaved changes
-                                   :else :inherit)
-                     :border-bottom "1px solid #eee"
-                     :box-sizing "border-box"
-                     :outline "none"
-                     :cursor (if is-db-id? "not-allowed" "text")}
-             :on-focus #(when-not is-db-id?
-                          (when (and (-> @app/state :grid :selected-rows seq)
-                                     (not (= (-> @app/state :grid :selected-rows)
-                                             row-idx)))
-                            (swap! app/state assoc-in [:grid :selected-rows] nil)))
-             :on-blur #(when-not is-db-id?
-                         (js/console.log "Cell lost focus, saving...")
-                         (save-cell-on-blur row-idx col-idx))
-             :on-key-down #(when-not is-db-id?
-                             (when (= (.-key %) "Enter")
-                               (.blur (.-target %)))
-                             (handle-key-nav row-idx col-idx %))
-             :on-change #(when-not is-db-id?
-                           (update-cell row-idx col-idx (.. % -target -value)))}]))
+        is-dirty? (contains? dirty-cells cell-key)
+        is-db-id? (= column-key :db/id)
+        ;; Choose renderer based on column type or special cases
+        renderer (cond
+                   is-db-id? (:renderer (:readonly types))
+                   :else (:renderer column-type))]
+    [:div {:style {:background (when is-dirty? "#fff3cd")}} ; Yellow background for dirty cells
+     [renderer cell-value row-idx col-idx]]))
+
+;; Update process-grid-data to detect column types and assign renderers
+(defn detect-column-type [column-key sample-value]
+  "Detect column type based on column name and sample value"
+  (cond
+    (= column-key :db/id) (:readonly types)
+    (and (string? sample-value) 
+         (re-matches #"^https?://.*\.(jpg|jpeg|png|gif|bmp|webp|svg)(\?.*)?$" sample-value)) (:image types)
+    (integer? sample-value) (:int types)
+    (float? sample-value) (:float types)
+    :else (:str types)))
+
+(defn process-grid-data [response]
+  "Process RPC response and update grid state"
+  (let [rows (:results response)]
+    (js/console.log "Loaded grid data:" rows)
+    (when (seq rows)
+      (let [row0 (first rows)
+            headers (keys row0)]
+        (swap! app/state update :grid assoc
+               :rows rows
+               :columns (mapv (fn [header-kw]
+                                (let [sample-value (get row0 header-kw)]
+                                  {:name header-kw
+                                   :type (detect-column-type header-kw sample-value)}))
+                              headers))))))
 
 (defn grid-component []
   (let [grid-state (r/cursor app/state [:grid])
@@ -293,37 +387,6 @@
 
 (defonce root (atom nil))
 
-(def types {:int {:pred integer?
-                  :from-str js/parseInt
-                  :to-str str}
-            :str {:pred string?
-                  :from-str str
-                  :to-str str}
-            :float {:pred float?
-                    :from-str js/parseFloat
-                    :to-str str}
-            :image {:pred (fn [value]
-                           (and (string? value)
-                                (or (empty? value) ; Allow empty strings
-                                    (re-matches #"^https?://.*\.(jpg|jpeg|png|gif|bmp|webp|svg)(\?.*)?$" value))))
-                    :from-str str
-                    :to-str str}})
-
-(defn process-grid-data [response]
-  "Process RPC response and update grid state"
-  (let [rows (:results response)]
-    (js/console.log "Loaded grid data:" rows)
-    (when (seq rows)
-      (let [row0 (first rows)
-            headers (keys row0)]
-
-        (swap! app/state update :grid assoc
-               :rows rows
-               :columns (mapv (fn [header-kw]
-                                {:name header-kw
-                                 :type (:str types)})
-                              headers))))))
-
 (defn mount-grid []
   (when-let [container (.getElementById js/document "app")]
     (when-not @root
@@ -377,3 +440,5 @@
   "Called by shadow-cljs after code reload"
   (js/console.log "Code reloaded, refreshing grid...")
   (load-and-display-data))
+
+
