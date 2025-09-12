@@ -184,7 +184,7 @@
 
 (defn load-grid-data []
   "Load grid data via RPC and return the response channel"
-  (rpc/invoke-with-response 'q '[:find [(pull ?e [*]) ...]
+  (rpc/invoke-with-response 'q '[:find [(pull ?e [* {:item/images [*]}]) ...]
                                  :where
                                  [?e :item/name _]]))
 
@@ -213,38 +213,76 @@
            :on-change #(update-cell row-idx col-idx (.. % -target -value))}])
 
 (defn image-cell-renderer [cell-value row-idx col-idx]
-  [:div {:style {:display "flex" :align-items "center" :gap "8px"}}
-   [:input {:type "text"
-            :value (str cell-value)
-            :data-row row-idx
-            :data-col col-idx
-            :placeholder "https://example.com/image.jpg"
-            :style {:flex "1"
-                    :padding "8px"
-                    :border "none"
-                    :background :inherit
-                    :border-bottom "1px solid #eee"
-                    :box-sizing "border-box"
-                    :outline "none"}
-            :on-focus #(when (and (-> @app/state :grid :selected-rows seq)
-                                  (not (= (-> @app/state :grid :selected-rows)
-                                          row-idx)))
-                         (swap! app/state assoc-in [:grid :selected-rows] nil))
-            :on-blur #(save-cell-on-blur row-idx col-idx)
-            :on-key-down #(do
-                            (when (= (.-key %) "Enter")
-                              (.blur (.-target %)))
-                            (handle-key-nav row-idx col-idx %))
-            :on-change #(update-cell row-idx col-idx (.. % -target -value))}]
-   ;; Show thumbnail if valid URL
-   (when (and (not (empty? (str cell-value)))
-              (re-matches #"^https?://.*\.(jpg|jpeg|png|gif|bmp|webp|svg)(\?.*)?$" (str cell-value)))
-     [:img {:src (str cell-value)
-            :style {:width "24px"
-                    :height "24px"
-                    :object-fit "cover"
-                    :border-radius "4px"}
-            :on-error #(set! (-> % .-target .-style .-display) "none")}])])
+  (let [images (if (vector? cell-value) cell-value [])]
+    [:div {:style {:display "flex" :flex-direction "column" :gap "4px" :padding "4px"}}
+     ;; Display existing images
+     (when (seq images)
+       [:div {:style {:display "flex" :flex-wrap "wrap" :gap "4px" :margin-bottom "4px"}}
+        (doall
+         (for [[idx image] (map-indexed vector images)
+               :let [image-url (:image/url image)]]
+           ^{:key (str "img-" row-idx "-" col-idx "-" idx)}
+           [:div {:style {:position "relative" :display "inline-block"}}
+            [:img {:src image-url
+                   :style {:width "32px"
+                           :height "32px"
+                           :object-fit "cover"
+                           :border-radius "4px"
+                           :border "1px solid #ddd"}
+                   :on-error #(set! (-> % .-target .-style .-display) "none")}]
+            ;; Delete button for each image
+            [:button {:style {:position "absolute"
+                              :top "-4px"
+                              :right "-4px"
+                              :width "16px"
+                              :height "16px"
+                              :border-radius "50%"
+                              :border "none"
+                              :background "#ff4444"
+                              :color "white"
+                              :font-size "10px"
+                              :cursor "pointer"
+                              :display "flex"
+                              :align-items "center"
+                              :justify-content "center"}
+                      :on-click #(let [new-images (vec (concat (take idx images) 
+                                                               (drop (inc idx) images)))]
+                                   (update-cell row-idx col-idx new-images))}
+             "×"]]))])
+     
+     ;; Add new image input
+     [:div {:style {:display "flex" :align-items "center" :gap "4px"}}
+      [:input {:type "text"
+               :placeholder "Add image URL..."
+               :style {:flex "1"
+                       :padding "4px"
+                       :border "1px solid #ddd"
+                       :border-radius "4px"
+                       :font-size "12px"
+                       :outline "none"}
+               :on-key-down #(when (= (.-key %) "Enter")
+                               (let [url (.. % -target -value)]
+                                 (when (and (not (empty? url))
+                                           (re-matches #"^https?://.*\.(jpg|jpeg|png|gif|bmp|webp|svg)(\?.*)?$" url))
+                                   (let [new-image {:image/url url}
+                                         new-images (conj images new-image)]
+                                     (update-cell row-idx col-idx new-images)
+                                     (set! (.. % -target -value) "")))))}]
+      [:button {:style {:padding "4px 8px"
+                        :border "1px solid #ddd"
+                        :border-radius "4px"
+                        :background "#f5f5f5"
+                        :cursor "pointer"
+                        :font-size "12px"}
+                :on-click #(let [input (.-previousElementSibling (.-target %))
+                                url (.-value input)]
+                             (when (and (not (empty? url))
+                                       (re-matches #"^https?://.*\.(jpg|jpeg|png|gif|bmp|webp|svg)(\?.*)?$" url))
+                               (let [new-image {:image/url url}
+                                     new-images (conj images new-image)]
+                                 (update-cell row-idx col-idx new-images)
+                                 (set! (.-value input) ""))))}
+       "Add"]]]))
 
 (defn readonly-cell-renderer [cell-value row-idx col-idx]
   [:div {:style {:padding "8px"
@@ -301,6 +339,10 @@
   "Detect column type based on column name and sample value"
   (cond
     (= column-key :db/id) (:readonly types)
+    ;; Check for image collections (vector of entities with :image/url)
+    (and (vector? sample-value)
+         (every? #(and (map? %) (contains? % :image/url)) sample-value)) (:image types)
+    ;; Check for single image URL string
     (and (string? sample-value) 
          (re-matches #"^https?://.*\.(jpg|jpeg|png|gif|bmp|webp|svg)(\?.*)?$" sample-value)) (:image types)
     (integer? sample-value) (:int types)
