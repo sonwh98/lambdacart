@@ -188,20 +188,20 @@
                                  :where
                                  [?e :item/name _]]))
 
-;; Update text-cell-renderer to properly handle editing without overwriting user input
-(defn text-cell-renderer [cell-value row-idx col-idx]
+;; Update text-cell-renderer to take cell-value-cursor
+(defn text-cell-renderer [cell-value-cursor row-idx col-idx]
   (let [div-ref (r/atom nil)
         is-focused (r/atom false)]
     (r/create-class
      {:component-did-mount
       (fn [this]
         (when-let [div @div-ref]
-          (set! (.-textContent div) (str cell-value))))
+          (set! (.-textContent div) (str @cell-value-cursor))))
       
       :component-did-update
       (fn [this old-argv]
         (let [old-cell-value (nth old-argv 1)
-              new-cell-value cell-value]
+              new-cell-value @cell-value-cursor]
           ;; Only update if not focused and value actually changed
           (when (and @div-ref 
                      (not @is-focused)
@@ -209,7 +209,7 @@
             (set! (.-textContent @div-ref) (str new-cell-value)))))
       
       :reagent-render
-      (fn [cell-value row-idx col-idx]
+      (fn [cell-value-cursor row-idx col-idx]
         [:div {:ref #(reset! div-ref %)
                :content-editable true
                :data-row row-idx
@@ -257,8 +257,9 @@
                :on-input #(let [text-content (.-textContent (.-target %))]
                             (update-cell row-idx col-idx text-content))}])})))
 
-(defn image-cell-renderer [cell-value row-idx col-idx]
-  (let [images (if (vector? cell-value) cell-value [])]
+;; Update image-cell-renderer to take cell-value-cursor
+(defn image-cell-renderer [cell-value-cursor row-idx col-idx]
+  (let [images (if (vector? @cell-value-cursor) @cell-value-cursor [])]
     [:div {:style {:display "flex" :flex-direction "column" :gap "4px" :padding "4px"}}
      ;; Display existing images
      (when (seq images)
@@ -329,13 +330,14 @@
                                  (set! (.-value input) ""))))}
        "Add"]]]))
 
-(defn readonly-cell-renderer [cell-value row-idx col-idx]
+;; Update readonly-cell-renderer to take cell-value-cursor
+(defn readonly-cell-renderer [cell-value-cursor row-idx col-idx]
   [:div {:style {:padding "8px"
                  :background "#f5f5f5"
                  :color "#666"
                  :border-bottom "1px solid #eee"
                  :cursor "not-allowed"}}
-   (str cell-value)])
+   (str @cell-value-cursor)])
 
 ;; Update the types definition to include renderers
 (def types {:int {:pred integer?
