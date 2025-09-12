@@ -443,10 +443,41 @@
                                (conj (or selected (sorted-set)) row-idx))))}
    (inc row-idx)])
 
-;; Update grid-component to use the extracted function
+;; Add this function before grid-component
+(defn grid-row-component [row-idx row grid-state context-menu-state]
+  (let [columns (-> @grid-state :columns)]
+    [:div {:style {:display "flex"
+                   :background (when (contains? (:selected-rows @grid-state) row-idx)
+                                 "#e8f2ff")}
+           :key row-idx
+           :on-context-menu (fn [e]
+                              (.preventDefault e)
+                              (when (contains? (:selected-rows @grid-state) row-idx)
+                                (reset! context-menu-state
+                                        {:visible? true
+                                         :x (.-clientX e)
+                                         :y (.-clientY e)})))}
+     [row-number-component row-idx grid-state]
+     (doall
+      (for [[j column] (map-indexed vector columns)
+            :let [column-key (keyword (:name column))]]
+        ^{:key (str "cell-" row-idx "-" j)}
+        [:div {:style (if (:width column)
+                        ;; Column has been manually resized - use fixed width
+                        {:width (str (:width column) "px")
+                         :min-width "50px"
+                         :border-right "1px solid #f9f9f9"
+                         :box-sizing "border-box"}
+                        ;; Column uses default sizing - flex to fill space
+                        {:flex "1"
+                         :min-width "50px"
+                         :border-right "1px solid #f9f9f9"
+                         :box-sizing "border-box"})}
+         [cell-component row-idx j]]))]))
+
+;; Update grid-component to use the extracted grid-row component
 (defn grid-component [grid-state context-menu-state]
-  (let [rows (-> @grid-state :rows)
-        columns (-> @grid-state :columns)]
+  (let [rows (-> @grid-state :rows)]
     [:div {:on-click #(when (:visible? @context-menu-state)
                         (swap! context-menu-state assoc :visible? false))
            :on-context-menu #(.preventDefault %)}
@@ -460,34 +491,8 @@
                     :position "relative"}}
       (doall
        (for [[i row] (map-indexed vector rows)]
-         [:div {:style {:display "flex"
-                        :background (when (contains? (:selected-rows @grid-state) i)
-                                      "#e8f2ff")}
-                :key i
-                :on-context-menu (fn [e]
-                                   (.preventDefault e)
-                                   (when (contains? (:selected-rows @grid-state) i)
-                                     (reset! context-menu-state
-                                             {:visible? true
-                                              :x (.-clientX e)
-                                              :y (.-clientY e)})))}
-          [row-number-component i grid-state]
-          (doall
-           (for [[j column] (map-indexed vector columns)
-                 :let [column-key (keyword (:name column))]]
-             ^{:key (str "cell-" i "-" j)}
-             [:div {:style (if (:width column)
-                             ;; Column has been manually resized - use fixed width
-                             {:width (str (:width column) "px")
-                              :min-width "50px"
-                              :border-right "1px solid #f9f9f9"
-                              :box-sizing "border-box"}
-                             ;; Column uses default sizing - flex to fill space
-                             {:flex "1"
-                              :min-width "50px"
-                              :border-right "1px solid #f9f9f9"
-                              :box-sizing "border-box"})}
-              [cell-component i j]]))]))]]))
+         ^{:key (str "row-" i)}
+         [grid-row-component i row grid-state context-menu-state]))]]))
 
 ;; Create a top-level app component that includes both grid and context menu
 (defn app-component []
