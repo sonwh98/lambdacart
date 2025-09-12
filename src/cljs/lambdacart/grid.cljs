@@ -415,13 +415,12 @@
                                    :type (detect-column-type header-kw sample-value)}))
                               headers))))))
 
-(defn grid-component [grid-state]
+(defn grid-component [grid-state context-menu-state]
   (let [rows (-> @grid-state :rows)
         columns (-> @grid-state :columns)
-        num-of-rows (count rows)
-        context-menu (r/cursor app/state [:context-menu])]
-    [:div {:on-click #(when (:visible? @context-menu)
-                        (swap! context-menu assoc :visible? false))
+        num-of-rows (count rows)]
+    [:div {:on-click #(when (:visible? @context-menu-state)
+                        (swap! context-menu-state assoc :visible? false))
            :on-context-menu #(.preventDefault %)}
      [header grid-state]
      [:div {:style {:width "100%"
@@ -441,7 +440,7 @@
                 :on-context-menu (fn [e]
                                    (.preventDefault e)
                                    (when (contains? (:selected-rows @grid-state) i)
-                                     (reset! context-menu
+                                     (reset! context-menu-state
                                              {:visible? true
                                               :x (.-clientX e)
                                               :y (.-clientY e)})))}
@@ -491,10 +490,10 @@
 ;; Create a top-level app component that includes both grid and context menu
 (defn app-component []
   (let [grid-state (r/cursor app/state [:grid])
-        context-menu (r/cursor app/state [:context-menu])]
+        context-menu-state (r/cursor app/state [:context-menu])]
     [:div
-     [grid-component grid-state]
-     [context-menu-component grid-state context-menu]]))
+     [grid-component grid-state context-menu-state]
+     [context-menu-component grid-state context-menu-state]]))
 
 ;; Update mount-grid to render the app-component instead of grid-component directly
 (defn mount-grid []
