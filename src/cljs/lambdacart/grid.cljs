@@ -413,9 +413,8 @@
                                    :type (detect-column-type header-kw sample-value)}))
                               headers))))))
 
-(defn grid-component []
-  (let [grid-state (r/cursor app/state [:grid])
-        rows (-> @grid-state :rows)
+(defn grid-component [grid-state]
+  (let [rows (-> @grid-state :rows)
         columns (-> @grid-state :columns)
         num-of-rows (count rows)
         context-menu (r/cursor app/state [:context-menu])]
@@ -491,7 +490,9 @@
             :sort-dir :asc
             :dirty-cells #{}})
 
-    (rdc/render @root [grid-component])))
+    ;; Create the grid-state cursor and pass it to grid-component
+    (let [grid-state (r/cursor app/state [:grid])]
+      (rdc/render @root [grid-component grid-state]))))
 
 (defn load-and-display-data []
   "Load grid data and update the display"
