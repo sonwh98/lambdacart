@@ -137,8 +137,6 @@
         (when next-el
           (.focus next-el))))))
 
-(defonce save-timeouts (atom {}))
-
 (defn save-cell-value [entity-id attribute new-value]
   "Save a cell value change to the backend via RPC"
   (rpc/invoke-with-response 'transact
