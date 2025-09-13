@@ -212,6 +212,7 @@
 
       :reagent-render
       (fn [cell-value-cursor row-idx col-idx]
+        @cell-value-cursor ;;deref to trigger reactivivity 
         [:div {:ref #(reset! div-ref %)
                :content-editable true
                :data-row row-idx
@@ -257,7 +258,10 @@
                                  )
                                (handle-key-nav row-idx col-idx %))
                :on-input #(let [text-content (.-textContent (.-target %))]
-                            (update-cell row-idx col-idx text-content))}])})))
+                            (update-cell row-idx col-idx text-content))}
+         ;;@cell-value-cursor
+         ;;div content purposely left empty. content is managed by :component-did-update
+         ])})))
 
 ;; Update image-cell-renderer to take cell-value-cursor
 (defn image-cell-renderer [cell-value-cursor row-idx col-idx]
