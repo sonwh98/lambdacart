@@ -376,7 +376,7 @@
     (and (vector? sample-value)
          (every? #(and (map? %) (contains? % :image/url)) sample-value)) (:image types)
     ;; Check for single image URL string
-    (and (string? sample-value) 
+    (and (string? sample-value)
          (re-matches #"^https?://.*\.(jpg|jpeg|png|gif|bmp|webp|svg)(\?.*)?$" sample-value)) (:image types)
     (integer? sample-value) (:int types)
     (number? sample-value) (:float types)
