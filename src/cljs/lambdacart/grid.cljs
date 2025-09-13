@@ -1,6 +1,5 @@
 (ns lambdacart.grid
-  (:require [lambdacart.serde :as serde]
-            [lambdacart.stream :as stream]
+  (:require [lambdacart.stream :as stream]
             [lambdacart.rpc :as rpc]
             [reagent.core :as r]
             [reagent.dom.client :as rdc]
@@ -45,72 +44,74 @@
 
      [:div {:style {:width "20px" :height "20px" :padding "10px" :border-right "1px solid #ddd"}} ""]
      (doall
-      (for [[i column] (map-indexed vector columns)]
-        [:div {:key (str "h-" (:name column))
-               :style (if (:width column)
-                        ;; Column has been manually resized - use fixed width
-                        {:width (str (:width column) "px")
-                         :min-width "50px"
-                         :padding "10px"
-                         :border-right "1px solid #ddd"
-                         :display "flex"
-                         :justify-content "space-between"
-                         :align-items "center"
-                         :position "relative"
-                         :box-sizing "border-box"}
-                        ;; Column uses default sizing - flex to fill space
-                        {:flex "1"
-                         :min-width "50px"
-                         :padding "10px"
-                         :border-right "1px solid #ddd"
-                         :display "flex"
-                         :justify-content "space-between"
-                         :align-items "center"
-                         :position "relative"
-                         :box-sizing "border-box"})
-               :on-click (fn [e]
-                           ;; Only sort if not clicking on resize handle
-                           (when-not (= (.-target e) (.-currentTarget e))
-                             (let [rows (-> @grid-state :rows)
-                                   column-key (keyword (:name column))
-                                   new-dir (if (= i sort-col)
-                                             (if (= sort-dir :asc) :desc :asc)
-                                             :asc)
-                                   sorted-rows (vec (sort-by #(get % column-key)
-                                                             (if (= new-dir :desc) #(compare %2 %1) compare)
-                                                             rows))]
-                               (swap! grid-state assoc
-                                      :rows sorted-rows
-                                      :sort-col i
-                                      :sort-dir new-dir))))}
-         [:span (str (:name column))]
-         (when (= i sort-col)
-           [:span {:style {:margin-left "8px"}}
-            (if (= sort-dir :asc) "▲" "▼")])
-         ;; Resize handle
-         [:div {:style {:position "absolute"
-                        :right "0"
-                        :top "0"
-                        :bottom "0"
-                        :width "4px"
-                        :cursor "col-resize"
-                        :background "transparent"
-                        :z-index 10}
-                :on-mouse-down (fn [e]
-                                 (.preventDefault e)
-                                 (.stopPropagation e)
-                                 (let [start-x (.-clientX e)
-                                       header-element (.-parentElement (.-currentTarget e))
-                                       start-width (.-offsetWidth header-element)]
-                                   (letfn [(handle-mouse-move [move-e]
-                                             (let [delta (- (.-clientX move-e) start-x)
-                                                   new-width (max 50 (+ start-width delta))]
-                                               (swap! grid-state assoc-in [:columns i :width] new-width)))
-                                           (handle-mouse-up [_]
-                                             (.removeEventListener js/document "mousemove" handle-mouse-move)
-                                             (.removeEventListener js/document "mouseup" handle-mouse-up))]
-                                     (.addEventListener js/document "mousemove" handle-mouse-move)
-                                     (.addEventListener js/document "mouseup" handle-mouse-up))))}]]))]))
+      (map-indexed
+       (fn [i column]
+         [:div {:key (str "h-" (:name column))
+                :style (if (:width column)
+                         ;; Column has been manually resized - use fixed width
+                         {:width (str (:width column) "px")
+                          :min-width "50px"
+                          :padding "10px"
+                          :border-right "1px solid #ddd"
+                          :display "flex"
+                          :justify-content "space-between"
+                          :align-items "center"
+                          :position "relative"
+                          :box-sizing "border-box"}
+                         ;; Column uses default sizing - flex to fill space
+                         {:flex "1"
+                          :min-width "50px"
+                          :padding "10px"
+                          :border-right "1px solid #ddd"
+                          :display "flex"
+                          :justify-content "space-between"
+                          :align-items "center"
+                          :position "relative"
+                          :box-sizing "border-box"})
+                :on-click (fn [e]
+                            ;; Only sort if not clicking on resize handle
+                            (when-not (= (.-target e) (.-currentTarget e))
+                              (let [rows (-> @grid-state :rows)
+                                    column-key (keyword (:name column))
+                                    new-dir (if (= i sort-col)
+                                              (if (= sort-dir :asc) :desc :asc)
+                                              :asc)
+                                    sorted-rows (vec (sort-by #(get % column-key)
+                                                              (if (= new-dir :desc) #(compare %2 %1) compare)
+                                                              rows))]
+                                (swap! grid-state assoc
+                                       :rows sorted-rows
+                                       :sort-col i
+                                       :sort-dir new-dir))))}
+          [:span (str (:name column))]
+          (when (= i sort-col)
+            [:span {:style {:margin-left "8px"}}
+             (if (= sort-dir :asc) "▲" "▼")])
+          ;; Resize handle
+          [:div {:style {:position "absolute"
+                         :right "0"
+                         :top "0"
+                         :bottom "0"
+                         :width "4px"
+                         :cursor "col-resize"
+                         :background "transparent"
+                         :z-index 10}
+                 :on-mouse-down (fn [e]
+                                  (.preventDefault e)
+                                  (.stopPropagation e)
+                                  (let [start-x (.-clientX e)
+                                        header-element (.-parentElement (.-currentTarget e))
+                                        start-width (.-offsetWidth header-element)]
+                                    (letfn [(handle-mouse-move [move-e]
+                                              (let [delta (- (.-clientX move-e) start-x)
+                                                    new-width (max 50 (+ start-width delta))]
+                                                (swap! grid-state assoc-in [:columns i :width] new-width)))
+                                            (handle-mouse-up [_]
+                                              (.removeEventListener js/document "mousemove" handle-mouse-move)
+                                              (.removeEventListener js/document "mouseup" handle-mouse-up))]
+                                      (.addEventListener js/document "mousemove" handle-mouse-move)
+                                      (.addEventListener js/document "mouseup" handle-mouse-up))))}]])
+       columns))]))
 
 (defn handle-key-nav [row-idx col-idx e]
   (let [rows (-> @app/state :grid :rows)
@@ -267,36 +268,38 @@
      (when (seq images)
        [:div {:style {:display "flex" :flex-wrap "wrap" :gap "4px" :margin-bottom "4px"}}
         (doall
-         (for [[idx image] (map-indexed vector images)
-               :let [image-url (:image/url image)]]
-           ^{:key (str "img-" row-idx "-" col-idx "-" idx)}
-           [:div {:style {:position "relative" :display "inline-block"}}
-            [:img {:src image-url
-                   :style {:width "100px"
-                           :height "100px"
-                           :object-fit "cover"
-                           :border-radius "4px"
-                           :border "1px solid #ddd"}
-                   :on-error #(set! (-> % .-target .-style .-display) "none")}]
-            ;; Delete button for each image
-            [:button {:style {:position "absolute"
-                              :top "-4px"
-                              :right "-4px"
-                              :width "16px"
-                              :height "16px"
-                              :border-radius "50%"
-                              :border "none"
-                              :background "#ff4444"
-                              :color "white"
-                              :font-size "10px"
-                              :cursor "pointer"
-                              :display "flex"
-                              :align-items "center"
-                              :justify-content "center"}
-                      :on-click #(let [new-images (vec (concat (take idx images)
-                                                               (drop (inc idx) images)))]
-                                   (update-cell row-idx col-idx new-images))}
-             "×"]]))])
+         (map-indexed
+          (fn [idx image]
+            (let [image-url (:image/url image)]
+              ^{:key (str "img-" row-idx "-" col-idx "-" idx)}
+              [:div {:style {:position "relative" :display "inline-block"}}
+               [:img {:src image-url
+                      :style {:width "100px"
+                              :height "100px"
+                              :object-fit "cover"
+                              :border-radius "4px"
+                              :border "1px solid #ddd"}
+                      :on-error #(set! (-> % .-target .-style .-display) "none")}]
+               ;; Delete button for each image
+               [:button {:style {:position "absolute"
+                                 :top "-4px"
+                                 :right "-4px"
+                                 :width "16px"
+                                 :height "16px"
+                                 :border-radius "50%"
+                                 :border "none"
+                                 :background "#ff4444"
+                                 :color "white"
+                                 :font-size "10px"
+                                 :cursor "pointer"
+                                 :display "flex"
+                                 :align-items "center"
+                                 :justify-content "center"}
+                         :on-click #(let [new-images (vec (concat (take idx images)
+                                                                  (drop (inc idx) images)))]
+                                      (update-cell row-idx col-idx new-images))}
+                "×"]]))
+          images))])
 
      ;; Add new image input
      [:div {:style {:display "flex" :align-items "center" :gap "4px"}}
