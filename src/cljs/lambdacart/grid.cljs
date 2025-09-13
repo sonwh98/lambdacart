@@ -7,7 +7,6 @@
             [lambdacart.app :as app]
             [cljs.core.async :refer [chan put! <! >! close! timeout] :as async]))
 
-
 (defn delete-selected-rows [grid-state context-menu]
   (let [selected (-> @grid-state :selected-rows)
         rows (-> @grid-state :rows)]
@@ -458,20 +457,20 @@
          :key row-idx}
    [row-number-component row-idx selected-rows-cursor]
    (doall
-    (for [[col-idx column] (map-indexed vector @columns-cursor)]
-      ^{:key (str "cell-" row-idx "-" col-idx)}
-      [:div {:style (if (:width column)
-                      ;; Column has been manually resized - use fixed width
-                      {:width (str (:width column) "px")
-                       :min-width "50px"
-                       :border-right "1px solid #f9f9f9"
-                       :box-sizing "border-box"}
-                      ;; Column uses default sizing - flex to fill space
-                      {:flex "1"
-                       :min-width "50px"
-                       :border-right "1px solid #f9f9f9"
-                       :box-sizing "border-box"})}
-       [cell-component row-cursor row-idx col-idx]]))])
+    (map-indexed
+     (fn [col-idx column]
+       ^{:key (str "cell-" row-idx "-" col-idx)}
+       [:div {:style (if (:width column)
+                       {:width (str (:width column) "px")
+                        :min-width "50px"
+                        :border-right "1px solid #f9f9f9"
+                        :box-sizing "border-box"}
+                       {:flex "1"
+                        :min-width "50px"
+                        :border-right "1px solid #f9f9f9"
+                        :box-sizing "border-box"})}
+        [cell-component row-cursor row-idx col-idx]])
+     @columns-cursor))])
 
 (defn grid-component [grid-state context-menu-state]
   [:div {:on-click #(when (:visible? @context-menu-state)
