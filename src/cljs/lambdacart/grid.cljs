@@ -7,7 +7,6 @@
             [lambdacart.app :as app]
             [cljs.core.async :refer [chan put! <! >! close! timeout] :as async]))
 
-(defonce root (atom nil))
 
 (defn delete-selected-rows [grid-state context-menu]
   (let [selected (-> @grid-state :selected-rows)
@@ -397,8 +396,8 @@
                                    :type (detect-column-type header-kw sample-value)}))
                               headers))))))
 
-;; Simplified cell-component that delegates to column renderer
-(defn cell-component [row-idx col-idx]
+;; Update cell-component to use the passed row-cursor
+(defn cell-component [row-idx col-idx row-cursor]
   (let [columns-cursor (r/cursor app/state [:grid :columns])
         dirty-cells-cursor (r/cursor app/state [:grid :dirty-cells])
         column (nth @columns-cursor col-idx)
@@ -407,8 +406,8 @@
         cell-key [row-idx col-idx]
         is-dirty? (contains? @dirty-cells-cursor cell-key)
         is-db-id? (= column-key :db/id)
-        ;; Create a cursor for this specific cell
-        cell-value-cursor (r/cursor app/state [:grid :rows row-idx column-key])
+        ;; Use the passed row-cursor to create cell cursor
+        cell-value-cursor (r/cursor row-cursor [column-key])
         ;; Choose renderer based on column type or special cases
         renderer (cond
                    is-db-id? (:renderer (:readonly types))
@@ -416,7 +415,6 @@
     [:div {:style {:background (when is-dirty? "#fff3cd")}} ; Yellow background for dirty cells
      [renderer cell-value-cursor row-idx col-idx]]))
 
-;; Update row-number-component to create its own context-menu cursor
 (defn row-number-component [row-idx selected-rows-cursor]
   (let [context-menu-cursor (r/cursor app/state [:context-menu])]
     [:div {:style {:width "40px"
@@ -453,9 +451,8 @@
                                          :y (.-clientY e)})))}
      (inc row-idx)]))
 
-;; Update grid-row-component to remove context-menu-cursor parameter
+;; Update grid-row-component to pass row-cursor to cell-component
 (defn grid-row-component [row-idx row-cursor columns-cursor selected-rows-cursor]
-  (prn {:sonny-row-idx row-idx})
   [:div {:style {:display "flex"
                  :background (when (contains? @selected-rows-cursor row-idx)
                                "#e8f2ff")}
@@ -476,9 +473,8 @@
                        :min-width "50px"
                        :border-right "1px solid #f9f9f9"
                        :box-sizing "border-box"})}
-       [cell-component row-idx j]]))])
+       [cell-component row-idx j row-cursor]]))])
 
-;; Update grid-component to not pass context-menu-state to grid-row-component
 (defn grid-component [grid-state context-menu-state]
   [:div {:on-click #(when (:visible? @context-menu-state)
                       (swap! context-menu-state assoc :visible? false))
@@ -499,7 +495,6 @@
                [grid-row-component i row-cursor columns-cursor selected-rows-cursor]))
            (-> @grid-state :rows count range)))]])
 
-;; Create a top-level app component that includes both grid and context menu
 (defn app-component []
   (let [grid-state (r/cursor app/state [:grid])
         context-menu-state (r/cursor app/state [:context-menu])]
@@ -507,22 +502,22 @@
      [grid-component grid-state context-menu-state]
      [context-menu-component grid-state context-menu-state]]))
 
-;; Update mount-grid to render the app-component instead of grid-component directly
+(defonce root (atom nil))
+
 (defn mount-grid []
   (when-let [container (.getElementById js/document "app")]
     (when-not @root
       (reset! root (rdc/create-root container)))
 
-    (swap! app/state assoc :context-menu {:visible? false :x 0 :y 0})
-    (swap! app/state assoc :grid
-           {:rows []
-            :columns []
-            :selected-rows (sorted-set)
-            :sort-col nil
-            :sort-dir :asc
-            :dirty-cells #{}})
+    (swap! app/state assoc
+           :context-menu {:visible? false :x 0 :y 0}
+           :grid {:rows []
+                  :columns []
+                  :selected-rows (sorted-set)
+                  :sort-col nil
+                  :sort-dir :asc
+                  :dirty-cells #{}})
 
-    ;; Render the top-level app component
     (rdc/render @root [app-component])))
 
 (defn load-and-display-data []
@@ -534,7 +529,7 @@
       (js/console.log "Grid data loaded and displayed"))))
 
 (defn init! []
-  (mount-grid) ; Mount the grid first
+  (mount-grid)
 
   (let [wss (stream/map->WebSocketStream {:url "/wsstream"})
         wss (stream/open wss {})]
@@ -562,5 +557,7 @@
   "Called by shadow-cljs after code reload"
   (js/console.log "Code reloaded, refreshing grid...")
   (load-and-display-data))
+
+
 
 
