@@ -137,7 +137,6 @@
           (.focus next-el))))))
 
 (defn save-cell-value [entity-id attribute new-value]
-  "Save a cell value change to the backend via RPC"
   (rpc/invoke-with-response 'transact
                             [[:db/add entity-id attribute new-value]]))
 
@@ -153,13 +152,10 @@
     (when (pred value)
       (swap! app/state assoc-in [:grid :rows row-idx column-key] value)
       (if (= value original-value)
-        ;; Value unchanged, remove from dirty cells
         (swap! app/state update-in [:grid :dirty-cells] disj cell-key)
-        ;; Value changed, add to dirty cells
         (swap! app/state update-in [:grid :dirty-cells] (fnil conj #{}) cell-key)))))
 
 (defn save-cell-on-blur [row-idx col-idx]
-  "Save cell value when focus is lost"
   (let [row (get-in @app/state [:grid :rows row-idx])
         columns (get-in @app/state [:grid :columns])
         column (nth columns col-idx)
@@ -176,18 +172,15 @@
               (js/console.error "Failed to save cell value:" (:error response))
               (do
                 (js/console.log "Cell value saved successfully")
-                ;; Clear dirty state after successful save
                 (swap! app/state update-in [:grid :dirty-cells] disj cell-key))))
           (catch js/Error e
             (js/console.error "Error saving cell value:" e)))))))
 
 (defn load-grid-data []
-  "Load grid data via RPC and return the response channel"
   (rpc/invoke-with-response 'q '[:find [(pull ?e [* {:item/images [*]}]) ...]
                                  :where
                                  [?e :item/name _]]))
 
-;; Update text-cell-renderer to take cell-value-cursor
 (defn text-cell-renderer [cell-value-cursor row-idx col-idx]
   (let [div-ref (r/atom nil)
         is-focused (r/atom false)]
@@ -260,11 +253,9 @@
          ;;div content purposely left empty. content is managed by :component-did-update
          ])})))
 
-;; Update image-cell-renderer to take cell-value-cursor
 (defn image-cell-renderer [cell-value-cursor row-idx col-idx]
   (let [images (if (vector? @cell-value-cursor) @cell-value-cursor [])]
     [:div {:style {:display "flex" :flex-direction "column" :gap "4px" :padding "4px"}}
-     ;; Display existing images
      (when (seq images)
        [:div {:style {:display "flex" :flex-wrap "wrap" :gap "4px" :margin-bottom "4px"}}
         (doall
@@ -280,7 +271,6 @@
                               :border-radius "4px"
                               :border "1px solid #ddd"}
                       :on-error #(set! (-> % .-target .-style .-display) "none")}]
-               ;; Delete button for each image
                [:button {:style {:position "absolute"
                                  :top "-4px"
                                  :right "-4px"
@@ -301,7 +291,6 @@
                 "×"]]))
           images))])
 
-     ;; Add new image input
      [:div {:style {:display "flex" :align-items "center" :gap "4px"}}
       [:input {:type "text"
                :placeholder "Add image URL..."
@@ -335,7 +324,6 @@
                                  (set! (.-value input) ""))))}
        "Add"]]]))
 
-;; Update readonly-cell-renderer to take cell-value-cursor
 (defn readonly-cell-renderer [cell-value-cursor row-idx col-idx]
   [:div {:style {:padding "8px"
                  :background "#f5f5f5"
@@ -344,7 +332,6 @@
                  :cursor "not-allowed"}}
    (str @cell-value-cursor)])
 
-;; Update the types definition to include renderers
 (def types {:int {:pred integer?
                   :from-str js/parseInt
                   :to-str str
@@ -370,13 +357,10 @@
                        :renderer readonly-cell-renderer}})
 
 (defn detect-column-type [column-key sample-value]
-  "Detect column type based on column name and sample value"
   (cond
     (= column-key :db/id) (:readonly types)
-    ;; Check for image collections (vector of entities with :image/url)
     (and (vector? sample-value)
          (every? #(and (map? %) (contains? % :image/url)) sample-value)) (:image types)
-    ;; Check for single image URL string
     (and (string? sample-value)
          (re-matches #"^https?://.*\.(jpg|jpeg|png|gif|bmp|webp|svg)(\?.*)?$" sample-value)) (:image types)
     (integer? sample-value) (:int types)
@@ -384,7 +368,6 @@
     :else (:str types)))
 
 (defn process-grid-data [response]
-  "Process RPC response and update grid state"
   (let [rows (:results response)]
     (js/console.log "Loaded grid data:" rows)
     (when (seq rows)
@@ -398,7 +381,6 @@
                                    :type (detect-column-type header-kw sample-value)}))
                               headers))))))
 
-;; Update cell-component to use the passed row-cursor
 (defn cell-component [row-cursor row-idx col-idx]
   (let [columns-cursor (r/cursor app/state [:grid :columns])
         dirty-cells-cursor (r/cursor app/state [:grid :dirty-cells])
@@ -408,9 +390,7 @@
         cell-key [row-idx col-idx]
         is-dirty? (contains? @dirty-cells-cursor cell-key)
         is-db-id? (= column-key :db/id)
-        ;; Use the passed row-cursor to create cell cursor
         cell-value-cursor (r/cursor row-cursor [column-key])
-        ;; Choose renderer based on column type or special cases
         renderer (cond
                    is-db-id? (:renderer (:readonly types))
                    :else (:renderer column-type))]
@@ -521,7 +501,6 @@
     (rdc/render @root [app-component])))
 
 (defn load-and-display-data []
-  "Load grid data and update the display"
   (async/go
     (js/console.log "Loading grid data...")
     (let [response (<! (load-grid-data))]
