@@ -397,7 +397,7 @@
                               headers))))))
 
 ;; Update cell-component to use the passed row-cursor
-(defn cell-component [row-idx col-idx row-cursor]
+(defn cell-component [row-cursor row-idx col-idx]
   (let [columns-cursor (r/cursor app/state [:grid :columns])
         dirty-cells-cursor (r/cursor app/state [:grid :dirty-cells])
         column (nth @columns-cursor col-idx)
@@ -451,7 +451,6 @@
                                          :y (.-clientY e)})))}
      (inc row-idx)]))
 
-;; Update grid-row-component to pass row-cursor to cell-component
 (defn grid-row-component [row-idx row-cursor columns-cursor selected-rows-cursor]
   [:div {:style {:display "flex"
                  :background (when (contains? @selected-rows-cursor row-idx)
@@ -459,8 +458,8 @@
          :key row-idx}
    [row-number-component row-idx selected-rows-cursor]
    (doall
-    (for [[j column] (map-indexed vector @columns-cursor)]
-      ^{:key (str "cell-" row-idx "-" j)}
+    (for [[col-idx column] (map-indexed vector @columns-cursor)]
+      ^{:key (str "cell-" row-idx "-" col-idx)}
       [:div {:style (if (:width column)
                       ;; Column has been manually resized - use fixed width
                       {:width (str (:width column) "px")
@@ -472,7 +471,7 @@
                        :min-width "50px"
                        :border-right "1px solid #f9f9f9"
                        :box-sizing "border-box"})}
-       [cell-component row-idx j row-cursor]]))])
+       [cell-component row-cursor row-idx col-idx]]))])
 
 (defn grid-component [grid-state context-menu-state]
   [:div {:on-click #(when (:visible? @context-menu-state)
