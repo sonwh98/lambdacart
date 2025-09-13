@@ -208,12 +208,12 @@
                :data-row row-idx
                :data-col col-idx
                :style {:width "100%"
+                       :height "100%"
                        :min-height "40px"
                        :max-height "200px"
                        :padding "8px"
                        :border "none"
                        :background :inherit
-                       :border-bottom "1px solid #eee"
                        :box-sizing "border-box"
                        :outline "none"
                        :font-family "inherit"
@@ -223,7 +223,10 @@
                        :word-wrap "break-word"
                        :overflow-wrap "break-word"
                        :overflow-y "auto"
-                       :cursor "text"}
+                       :cursor "text"
+                       :display "flex"
+                       :align-items "flex-start"
+                       :margin "0"}
                :suppress-content-editable-warning true
                :on-focus #(do
                             (reset! is-focused true)
