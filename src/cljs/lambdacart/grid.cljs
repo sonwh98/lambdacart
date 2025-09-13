@@ -459,8 +459,7 @@
          :key row-idx}
    [row-number-component row-idx selected-rows-cursor]
    (doall
-    (for [[j column] (map-indexed vector @columns-cursor)
-          :let [column-key (keyword (:name column))]]
+    (for [[j column] (map-indexed vector @columns-cursor)]
       ^{:key (str "cell-" row-idx "-" j)}
       [:div {:style (if (:width column)
                       ;; Column has been manually resized - use fixed width
