@@ -478,8 +478,7 @@
 
 ;; Update grid-component to not pass context-menu-state to grid-row-component
 (defn grid-component [grid-state context-menu-state]
-  (let [rows (-> @grid-state :rows)
-        columns-cursor (r/cursor app/state [:grid :columns])
+  (let [columns-cursor (r/cursor app/state [:grid :columns])
         selected-rows-cursor (r/cursor app/state [:grid :selected-rows])]
     [:div {:on-click #(when (:visible? @context-menu-state)
                         (swap! context-menu-state assoc :visible? false))
@@ -493,7 +492,7 @@
                     :font-size "14px"
                     :position "relative"}}
       (doall
-       (for [[i row] (map-indexed vector rows)]
+       (for [i (-> @grid-state :rows count range)]
          (let [row-cursor (r/cursor app/state [:grid :rows i])]
            ^{:key (str "row-" i)}
            [grid-row-component i row-cursor columns-cursor selected-rows-cursor])))]]))
