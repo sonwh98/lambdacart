@@ -491,11 +491,11 @@
                     :font-family "sans-serif"
                     :font-size "14px"
                     :position "relative"}}
-      (doall
-       (for [i (-> @grid-state :rows count range)]
-         (let [row-cursor (r/cursor app/state [:grid :rows i])]
-           ^{:key (str "row-" i)}
-           [grid-row-component i row-cursor columns-cursor selected-rows-cursor])))]]))
+      (map (fn [i]
+             (let [row-cursor (r/cursor app/state [:grid :rows i])]
+               ^{:key (str "row-" i)}
+               [grid-row-component i row-cursor columns-cursor selected-rows-cursor]))
+           (-> @grid-state :rows count range))]]))
 
 ;; Create a top-level app component that includes both grid and context menu
 (defn app-component []
