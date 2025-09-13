@@ -478,24 +478,24 @@
 
 ;; Update grid-component to not pass context-menu-state to grid-row-component
 (defn grid-component [grid-state context-menu-state]
-  (let [columns-cursor (r/cursor app/state [:grid :columns])
-        selected-rows-cursor (r/cursor app/state [:grid :selected-rows])]
-    [:div {:on-click #(when (:visible? @context-menu-state)
-                        (swap! context-menu-state assoc :visible? false))
-           :on-context-menu #(.preventDefault %)}
-     [header grid-state]
-     [:div {:style {:width "100%"
-                    :height "90%"
-                    :border "1px solid #ccc"
-                    :overflow "auto"
-                    :font-family "sans-serif"
-                    :font-size "14px"
-                    :position "relative"}}
+  [:div {:on-click #(when (:visible? @context-menu-state)
+                      (swap! context-menu-state assoc :visible? false))
+         :on-context-menu #(.preventDefault %)}
+   [header grid-state]
+   [:div {:style {:width "100%"
+                  :height "90%"
+                  :border "1px solid #ccc"
+                  :overflow "auto"
+                  :font-family "sans-serif"
+                  :font-size "14px"
+                  :position "relative"}}
+    (let [columns-cursor (r/cursor app/state [:grid :columns])
+          selected-rows-cursor (r/cursor app/state [:grid :selected-rows])]
       (map (fn [i]
              (let [row-cursor (r/cursor app/state [:grid :rows i])]
                ^{:key (str "row-" i)}
                [grid-row-component i row-cursor columns-cursor selected-rows-cursor]))
-           (-> @grid-state :rows count range))]]))
+           (-> @grid-state :rows count range)))]])
 
 ;; Create a top-level app component that includes both grid and context menu
 (defn app-component []
