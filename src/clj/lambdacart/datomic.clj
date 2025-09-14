@@ -9,49 +9,30 @@
 (def db-uri
   (format "datomic:sql://lambdacart?jdbc:postgresql://localhost:5432/datomic?user=%s&password=%s"
           datomic-user datomic-password))
-(defonce conn (atom nil))
+(def conn (atom nil))
 
 (defn get-db []
   (when @conn
     (d/db @conn)))
 
+(defn reset-datomic! []
+  "Deletes and recreates the database with a fresh connection"
+  (when @conn
+    (println "Closing existing connection..."))
+  (reset! conn nil)
+  (d/delete-database db-uri)
+  (println "Database deleted")
+  (d/create-database db-uri)
+  (println "Database created")
+  (reset! conn (d/connect db-uri))
+  (println "New connection established"))
+
+
 (defn init-datomic! []
   (when-not @conn
     (d/create-database db-uri)
-
     (reset! conn (d/connect db-uri))
     (println "Datomic connection established")))
-
-(def schema
-  [{:db/ident :item/name
-    :db/valueType :db.type/string
-    :db/cardinality :db.cardinality/one
-    :db.install/_attribute :db.part/db}
-
-   {:db/ident :item/description
-    :db/valueType :db.type/string
-    :db/cardinality :db.cardinality/one
-    :db.install/_attribute :db.part/db}
-
-   {:db/ident :item/price
-    :db/valueType :db.type/long
-    :db/cardinality :db.cardinality/one
-    :db.install/_attribute :db.part/db}
-
-   {:db/ident :item/images
-    :db/valueType :db.type/ref
-    :db/cardinality :db.cardinality/many
-    :db/doc "References to image entities associated with the tour"}
-
-   {:db/ident :image/url
-    :db/valueType :db.type/string
-    :db/cardinality :db.cardinality/one
-    :db/doc "URL of the image"}
-
-   {:db/ident :image/alt
-    :db/valueType :db.type/string
-    :db/cardinality :db.cardinality/one
-    :db/doc "Alternative text for the image"}])
 
 (def datomic-readers
   {'db/id datomic.db/id-literal
@@ -63,10 +44,18 @@
   @conn)
 
 (comment
+  (def conn (atom nil))
   (init-datomic!)
+  (reset-datomic!)
+  (d/create-database db-uri)
   (d/delete-database db-uri)
-
+  
+  (def schema (->> "resources/schema.edn" slurp (edn/read-string {:readers datomic-readers})))
   @(d/transact @conn schema)
+
+  
+  (def tt (->> "resources/tt-cosmetics.edn" slurp (edn/read-string {:readers datomic-readers})))
+  @(d/transact @conn tt)
 
   (def sample-data (->> "resources/tours.edn" slurp (edn/read-string {:readers datomic-readers})))
 
