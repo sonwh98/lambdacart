@@ -1,0 +1,40 @@
+[
+ ;; Create tenant with temp ID
+ {:db/id "tenant-1"
+  :tenant/id #uuid "550e8400-e29b-41d4-a716-446655440001"
+  :tenant/name "TT Cosmetics"}
+
+ ;; Create catalog with temp ID
+ {:db/id "catalog-1"
+  :catalog/id #uuid "550e8400-e29b-41d4-a716-446655440002"
+  :catalog/name "TT Cosmetics Collection"
+  :catalog/description "Premium beauty products for the modern woman"}
+
+ ;; Link tenant to catalog using temp IDs
+ {:db/id "tenant-1"
+  :tenant/catalogs ["catalog-1"]}
+
+ ;; Create first tagory
+ {:db/id "tagory-1"
+  :tagory/id #uuid "550e8400-e29b-41d4-a716-446655440100"
+  :tagory/name "Lips"
+  :tagory/description "Lip makeup products"
+  :tagory/catalog "catalog-1"}
+
+ ;; Create second tagory
+ {:db/id "tagory-2"
+  :tagory/id #uuid "550e8400-e29b-41d4-a716-446655440101"
+  :tagory/name "Eyes"
+  :tagory/description "Eye makeup products"
+  :tagory/catalog "catalog-1"}
+
+ ;; Create item for Lips tagory
+ {:db/id "item-1"
+  :item/id #uuid "550e8400-e29b-41d4-a716-446655440010"
+  :item/name "Matte Liquid Lipstick - Ruby Red"
+  :item/description "Long-lasting matte liquid lipstick with rich, vibrant color that stays put all day. Comfortable, non-drying formula."
+  :item/price 2499
+  :item/catalog "catalog-1"
+  :item/tagories ["tagory-1"]}]
+
+

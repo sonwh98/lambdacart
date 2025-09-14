@@ -1,0 +1,128 @@
+[{:db/ident :tenant/id
+  :db/valueType :db.type/uuid
+  :db/cardinality :db.cardinality/one
+  :db/unique :db.unique/identity
+  :db/doc "External UUID identifier for tenant"
+  :db.install/_attribute :db.part/db}
+
+ {:db/ident :tenant/name
+  :db/valueType :db.type/string
+  :db/cardinality :db.cardinality/one
+  :db/doc "Display name for a tenant (not unique)"
+  :db.install/_attribute :db.part/db}
+
+ {:db/ident :catalog/id
+  :db/valueType :db.type/uuid
+  :db/cardinality :db.cardinality/one
+  :db/unique :db.unique/identity
+  :db/doc "External UUID identifier for catalog"
+  :db.install/_attribute :db.part/db}
+
+ {:db/ident :catalog/name
+  :db/valueType :db.type/string
+  :db/cardinality :db.cardinality/one
+  :db/doc "Name of the catalog"
+  :db.install/_attribute :db.part/db}
+
+ {:db/ident :catalog/description
+  :db/valueType :db.type/string
+  :db/cardinality :db.cardinality/one
+  :db/doc "Description of the catalog"
+  :db.install/_attribute :db.part/db}
+
+ {:db/ident :tenant/catalogs
+  :db/valueType :db.type/ref
+  :db/cardinality :db.cardinality/many
+  :db/doc "Catalogs that this tenant has access to"
+  :db.install/_attribute :db.part/db}
+
+ ;; Tagory schema
+ {:db/ident :tagory/id
+  :db/valueType :db.type/uuid
+  :db/cardinality :db.cardinality/one
+  :db/unique :db.unique/identity
+  :db/doc "External UUID identifier for tagory"
+  :db.install/_attribute :db.part/db}
+
+ {:db/ident :tagory/name
+  :db/valueType :db.type/string
+  :db/cardinality :db.cardinality/one
+  :db/doc "Name of the tagory"
+  :db.install/_attribute :db.part/db}
+
+ {:db/ident :tagory/description
+  :db/valueType :db.type/string
+  :db/cardinality :db.cardinality/one
+  :db/doc "Description of the tagory"
+  :db.install/_attribute :db.part/db}
+
+ {:db/ident :tagory/parent
+  :db/valueType :db.type/ref
+  :db/cardinality :db.cardinality/one
+  :db/doc "Parent tagory for hierarchical organization"
+  :db.install/_attribute :db.part/db}
+
+ {:db/ident :tagory/catalog
+  :db/valueType :db.type/ref
+  :db/cardinality :db.cardinality/one
+  :db/doc "Catalog this tagory belongs to"
+  :db.install/_attribute :db.part/db}
+
+ {:db/ident :item/id
+  :db/valueType :db.type/uuid
+  :db/cardinality :db.cardinality/one
+  :db/unique :db.unique/identity
+  :db/doc "External UUID identifier for item"
+  :db.install/_attribute :db.part/db}
+
+ {:db/ident :item/name
+  :db/valueType :db.type/string
+  :db/cardinality :db.cardinality/one
+  :db.install/_attribute :db.part/db}
+
+ {:db/ident :item/description
+  :db/valueType :db.type/string
+  :db/cardinality :db.cardinality/one
+  :db.install/_attribute :db.part/db}
+
+ {:db/ident :item/price
+  :db/valueType :db.type/long
+  :db/cardinality :db.cardinality/one
+  :db.install/_attribute :db.part/db}
+
+ {:db/ident :item/catalog
+  :db/valueType :db.type/ref
+  :db/cardinality :db.cardinality/one
+  :db/doc "The catalog this item belongs to"
+  :db.install/_attribute :db.part/db}
+
+ {:db/ident :item/tagories
+  :db/valueType :db.type/ref
+  :db/cardinality :db.cardinality/many
+  :db/doc "Tagories assigned to this item (can be multiple)"
+  :db.install/_attribute :db.part/db}
+
+ {:db/ident :item/images
+  :db/valueType :db.type/ref
+  :db/cardinality :db.cardinality/many
+  :db/doc "References to image entities associated with the item"
+  :db.install/_attribute :db.part/db}
+
+ {:db/ident :image/id
+  :db/valueType :db.type/uuid
+  :db/cardinality :db.cardinality/one
+  :db/unique :db.unique/identity
+  :db/doc "External UUID identifier for image"
+  :db.install/_attribute :db.part/db}
+
+ {:db/ident :image/url
+  :db/valueType :db.type/string
+  :db/cardinality :db.cardinality/one
+  :db/doc "URL of the image"
+  :db.install/_attribute :db.part/db}
+
+ {:db/ident :image/alt
+  :db/valueType :db.type/string
+  :db/cardinality :db.cardinality/one
+  :db/doc "Alternative text for the image"
+  :db.install/_attribute :db.part/db}]
