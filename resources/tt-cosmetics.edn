@@ -117,6 +117,113 @@
   :item/description "Smoothing eye primer that extends eyeshadow wear. Creates perfect base for color application."
   :item/price 2599
   :item/catalog "catalog-1"
-  :item/tagories ["tagory-2"]}]
+  :item/tagories ["tagory-2"]}
+
+ ;; Images for all items
+ 
+ ;; Images for item-1 (Matte Liquid Lipstick)
+ {:db/id "image-1"
+  :image/id #uuid "550e8400-e29b-41d4-a716-446655440100"
+  :image/url "https://images.unsplash.com/photo-1586495777744-4413f21062fa?w=400&h=400&fit=crop&crop=center"
+  :image/alt "Matte Liquid Lipstick Ruby Red"}
+ 
+ {:db/id "image-2"
+  :image/id #uuid "550e8400-e29b-41d4-a716-446655440101"
+  :image/url "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=400&fit=crop&crop=center"
+  :image/alt "Lipstick application close-up"}
+
+ ;; Images for item-2 (Glossy Lip Tint)
+ {:db/id "image-3"
+  :image/id #uuid "550e8400-e29b-41d4-a716-446655440102"
+  :image/url "https://images.unsplash.com/photo-1583001931096-959e9a1a6223?w=400&h=400&fit=crop&crop=center"
+  :image/alt "Glossy Lip Tint Pink Blush"}
+
+ ;; Images for item-3 (Velvet Lipstick)
+ {:db/id "image-4"
+  :image/id #uuid "550e8400-e29b-41d4-a716-446655440103"
+  :image/url "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=400&h=400&fit=crop&crop=center"
+  :image/alt "Velvet Lipstick Berry Crush"}
+
+ ;; Images for item-4 (Lip Liner)
+ {:db/id "image-5"
+  :image/id #uuid "550e8400-e29b-41d4-a716-446655440104"
+  :image/url "https://images.unsplash.com/photo-1559056199-641a0ac8b55e?w=400&h=400&fit=crop&crop=center"
+  :image/alt "Lip Liner Classic Nude"}
+
+ ;; Images for item-5 (Lip Gloss)
+ {:db/id "image-6"
+  :image/id #uuid "550e8400-e29b-41d4-a716-446655440105"
+  :image/url "https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?w=400&h=400&fit=crop&crop=center"
+  :image/alt "Lip Gloss Crystal Clear"}
+
+ ;; Images for item-6 (Lip Balm)
+ {:db/id "image-7"
+  :image/id #uuid "550e8400-e29b-41d4-a716-446655440106"
+  :image/url "https://images.unsplash.com/photo-1596755389378-c31d21fd1273?w=400&h=400&fit=crop&crop=center"
+  :image/alt "Lip Balm Vanilla Mint"}
+
+ ;; Images for item-7 (Waterproof Mascara)
+ {:db/id "image-8"
+  :image/id #uuid "550e8400-e29b-41d4-a716-446655440107"
+  :image/url "https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=400&h=400&fit=crop&crop=center"
+  :image/alt "Waterproof Mascara Jet Black"}
+
+ ;; Images for item-8 (Eyeshadow Palette)
+ {:db/id "image-9"
+  :image/id #uuid "550e8400-e29b-41d4-a716-446655440108"
+  :image/url "https://images.unsplash.com/photo-1512496015851-a90fb38ba796?w=400&h=400&fit=crop&crop=center"
+  :image/alt "Eyeshadow Palette Smoky Nights"}
+
+ ;; Images for item-9 (Liquid Eyeliner)
+ {:db/id "image-10"
+  :image/id #uuid "550e8400-e29b-41d4-a716-446655440109"
+  :image/url "https://images.unsplash.com/photo-1503236647147-89d4447f2055?w=400&h=400&fit=crop&crop=center"
+  :image/alt "Liquid Eyeliner Precision Black"}
+
+ ;; Images for item-10 (Eyebrow Pencil)
+ {:db/id "image-11"
+  :image/id #uuid "550e8400-e29b-41d4-a716-446655440110"
+  :image/url "https://images.unsplash.com/photo-1570554886111-e80fcca6a029?w=400&h=400&fit=crop&crop=center"
+  :image/alt "Eyebrow Pencil Medium Brown"}
+
+ ;; Images for item-11 (Eye Primer)
+ {:db/id "image-12"
+  :image/id #uuid "550e8400-e29b-41d4-a716-446655440111"
+  :image/url "https://images.unsplash.com/photo-1556228578-8c89e6adf883?w=400&h=400&fit=crop&crop=center"
+  :image/alt "Eye Primer Neutral Base"}
+
+ ;; Link images to items
+ {:db/id "item-1"
+  :item/images ["image-1" "image-2"]}
+
+ {:db/id "item-2"
+  :item/images ["image-3"]}
+
+ {:db/id "item-3"
+  :item/images ["image-4"]}
+
+ {:db/id "item-4"
+  :item/images ["image-5"]}
+
+ {:db/id "item-5"
+  :item/images ["image-6"]}
+
+ {:db/id "item-6"
+  :item/images ["image-7"]}
+
+ {:db/id "item-7"
+  :item/images ["image-8"]}
+
+ {:db/id "item-8"
+  :item/images ["image-9"]}
+
+ {:db/id "item-9"
+  :item/images ["image-10"]}
+
+ {:db/id "item-10"
+  :item/images ["image-11"]}
+
+ {:db/id "item-11"
+  :item/images ["image-12"]}]
 
 
