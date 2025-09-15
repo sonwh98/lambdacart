@@ -177,7 +177,7 @@
  ;; Images for item-9 (Liquid Eyeliner)
  {:db/id "image-10"
   :image/id #uuid "550e8400-e29b-41d4-a716-446655440109"
-  :image/url "https://images.unsplash.com/photo-1503236647147-89d4447f2055?w=400&h=400&fit=crop&crop=center"
+  :image/url "https://images.unsplash.com/photo-1512496015851-a90fb38ba796?w=400&h=400&fit=crop&crop=center"
   :image/alt "Liquid Eyeliner Precision Black"}
 
  ;; Images for item-10 (Eyebrow Pencil)

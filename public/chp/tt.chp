@@ -1,0 +1,82 @@
+(require '[datomic.api :as d]
+         '[datomic.db])
+
+(def datomic-user (System/getenv "DATOMIC_USER"))
+(def datomic-password (System/getenv "DATOMIC_PASSWORD"))
+
+(def db-uri
+  (format "datomic:sql://lambdacart?jdbc:postgresql://localhost:5432/datomic?user=%s&password=%s"
+          datomic-user datomic-password))
+(def conn (d/connect db-uri))
+(def db (d/db conn))
+
+;; Query tagories for TT Cosmetics
+(def tagories 
+  (->> (d/q '[:find ?tagory-name ?tagory-id
+              :in $ ?tenant-name
+              :where
+              [?tenant :tenant/name ?tenant-name]
+              [?tenant :tenant/catalogs ?catalog]
+              [?tagory :tagory/catalog ?catalog]
+              [?tagory :tagory/name ?tagory-name]
+              [?tagory :tagory/id ?tagory-id]]
+            db "TT Cosmetics")
+       (map (fn [[name id]] {:name name :id id}))))
+
+;; Query items for TT Cosmetics - convert to maps
+(def items
+  (->> (d/q '[:find ?item ?name ?description ?price ?image-url
+              :in $ ?tenant-name
+              :where
+              [?tenant :tenant/name ?tenant-name]
+              [?tenant :tenant/catalogs ?catalog]
+              [?item :item/catalog ?catalog]
+              [?item :item/name ?name]
+              [?item :item/description ?description]
+              [?item :item/price ?price]
+              [?item :item/images ?image]
+              [?image :image/url ?image-url]]
+            db "TT Cosmetics")
+       (mapv (fn [[item-id name description price image-url]]
+              {:id item-id
+               :name name
+               :description description
+               :price price
+               :image-url image-url}))))
+
+[:html {:lang "en"}
+ [:head
+  [:meta {:charset "UTF-8"}]
+  [:meta {:name "viewport" :content "width=device-width, initial-scale=1.0"}]
+  [:title "TT Cosmetics"]
+  [:link {:rel "stylesheet" :href "/css/style.css"}]
+  [:script {:src "/js/cosmetics.js"}]]
+ [:body
+  [:div.header-container
+   [:div.search-container
+    [:input.search-box {:type "text" :placeholder "Search cosmetics..."}]]
+   [:button.menu-toggle {:onclick "lambdacart.cosmetics.toggleMenu()"}
+    [:span.hamburger]]
+   [:nav.navigation
+    [:div.tab-bar
+     [:button.tab {:class "active"} "All Products"]
+     ;; Dynamically generate tagory tabs
+     (for [tagory tagories]
+       [:button.tab 
+        {:data-tagory-id (str (:id tagory))
+         :onclick (str "lambdacart.cosmetics.filterByTagory('" (:id tagory) "')")}
+        (:name tagory)])]]]
+
+  [:div.card-grid
+   (for [item items]
+     [:div.card {:data-item-id (str (:id item))}
+      [:img {:src (:image-url item)
+             :alt (:name item)
+             :style {:width "100%" :height 200 :object-fit :cover}}]
+      [:div.card-content
+       [:h3 (:name item)]
+       [:p (:description item)]
+       [:div.price 
+        {:style {:font-weight :bold :color "#e91e63" :font-size "1.2em"}}
+        "$" (format "%.2f" (/ (:price item) 100.0))]]])]]]
+
