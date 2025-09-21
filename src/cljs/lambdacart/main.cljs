@@ -15,6 +15,11 @@
        (mapcat :items)
        (vec)))
 
+(defn add-to-cart [item]
+  "Add item to shopping cart"
+  (js/console.log "Added to cart:" (:item/name item))
+  (js/alert (str "Added " (:item/name item) " to cart!")))
+
 (defn tabs [state]
   (let [tagories (get-in @state [:catalogs 0 :tagories])
         active-tagory (:active-tagory @state)]
@@ -55,16 +60,47 @@
    [:div.card-grid
     (for [item (:display-items @state)]
       [:div.card {:key (:item/id item)
-                  :data-item-id (str (:id item))}
+                  :data-item-id (str (:id item))
+                  :style {:display "flex"
+                          :flex-direction "column"
+                          :height "450px"}}  ; Fixed height for all cards
        [:img {:src (-> item :item/images first :image/url)
               :alt (:item/name item)
-              :style {:width "100%" :height 200 :object-fit :cover}}]
+              :style {:width "100%" 
+                      :height "200px" 
+                      :object-fit "cover"
+                      :flex-shrink 0}}]  ; Image won't shrink
        [:div.card-content
-        [:h3 (:item/name item)]
-        [:p (:item/description item)]
-        [:div.price
-         {:style {:font-weight :bold :color "#e91e63" :font-size "1.2em"}}
-         "$" (gstring/format "%.2f" (/ (:item/price item) 100.0))]]])]])
+        {:style {:display "flex"
+                 :flex-direction "column"
+                 :flex-grow 1
+                 :padding "16px"}}
+        [:h3 {:style {:margin "0 0 8px 0"}} (:item/name item)]
+        [:p {:style {:margin "0 0 auto 0"  ; Push everything below down
+                     :overflow "hidden"
+                     :display "-webkit-box"
+                     :-webkit-line-clamp 4  ; Limit to 4 lines
+                     :-webkit-box-orient "vertical"
+                     :text-overflow "ellipsis"
+                     :flex-grow 1}} 
+         (:item/description item)]
+        
+        ;; Price and button always at bottom
+        [:div {:style {:margin-top "auto"}}  ; This pushes to bottom
+         [:div.price
+          {:style {:font-weight :bold :color "#e91e63" :font-size "1.2em"
+                   :margin-bottom "10px"}}
+          "$" (gstring/format "%.2f" (/ (:item/price item) 100.0))]
+         [:button.add-to-cart-btn
+          {:style {:background "#e91e63"
+                   :color "white"
+                   :border "none"
+                   :border-radius "5px"
+                   :padding "8px 16px"
+                   :cursor "pointer"
+                   :width "100%"}
+           :on-click #(add-to-cart item)}
+          "Add to Cart"]]]])]])
 
 (defonce root (atom nil))
 
