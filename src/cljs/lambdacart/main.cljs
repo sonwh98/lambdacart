@@ -8,17 +8,22 @@
             [goog.string :as gstring]
             [goog.string.format]))
 
-(defn tabs [tagories active-tagory]
-  [:div
-   (for [tagory @tagories
-         :let [id (:tagory/id tagory)]]
-     [:button.tab
-      {:key id
-       :data-tagory-id id
-       :class (when (= active-tagory tagory)
-                "active")
-       :on-click #(swap! app/state assoc :active-tagory tagory)}
-      (:tagory/name tagory)])])
+(defn tabs [state]
+  (let [tagories (get-in @state [:catalogs 0 :tagories])
+        active-tagory (:active-tagory @state)]
+    [:div
+     (for [tagory tagories
+           :let [id (:tagory/id tagory)]]
+       [:button.tab
+        {:key id
+         :data-tagory-id id
+         :class (when (= active-tagory tagory)
+                  "active")
+         :on-click #(let [active-tagory tagory]
+                      (swap! app/state assoc
+                             :active-tagory active-tagory
+                             :display-items (:items tagory)))}
+        (:tagory/name tagory)])]))
 
 (defn main-ui [state]
   [:div
@@ -35,28 +40,21 @@
                                "active")
                       :on-click #(swap! app/state assoc :active-tagory nil)}
          "All Products"]
-        [tabs (r/cursor state [:catalogs 0 :tagories]) (:active-tagory @state)]])]]
+        [tabs state]])]]
 
    [:div.card-grid
-    (let [catalogs (:catalogs @state)
-          active-tagory (:active-tagory @state)
-          all-items (if active-tagory
-                      (:items active-tagory)
-                      (first (mapcat (fn [catalog]
-                                       (mapv :items (-> catalog :tagories)))
-                                     catalogs)))]
-      (for [item all-items]
-        [:div.card {:key (:item/id item)
-                    :data-item-id (str (:id item))}
-         [:img {:src (-> item :item/images first :image/url)
-                :alt (:item/name item)
-                :style {:width "100%" :height 200 :object-fit :cover}}]
-         [:div.card-content
-          [:h3 (:item/name item)]
-          [:p (:item/description item)]
-          [:div.price
-           {:style {:font-weight :bold :color "#e91e63" :font-size "1.2em"}}
-           "$" (gstring/format "%.2f" (/ (:price item) 100.0))]]]))]])
+    (for [item (:display-items @state)]
+      [:div.card {:key (:item/id item)
+                  :data-item-id (str (:id item))}
+       [:img {:src (-> item :item/images first :image/url)
+              :alt (:item/name item)
+              :style {:width "100%" :height 200 :object-fit :cover}}]
+       [:div.card-content
+        [:h3 (:item/name item)]
+        [:p (:item/description item)]
+        [:div.price
+         {:style {:font-weight :bold :color "#e91e63" :font-size "1.2em"}}
+         "$" (gstring/format "%.2f" (/ (:price item) 100.0))]]])]])
 
 (defonce root (atom nil))
 
