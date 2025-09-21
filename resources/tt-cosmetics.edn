@@ -131,7 +131,6 @@
   :image/id #uuid "550e8400-e29b-41d4-a716-446655440101"
   :image/url "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=400&fit=crop&crop=center"
   :image/alt "Lipstick application close-up"}
-
  ;; Images for item-2 (Glossy Lip Tint)
  {:db/id "image-3"
   :image/id #uuid "550e8400-e29b-41d4-a716-446655440102"
@@ -177,7 +176,7 @@
  ;; Images for item-9 (Liquid Eyeliner)
  {:db/id "image-10"
   :image/id #uuid "550e8400-e29b-41d4-a716-446655440109"
-  :image/url "https://images.unsplash.com/photo-1512496015851-a90fb38ba796?w=400&h=400&fit=crop&crop=center"
+  :image/url "https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=400&h=400&fit=crop&crop=center"
   :image/alt "Liquid Eyeliner Precision Black"}
 
  ;; Images for item-10 (Eyebrow Pencil)
