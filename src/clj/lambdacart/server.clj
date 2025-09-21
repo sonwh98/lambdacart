@@ -75,6 +75,43 @@
                        :available-functions (keys @available-functions)
                        :server-time (java.util.Date.)}))
 
+(defn get-tenant [tenant-name]
+  "Get tenant with catalogs/tagories/items using a single query and post-processing"
+  (let [db (datomic/get-db)
+        ;; Single query to get all related data
+        raw-data (d/q '[:find (pull ?tenant [:tenant/id :tenant/name])
+                        (pull ?catalog [:catalog/id :catalog/name :catalog/description])
+                        (pull ?tagory [:tagory/id :tagory/name :tagory/description :tagory/parent])
+                        (pull ?item [:item/id :item/name :item/description :item/price
+                                     {:item/images [:image/id :image/url :image/alt]}])
+                        :in $ ?tenant-name
+                        :where
+                        [?tenant :tenant/name ?tenant-name]
+                        [?tenant :tenant/catalogs ?catalog]
+                        [?tagory :tagory/catalog ?catalog]
+                        [?item :item/tagories ?tagory]]
+                      db tenant-name)]
+
+    (when (seq raw-data)
+      (let [tenant (first (first raw-data))
+
+            ;; Group by catalog, then by tagory
+            grouped-by-catalog
+            (->> raw-data
+                 (group-by second) ; group by catalog
+                 (mapv (fn [[catalog items-data]]
+                         (let [grouped-by-tagory
+                               (->> items-data
+                                    (group-by #(nth % 2)) ; group by tagory
+                                    (map (fn [[tagory item-data]]
+                                           (assoc tagory :items (mapv #(nth % 3) item-data)))))]
+                           (assoc catalog :tagories grouped-by-tagory)))))]
+
+        (assoc tenant :catalogs grouped-by-catalog)))))
+
+(register-function! 'get-tenant
+                    get-tenant)
+
 (defn send-response [channel response]
   (when response
     (let [response-data (serde/edn->transit response)]

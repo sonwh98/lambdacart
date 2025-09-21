@@ -4,45 +4,59 @@
             [lambdacart.rpc :as rpc]
             [lambdacart.stream :as stream]
             [reagent.core :as r]
-            [reagent.dom.client :as rdc]))
+            [reagent.dom.client :as rdc]
+            [goog.string :as gstring]
+            [goog.string.format]))
+
+(defn tabs [tagories active-tagory]
+  [:div
+   (for [tagory @tagories
+         :let [id (:tagory/id tagory)]]
+     [:button.tab
+      {:key id
+       :data-tagory-id id
+       :class (when (= active-tagory tagory)
+                "active")
+       :on-click #(swap! app/state assoc :active-tagory tagory)}
+      (:tagory/name tagory)])])
 
 (defn main-ui [state]
-  [:html {:lang "en"}
-   [:head
-    [:meta {:charset "UTF-8"}]
-    [:meta {:name "viewport" :content "width=device-width, initial-scale=1.0"}]
-    [:title "TT Cosmetics"]
-    [:link {:rel "stylesheet" :href "/css/style.css"}]
-    [:script {:src "/js/cosmetics.js"}]]
-   [:body
-    [:div.header-container
-     [:div.search-container
-      [:input.search-box {:type "text" :placeholder "Search cosmetics..."}]]
-     [:button.menu-toggle {:onclick "lambdacart.cosmetics.toggleMenu()"}
-      [:span.hamburger]]
-     [:nav.navigation
-      [:div.tab-bar
-       [:button.tab {:class "active"} "All Products"]
-       ;; Dynamically generate tagory tabs
-       #_(for [tagory tagories]
-           [:button.tab 
-            {:data-tagory-id (str (:id tagory))
-             :onclick (str "lambdacart.cosmetics.filterByTagory('" (:id tagory) "')")}
-            (:name tagory)])]]]
+  [:div
+   [:div.header-container
+    [:div.search-container
+     [:input.search-box {:type "text" :placeholder "Search cosmetics..."}]]
+    [:button.menu-toggle {:onclick "lambdacart.cosmetics.toggleMenu()"}
+     [:span.hamburger]]
+    [:nav.navigation
+     (let [active-tagory (:active-tagory @state)]
+       [:div.tab-bar
+        [:button.tab {:class (if (or (nil? active-tagory)
+                                     (= active-tagory {:tagory/name :all}))
+                               "active")
+                      :on-click #(swap! app/state assoc :active-tagory nil)}
+         "All Products"]
+        [tabs (r/cursor state [:catalogs 0 :tagories]) (:active-tagory @state)]])]]
 
-    [:div.card-grid
-     #_(for [item items]
-         [:div.card {:data-item-id (str (:id item))}
-          [:img {:src (:image-url item)
-                 :alt (:name item)
-                 :style {:width "100%" :height 200 :object-fit :cover}}]
-          [:div.card-content
-           [:h3 (:name item)]
-           [:p (:description item)]
-           [:div.price 
-            {:style {:font-weight :bold :color "#e91e63" :font-size "1.2em"}}
-            "$" (format "%.2f" (/ (:price item) 100.0))]]])]]]
-  )
+   [:div.card-grid
+    (let [catalogs (:catalogs @state)
+          active-tagory (:active-tagory @state)
+          all-items (if active-tagory
+                      (:items active-tagory)
+                      (first (mapcat (fn [catalog]
+                                       (mapv :items (-> catalog :tagories)))
+                                     catalogs)))]
+      (for [item all-items]
+        [:div.card {:key (:item/id item)
+                    :data-item-id (str (:id item))}
+         [:img {:src (-> item :item/images first :image/url)
+                :alt (:item/name item)
+                :style {:width "100%" :height 200 :object-fit :cover}}]
+         [:div.card-content
+          [:h3 (:item/name item)]
+          [:p (:item/description item)]
+          [:div.price
+           {:style {:font-weight :bold :color "#e91e63" :font-size "1.2em"}}
+           "$" (gstring/format "%.2f" (/ (:price item) 100.0))]]]))]])
 
 (defonce root (atom nil))
 
@@ -62,9 +76,25 @@
 
     (rdc/render @root [main-ui state])))
 
+(defn load-tenant [tenant-name]
+  (async/go
+    (try
+      (js/console.log "Loading tenant:" tenant-name)
+
+      ;; Call the server-side get-tenant function via RPC
+      (let [response (<! (rpc/invoke-with-response 'get-tenant tenant-name))]
+
+        (js/console.log "Server response:" (clj->js response))
+        (when response
+          ;;(cljs.pprint/pprint response)
+          (reset! app/state response)))
+      (catch js/Error e
+        (js/console.error "Error loading tenant:" e)
+        (js/alert (str "Error loading tenant: " (.-message e)))))))
+
 (defn init! []
   (mount-main-ui app/state)
-  
+
   (let [wss (stream/map->WebSocketStream {:url "/wsstream"})
         wss (stream/open wss {})]
     (swap! app/state assoc :wss wss)
@@ -75,7 +105,7 @@
       (js/console.log "Waiting for WebSocket connection...")
       ;; Wait for the WebSocket to be in OPEN state
       (loop [attempts 0]
-        (if (and (< attempts 50)                    ; Max 5 seconds
+        (if (and (< attempts 50) ; Max 5 seconds
                  (not= (.-readyState (:ws wss)) 1)) ; 1 = OPEN
           (do
             (<! (async/timeout 100))
@@ -83,5 +113,5 @@
           (if (= (.-readyState (:ws wss)) 1)
             (do
               (js/console.log "WebSocket connected, loading data...")
-              )
+              (load-tenant "TT Cosmetics"))
             (js/console.error "WebSocket failed to connect after 5 seconds")))))))
