@@ -27,7 +27,6 @@
   (reset! conn (d/connect db-uri))
   (println "New connection established"))
 
-
 (defn init-datomic! []
   (when-not @conn
     (d/create-database db-uri)
@@ -49,11 +48,10 @@
   (reset-datomic!)
   (d/create-database db-uri)
   (d/delete-database db-uri)
-  
+
   (def schema (->> "resources/schema.edn" slurp (edn/read-string {:readers datomic-readers})))
   @(d/transact @conn schema)
 
-  
   (def tt (->> "resources/tt-cosmetics.edn" slurp (edn/read-string {:readers datomic-readers})))
   @(d/transact @conn tt)
 
