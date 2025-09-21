@@ -8,6 +8,13 @@
             [goog.string :as gstring]
             [goog.string.format]))
 
+(defn get-all-items [tenant-data]
+  "Get all items from all catalogs and tagories"
+  (->> (:catalogs tenant-data)
+       (mapcat :tagories)
+       (mapcat :items)
+       (vec)))
+
 (defn tabs [state]
   (let [tagories (get-in @state [:catalogs 0 :tagories])
         active-tagory (:active-tagory @state)]
@@ -38,7 +45,10 @@
         [:button.tab {:class (if (or (nil? active-tagory)
                                      (= active-tagory {:tagory/name :all}))
                                "active")
-                      :on-click #(swap! app/state assoc :active-tagory nil)}
+                      :on-click #(let [all-items (get-all-items @state)]
+                                   (swap! app/state assoc
+                                          :active-tagory nil
+                                          :display-items all-items))}
          "All Products"]
         [tabs state]])]]
 
@@ -54,7 +64,7 @@
         [:p (:item/description item)]
         [:div.price
          {:style {:font-weight :bold :color "#e91e63" :font-size "1.2em"}}
-         "$" (gstring/format "%.2f" (/ (:price item) 100.0))]]])]])
+         "$" (gstring/format "%.2f" (/ (:item/price item) 100.0))]]])]])
 
 (defonce root (atom nil))
 
@@ -84,8 +94,13 @@
 
         (js/console.log "Server response:" (clj->js response))
         (when response
-          ;;(cljs.pprint/pprint response)
-          (reset! app/state response)))
+          ;; Get all items using the reusable function
+          (let [all-items (get-all-items response)]
+
+            ;; Reset state with response data and initialize display-items
+            (reset! app/state (assoc response :display-items all-items))
+
+            (js/console.log "Loaded" (count all-items) "items total"))))
       (catch js/Error e
         (js/console.error "Error loading tenant:" e)
         (js/alert (str "Error loading tenant: " (.-message e)))))))
