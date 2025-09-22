@@ -75,6 +75,55 @@
                        :available-functions (keys @available-functions)
                        :server-time (java.util.Date.)}))
 
+(defn get-store [tenant-name store-name]
+  "Get store with catalogs/tagories/items for a specific tenant and store"
+  (let [db (datomic/get-db)
+        ;; Query to get store data with catalogs/tagories/items
+        raw-data (d/q '[:find (pull ?tenant [:tenant/id :tenant/name])
+                              (pull ?store [:store/id :store/name :store/description
+                                            {:store/address [:address/id :address/street :address/city 
+                                                             :address/state :address/postal-code :address/country
+                                                             :address/latitude :address/longitude]}])
+                              (pull ?catalog [:catalog/id :catalog/name :catalog/description])
+                              (pull ?tagory [:tagory/id :tagory/name :tagory/description :tagory/parent])
+                              (pull ?item [:item/id :item/name :item/description :item/price
+                                           {:item/images [:image/id :image/url :image/alt]}])
+                        :in $ ?tenant-name ?store-name
+                        :where
+                        [?tenant :tenant/name ?tenant-name]
+                        [?tenant :tenant/stores ?store]
+                        [?store :store/name ?store-name]
+                        [?store :store/catalogs ?catalog]
+                        [?tagory :tagory/catalog ?catalog]
+                        [?item :item/tagories ?tagory]]
+                      db tenant-name store-name)]
+
+    (when (seq raw-data)
+      (let [tenant (first (first raw-data))      ; First element of first row
+            store (second (first raw-data))      ; Second element of first row (already pulled)
+
+            ;; Group by catalog, then by tagory
+            grouped-by-catalog
+            (->> raw-data
+                 (group-by #(nth % 2))  ; group by catalog (3rd element)
+                 (mapv (fn [[catalog items-data]]
+                         (let [grouped-by-tagory
+                               (->> items-data
+                                    (group-by #(nth % 3)) ; group by tagory (4th element)
+                                    (mapv (fn [[tagory item-data]]
+                                            (assoc tagory :items (mapv #(nth % 4) item-data)))))] ; items are 5th element
+                           (assoc catalog :tagories grouped-by-tagory)))))]
+
+        {:tenant tenant
+         :store (assoc store :catalogs grouped-by-catalog)}))))
+
+(register-function! 'get-store
+                    get-store)
+
+(comment
+  (get-store "TT Cosmetics" "TT Cosmetics Downtown NYC")
+  )
+
 (defn get-tenant [tenant-name]
   "Get tenant with catalogs/tagories/items using a single query and post-processing"
   (let [db (datomic/get-db)
@@ -98,7 +147,7 @@
             ;; Group by catalog, then by tagory
             grouped-by-catalog
             (->> raw-data
-                 (group-by second) ; group by catalog
+                 (group-by second)      ; group by catalog
                  (mapv (fn [[catalog items-data]]
                          (let [grouped-by-tagory
                                (->> items-data

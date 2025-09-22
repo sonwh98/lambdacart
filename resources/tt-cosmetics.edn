@@ -1,18 +1,59 @@
 [
  ;; Create tenant with temp ID
  {:db/id "tenant-1"
-  :tenant/id #uuid "550e8400-e29b-41d4-a716-446655440001"
+  :tenant/id #uuid "550e8400-e29b-41d4-a716-446655440000"
   :tenant/name "TT Cosmetics"}
 
- ;; Create catalog with temp ID
+ ;; Create addresses for stores
+ {:db/id "address-1"
+  :address/id #uuid "550e8400-e29b-41d4-a716-446655440300"
+  :address/street "123 Main Street"
+  :address/city "New York"
+  :address/state "NY"
+  :address/postal-code "10001"
+  :address/country "USA"
+  :address/latitude 40.7128
+  :address/longitude -74.0060}
+
+ {:db/id "address-2"
+  :address/id #uuid "550e8400-e29b-41d4-a716-446655440301"
+  :address/street "456 Fashion Avenue"
+  :address/city "Los Angeles"
+  :address/state "CA"
+  :address/postal-code "90210"
+  :address/country "USA"
+  :address/latitude 34.0522
+  :address/longitude -118.2437}
+
+ ;; Create stores for the tenant
+ {:db/id "store-1"
+  :store/id #uuid "550e8400-e29b-41d4-a716-446655440001"
+  :store/name "TT Cosmetics Downtown NYC"
+  :store/description "Flagship store in downtown Manhattan"
+  :store/address "address-1"}
+
+ {:db/id "store-2"
+  :store/id #uuid "550e8400-e29b-41d4-a716-446655440002"
+  :store/name "TT Cosmetics Beverly Hills"
+  :store/description "Premium boutique in Beverly Hills"
+  :store/address "address-2"}
+
+ ;; Link stores to tenant
+ {:db/id "tenant-1"
+  :tenant/stores ["store-1" "store-2"]}
+
+ ;; Create catalog
  {:db/id "catalog-1"
-  :catalog/id #uuid "550e8400-e29b-41d4-a716-446655440002"
+  :catalog/id #uuid "550e8400-e29b-41d4-a716-446655440003"
   :catalog/name "TT Cosmetics Collection"
   :catalog/description "Premium beauty products for the modern woman"}
 
- ;; Link tenant to catalog using temp IDs
- {:db/id "tenant-1"
-  :tenant/catalogs ["catalog-1"]}
+ ;; Link catalog to both stores (shared catalog)
+ {:db/id "store-1"
+  :store/catalogs ["catalog-1"]}
+
+ {:db/id "store-2"
+  :store/catalogs ["catalog-1"]}
 
  ;; Create first tagory
  {:db/id "tagory-1"
@@ -131,6 +172,7 @@
   :image/id #uuid "550e8400-e29b-41d4-a716-446655440101"
   :image/url "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=400&fit=crop&crop=center"
   :image/alt "Lipstick application close-up"}
+
  ;; Images for item-2 (Glossy Lip Tint)
  {:db/id "image-3"
   :image/id #uuid "550e8400-e29b-41d4-a716-446655440102"

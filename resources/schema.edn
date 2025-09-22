@@ -11,6 +11,94 @@
   :db/doc "Display name for a tenant (not unique)"
   :db.install/_attribute :db.part/db}
 
+ {:db/ident :tenant/stores
+  :db/valueType :db.type/ref
+  :db/cardinality :db.cardinality/many
+  :db/doc "Stores that this tenant owns"
+  :db.install/_attribute :db.part/db}
+
+ ;; Store schema
+ {:db/ident :store/id
+  :db/valueType :db.type/uuid
+  :db/cardinality :db.cardinality/one
+  :db/unique :db.unique/identity
+  :db/doc "External UUID identifier for store"
+  :db.install/_attribute :db.part/db}
+
+ {:db/ident :store/name
+  :db/valueType :db.type/string
+  :db/cardinality :db.cardinality/one
+  :db/doc "Name of the store"
+  :db.install/_attribute :db.part/db}
+
+ {:db/ident :store/description
+  :db/valueType :db.type/string
+  :db/cardinality :db.cardinality/one
+  :db/doc "Description of the store"
+  :db.install/_attribute :db.part/db}
+
+ {:db/ident :store/address
+  :db/valueType :db.type/ref
+  :db/cardinality :db.cardinality/one
+  :db/doc "Physical address of the store"
+  :db.install/_attribute :db.part/db}
+
+ {:db/ident :store/catalogs
+  :db/valueType :db.type/ref
+  :db/cardinality :db.cardinality/many
+  :db/doc "Catalogs available in this store (can be shared across stores)"
+  :db.install/_attribute :db.part/db}
+
+ ;; Address schema
+ {:db/ident :address/id
+  :db/valueType :db.type/uuid
+  :db/cardinality :db.cardinality/one
+  :db/unique :db.unique/identity
+  :db/doc "External UUID identifier for address"
+  :db.install/_attribute :db.part/db}
+
+ {:db/ident :address/street
+  :db/valueType :db.type/string
+  :db/cardinality :db.cardinality/one
+  :db/doc "Street address"
+  :db.install/_attribute :db.part/db}
+
+ {:db/ident :address/city
+  :db/valueType :db.type/string
+  :db/cardinality :db.cardinality/one
+  :db/doc "City"
+  :db.install/_attribute :db.part/db}
+
+ {:db/ident :address/state
+  :db/valueType :db.type/string
+  :db/cardinality :db.cardinality/one
+  :db/doc "State or province"
+  :db.install/_attribute :db.part/db}
+
+ {:db/ident :address/postal-code
+  :db/valueType :db.type/string
+  :db/cardinality :db.cardinality/one
+  :db/doc "Postal or ZIP code"
+  :db.install/_attribute :db.part/db}
+
+ {:db/ident :address/country
+  :db/valueType :db.type/string
+  :db/cardinality :db.cardinality/one
+  :db/doc "Country"
+  :db.install/_attribute :db.part/db}
+
+ {:db/ident :address/latitude
+  :db/valueType :db.type/double
+  :db/cardinality :db.cardinality/one
+  :db/doc "GPS latitude coordinate"
+  :db.install/_attribute :db.part/db}
+
+ {:db/ident :address/longitude
+  :db/valueType :db.type/double
+  :db/cardinality :db.cardinality/one
+  :db/doc "GPS longitude coordinate"
+  :db.install/_attribute :db.part/db}
+
  {:db/ident :catalog/id
   :db/valueType :db.type/uuid
   :db/cardinality :db.cardinality/one
@@ -28,12 +116,6 @@
   :db/valueType :db.type/string
   :db/cardinality :db.cardinality/one
   :db/doc "Description of the catalog"
-  :db.install/_attribute :db.part/db}
-
- {:db/ident :tenant/catalogs
-  :db/valueType :db.type/ref
-  :db/cardinality :db.cardinality/many
-  :db/doc "Catalogs that this tenant has access to"
   :db.install/_attribute :db.part/db}
 
  ;; Tagory schema
