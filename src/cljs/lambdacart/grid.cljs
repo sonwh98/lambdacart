@@ -145,6 +145,12 @@
   (rpc/invoke-with-response 'transact
                             [[:db/retract item-id :item/images (:db/id image-to-remove)]]))
 
+(defn add-image-to-item [item-id image-map]
+  "Add a new image entity to an item's :item/images"
+  (rpc/invoke-with-response 'transact
+                            [image-map  ; Pass the complete image map
+                             [:db/add item-id :item/images [:image/url (:image/url image-map)]]]))
+
 (defn update-cell [row-idx col-idx str-value]
   (let [columns (get-in @app/state [:grid :columns])
         column (nth columns col-idx)
