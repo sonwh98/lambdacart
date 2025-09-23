@@ -140,6 +140,11 @@
   (rpc/invoke-with-response 'transact
                             [[:db/add entity-id attribute new-value]]))
 
+(defn remove-image-from-item [item-id image-to-remove]
+  "Remove an image entity from an item's :item/images"
+  (rpc/invoke-with-response 'transact
+                            [[:db/retract item-id :item/images (:db/id image-to-remove)]]))
+
 (defn update-cell [row-idx col-idx str-value]
   (let [columns (get-in @app/state [:grid :columns])
         column (nth columns col-idx)
@@ -177,7 +182,7 @@
             (js/console.error "Error saving cell value:" e)))))))
 
 (defn load-grid-data []
-  (rpc/invoke-with-response 'q '[:find [(pull ?e [* {:item/images [*]}]) ...]
+  (rpc/invoke-with-response 'q '[:find [(pull ?e [:db/id :item/name :item/description :item/price {:item/images [*]}]) ...]
                                  :where
                                  [?e :item/name _]]))
 
@@ -288,15 +293,35 @@
                                  :display "flex"
                                  :align-items "center"
                                  :justify-content "center"}
-                         :on-click #(let [image-to-remove image  ; The actual image map to remove
-                                          new-images (vec (remove #{image-to-remove} images))]
-                                      (prn {:removing image-to-remove})
-                                      (prn {:new-images new-images})
-                                      ;; Update the cursor directly since it's a vector of maps
-                                      (reset! cell-value-cursor new-images)
-                                      ;; Mark cell as dirty
-                                      (let [cell-key [row-idx col-idx]]
-                                        (swap! app/state update-in [:grid :dirty-cells] (fnil conj #{}) cell-key)))}
+                         :on-click #(let [image-to-remove image
+                                          item-row (get-in @app/state [:grid :rows row-idx])
+                                          item-id (:db/id item-row)]
+                                      (js/console.log "Removing image:" image-to-remove "from item:" item-id)
+                                      
+                                      ;; Optimistically update UI first
+                                      (let [new-images (vec (remove #{image-to-remove} images))]
+                                        (reset! cell-value-cursor new-images)
+                                        (let [cell-key [row-idx col-idx]]
+                                          (swap! app/state update-in [:grid :dirty-cells] (fnil conj #{}) cell-key)))
+                                      
+                                      ;; Make RPC call to remove from database
+                                      (async/go
+                                        (try
+                                          (let [response (<! (remove-image-from-item item-id image-to-remove))]
+                                            (if (:error response)
+                                              (do
+                                                (js/console.error "Failed to remove image from database:" (:error response))
+                                                ;; Revert the UI change on error
+                                                (reset! cell-value-cursor images))
+                                              (do
+                                                (js/console.log "Image removed from database successfully")
+                                                ;; Clear the dirty flag since we've synced with DB
+                                                (let [cell-key [row-idx col-idx]]
+                                                  (swap! app/state update-in [:grid :dirty-cells] disj cell-key)))))
+                                          (catch js/Error e
+                                            (js/console.error "Error removing image:" e)
+                                            ;; Revert the UI change on error
+                                            (reset! cell-value-cursor images)))))}
                 "×"]]))
           images))])
 
