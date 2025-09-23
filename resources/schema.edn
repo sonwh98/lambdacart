@@ -200,7 +200,8 @@
  {:db/ident :image/url
   :db/valueType :db.type/string
   :db/cardinality :db.cardinality/one
-  :db/doc "URL of the image"
+  :db/unique :db.unique/identity
+  :db/doc "URL of the image (must be unique)"
   :db.install/_attribute :db.part/db}
 
  {:db/ident :image/alt
