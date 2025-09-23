@@ -343,8 +343,9 @@
                :on-key-down #(when (= (.-key %) "Enter")
                                (let [url (.. % -target -value)]
                                  (when (and (not (empty? url))
-                                            (re-matches #"^https?://.*\.(jpg|jpeg|png|gif|bmp|webp|svg)(\?.*)?$" url))
-                                   (let [new-image {:image/url url}  ; Note: no :db/id for new images
+                                            (re-matches #"(?i)^https?://.*\.(jpg|jpeg|png|gif|bmp|webp|svg)(\?.*)?$" url))
+                                   ;; Only update UI optimistically - don't call RPC on Enter
+                                   (let [new-image {:image/url url}
                                          new-images (conj images new-image)]
                                      (reset! cell-value-cursor new-images)
                                      (let [cell-key [row-idx col-idx]]
