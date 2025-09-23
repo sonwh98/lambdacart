@@ -288,9 +288,15 @@
                                  :display "flex"
                                  :align-items "center"
                                  :justify-content "center"}
-                         :on-click #(let [new-images (vec (concat (take idx images)
-                                                                  (drop (inc idx) images)))]
-                                      (update-cell row-idx col-idx new-images))}
+                         :on-click #(let [image-to-remove image  ; The actual image map to remove
+                                          new-images (vec (remove #{image-to-remove} images))]
+                                      (prn {:removing image-to-remove})
+                                      (prn {:new-images new-images})
+                                      ;; Update the cursor directly since it's a vector of maps
+                                      (reset! cell-value-cursor new-images)
+                                      ;; Mark cell as dirty
+                                      (let [cell-key [row-idx col-idx]]
+                                        (swap! app/state update-in [:grid :dirty-cells] (fnil conj #{}) cell-key)))}
                 "×"]]))
           images))])
 
@@ -307,9 +313,11 @@
                                (let [url (.. % -target -value)]
                                  (when (and (not (empty? url))
                                             (re-matches #"^https?://.*\.(jpg|jpeg|png|gif|bmp|webp|svg)(\?.*)?$" url))
-                                   (let [new-image {:image/url url}
+                                   (let [new-image {:image/url url}  ; Note: no :db/id for new images
                                          new-images (conj images new-image)]
-                                     (update-cell row-idx col-idx new-images)
+                                     (reset! cell-value-cursor new-images)
+                                     (let [cell-key [row-idx col-idx]]
+                                       (swap! app/state update-in [:grid :dirty-cells] (fnil conj #{}) cell-key))
                                      (set! (.. % -target -value) "")))))}]
       [:button {:style {:padding "4px 8px"
                         :border "1px solid #ddd"
@@ -323,7 +331,9 @@
                                         (re-matches #"^https?://.*\.(jpg|jpeg|png|gif|bmp|webp|svg)(\?.*)?$" url))
                                (let [new-image {:image/url url}
                                      new-images (conj images new-image)]
-                                 (update-cell row-idx col-idx new-images)
+                                 (reset! cell-value-cursor new-images)
+                                 (let [cell-key [row-idx col-idx]]
+                                   (swap! app/state update-in [:grid :dirty-cells] (fnil conj #{}) cell-key))
                                  (set! (.-value input) ""))))}
        "Add"]]]))
 
