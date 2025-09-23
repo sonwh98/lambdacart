@@ -7,7 +7,8 @@
             [reagent.core :as r]
             [reagent.dom.client :as rdc]
             [goog.string :as gstring]
-            [goog.string.format]))
+            [goog.string.format]
+            [cljs.pprint :refer [pprint]]))
 
 (defn get-fragment []
   "Get the fragment identifier from the URL"
@@ -20,7 +21,7 @@
   "Set the :view key in app state based on URL fragment"
   (let [fragment (get-fragment)]
     (swap! app/state assoc :view (keyword fragment))
-    (prn fragment)))
+    (pprint {:fragment fragment})))
 
 (defn handle-hash-change []
   "Handle browser hash change events"
@@ -36,7 +37,7 @@
 
 (defn add-to-cart [item]
   "Add item to shopping cart"
-  (js/console.log "Added to cart:" (:item/name item))
+  (pprint {:action "Added to cart" :item-name (:item/name item)})
   (js/alert (str "Added " (:item/name item) " to cart!")))
 
 (defn tabs [state]
@@ -161,7 +162,7 @@
 (defn load-store [tenant-name store-name]
   (async/go
     (try
-      (prn "Loading store:" store-name "for tenant:" tenant-name)
+      (pprint {:action "Loading store" :store-name store-name :tenant tenant-name})
       (let [store (<! (rpc/invoke-with-response 'get-store tenant-name store-name))]
         (when store
           (let [all-items (get-all-items store)]
@@ -169,7 +170,7 @@
                    :store store
                    :display-items all-items))))
       (catch js/Error e
-        (prn "Error loading store:" e)))))
+        (pprint {:error "Error loading store" :exception e})))))
 
 (defn init! []
   (set-view-from-fragment)
@@ -182,7 +183,7 @@
 
     ;; Wait for WebSocket to be ready, then load data
     (async/go
-      (js/console.log "Waiting for WebSocket connection...")
+      (pprint {:status "Waiting for WebSocket connection..."})
       ;; Wait for the WebSocket to be in OPEN state
       (loop [attempts 0]
         (if (and (< attempts 50) ; Max 5 seconds
@@ -192,7 +193,7 @@
             (recur (inc attempts)))
           (if (= (.-readyState (:ws wss)) 1)
             (do
-              (js/console.log "WebSocket connected, loading data...")
+              (pprint {:status "WebSocket connected, loading data..."})
               (load-store "TT Cosmetics" "TT Cosmetics Downtown NYC")
               (grid/load-and-display-data))
-            (js/console.error "WebSocket failed to connect after 5 seconds")))))))
+            (pprint {:error "WebSocket failed to connect after 5 seconds"})))))))
