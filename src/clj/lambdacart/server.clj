@@ -80,14 +80,14 @@
   (let [db (datomic/get-db)
         ;; Query to get store data with catalogs/tagories/items
         raw-data (d/q '[:find (pull ?tenant [:tenant/id :tenant/name])
-                              (pull ?store [:store/id :store/name :store/description
-                                            {:store/address [:address/id :address/street :address/city 
-                                                             :address/state :address/postal-code :address/country
-                                                             :address/latitude :address/longitude]}])
-                              (pull ?catalog [:catalog/id :catalog/name :catalog/description])
-                              (pull ?tagory [:tagory/id :tagory/name :tagory/description :tagory/parent])
-                              (pull ?item [:item/id :item/name :item/description :item/price
-                                           {:item/images [:image/id :image/url :image/alt]}])
+                        (pull ?store [:store/id :store/name :store/description
+                                      {:store/address [:address/id :address/street :address/city
+                                                       :address/state :address/postal-code :address/country
+                                                       :address/latitude :address/longitude]}])
+                        (pull ?catalog [:catalog/id :catalog/name :catalog/description])
+                        (pull ?tagory [:tagory/id :tagory/name :tagory/description :tagory/parent])
+                        (pull ?item [:item/id :item/name :item/description :item/price
+                                     {:item/images [:image/id :image/url :image/alt]}])
                         :in $ ?tenant-name ?store-name
                         :where
                         [?tenant :tenant/name ?tenant-name]
@@ -99,13 +99,13 @@
                       db tenant-name store-name)]
 
     (when (seq raw-data)
-      (let [tenant (first (first raw-data))      ; First element of first row
-            store (second (first raw-data))      ; Second element of first row (already pulled)
+      (let [tenant (first (first raw-data)) ; First element of first row
+            store (second (first raw-data)) ; Second element of first row (already pulled)
 
             ;; Group by catalog, then by tagory
             grouped-by-catalog
             (->> raw-data
-                 (group-by #(nth % 2))  ; group by catalog (3rd element)
+                 (group-by #(nth % 2)) ; group by catalog (3rd element)
                  (mapv (fn [[catalog items-data]]
                          (let [grouped-by-tagory
                                (->> items-data
@@ -120,8 +120,7 @@
                     get-store)
 
 (comment
-  (get-store "TT Cosmetics" "TT Cosmetics Downtown NYC")
-  )
+  (get-store "TT Cosmetics" "TT Cosmetics Downtown NYC"))
 
 (defn get-tenant [tenant-name]
   "Get tenant with catalogs/tagories/items using a single query and post-processing"
@@ -146,7 +145,7 @@
             ;; Group by catalog, then by tagory
             grouped-by-catalog
             (->> raw-data
-                 (group-by second)      ; group by catalog
+                 (group-by second) ; group by catalog
                  (mapv (fn [[catalog items-data]]
                          (let [grouped-by-tagory
                                (->> items-data
