@@ -9,3 +9,9 @@
                       #_{:old old-state
                          :new new-state})))))
 
+(comment
+  (keys @state)
+  (-> @state :grid keys)
+  (-> @state :grid :columns)
+  (-> @state :grid :rows first :item/images)
+  )
