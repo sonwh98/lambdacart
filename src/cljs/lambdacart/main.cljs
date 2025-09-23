@@ -13,8 +13,8 @@
   "Get the fragment identifier from the URL"
   (let [fragment (.-hash js/location)]
     (if (and fragment (> (.-length fragment) 1))
-      (.substring fragment 1)  ; Remove the # character
-      "default")))  ; Default view
+      (.substring fragment 1) ; Remove the # character
+      "default"))) ; Default view
 
 (defn set-view-from-fragment []
   "Set the :view key in app state based on URL fragment"
@@ -126,7 +126,6 @@
 
 (defn main-ui [state]
   [:div
-   
    (let [view (:view @state)]
      (case view
        :grid
@@ -135,14 +134,11 @@
          [:div {:style {:background-color :white}}
           [grid/grid-component grid-state context-menu-state]
           [grid/context-menu-component grid-state context-menu-state]])
-       
+
        ;;default
        [:div
         [header state]
-        [items-grid (r/cursor state [:display-items])]]
-
-       
-       ))])
+        [items-grid (r/cursor state [:display-items])]]))])
 
 (defonce root (atom nil))
 

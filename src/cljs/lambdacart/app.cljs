@@ -13,5 +13,4 @@
   (keys @state)
   (-> @state :grid keys)
   (-> @state :grid :columns)
-  (-> @state :grid :rows first :item/images)
-  )
+  (-> @state :grid :rows first :item/images))
