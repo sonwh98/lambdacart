@@ -84,11 +84,14 @@
           :on-click #(add-to-cart item)}
          "Add to Cart"]]]])])
 
+(defn toggle-menu []
+  (.. js/document (querySelector ".navigation") -classList (toggle "active")))
+
 (defn header [state]
   [:div.header-container
    [:div.search-container
     [:input.search-box {:type "text" :placeholder "Search cosmetics..."}]]
-   [:button.menu-toggle {:onclick "lambdacart.cosmetics.toggleMenu()"}
+   [:button.menu-toggle {:on-click toggle-menu}
     [:span.hamburger]]
    [:nav.navigation
     (let [active-tagory (:active-tagory @state)]
