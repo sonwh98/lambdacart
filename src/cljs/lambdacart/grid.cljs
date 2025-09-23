@@ -379,24 +379,25 @@
                                    (let [cell-key [row-idx col-idx]]
                                      (swap! app/state update-in [:grid :dirty-cells] (fnil conj #{}) cell-key)))
 
-                           ;; Make RPC call to add to database
+                                 ;; Make RPC call to add to database
                                  (async/go
                                    (try
                                      (let [response (<! (add-image-to-item item-id new-image))]
                                        (if (:error response)
                                          (do
                                            (js/console.error "Failed to add image to database:" (:error response))
-                                     ;; Revert the UI change on error
                                            (reset! cell-value-cursor images))
                                          (do
                                            (js/console.log "Image added to database successfully")
-                                     ;; Reload the row data to get the proper :db/id for the new image
-                                           (let [reload-response (<! (rpc/invoke-with-response 'pull item-id [:db/id :item/name :item/description :item/price {:item/images [*]}]))]
-                                             (when-not (:error reload-response)
-                                               (let [updated-row (:results reload-response)
-                                                     updated-images (:item/images updated-row)]
-                                                 (reset! cell-value-cursor updated-images)
-                                                 (swap! app/state assoc-in [:grid :rows row-idx] updated-row))))
+                                           ;;Reload the row data to get the proper :db/id for the new image
+                                           ;;error here
+                                           #_(let [reload-response (<! (rpc/invoke-with-response 'pull item-id [:db/id :item/name :item/description :item/price {:item/images [*]}]))]
+                                             (cljs.pprint/pprint {:reload-response reload-response})
+                                             #_(when-not (:error reload-response)
+                                                 (let [updated-row (:results reload-response)
+                                                       updated-images (:item/images updated-row)]
+                                                   (reset! cell-value-cursor updated-images)
+                                                   (swap! app/state assoc-in [:grid :rows row-idx] updated-row))))
                                      ;; Clear the dirty flag since we've synced with DB
                                            (let [cell-key [row-idx col-idx]]
                                              (swap! app/state update-in [:grid :dirty-cells] disj cell-key)))))
