@@ -8,9 +8,9 @@
             [goog.string :as gstring]
             [goog.string.format]))
 
-(defn get-all-items [store-data]
+(defn get-all-items [store]
   "Get all items from all catalogs and tagories in store data"
-  (->> store-data
+  (->> store
        :catalogs  
        (mapcat :tagories)
        (mapcat :items)
@@ -22,7 +22,7 @@
   (js/alert (str "Added " (:item/name item) " to cart!")))
 
 (defn tabs [state]
-  (let [tagories (get-in @state [:catalogs 0 :tagories])
+  (let [tagories (get-in @state [:store :catalogs 0 :tagories])
         active-tagory (:active-tagory @state)]
     [:div
      (for [tagory tagories
@@ -51,7 +51,7 @@
         [:button.tab {:class (if (or (nil? active-tagory)
                                      (= active-tagory {:tagory/name :all}))
                                "active")
-                      :on-click #(let [all-items (get-all-items @state)]
+                      :on-click #(let [all-items (get-all-items (:store @state))]
                                    (swap! app/state assoc
                                           :active-tagory nil
                                           :display-items all-items))}
@@ -128,7 +128,9 @@
       (let [store (<! (rpc/invoke-with-response 'get-store tenant-name store-name))]
         (when store
           (let [all-items (get-all-items store)]
-            (reset! app/state (assoc store :display-items all-items)))))
+            (swap! app/state assoc
+                   :store store
+                   :display-items all-items))))
       (catch js/Error e
         (prn "Error loading store:" e)))))
 
