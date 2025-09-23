@@ -147,9 +147,12 @@
 
 (defn add-image-to-item [item-id image-map]
   "Add a new image entity to an item's :item/images"
-  (rpc/invoke-with-response 'transact
-                            [image-map  ; Pass the complete image map
-                             [:db/add item-id :item/images [:image/url (:image/url image-map)]]]))
+  (let [temp-id (str "temp-image-" (random-uuid))]
+    (rpc/invoke-with-response 'transact
+                              [;; Create the image entity with a temp ID
+                               (assoc image-map :db/id temp-id)
+                               ;; Link the temp ID to the item
+                               [:db/add item-id :item/images temp-id]])))
 
 (defn update-cell [row-idx col-idx str-value]
   (let [columns (get-in @app/state [:grid :columns])
@@ -303,13 +306,13 @@
                                           item-row (get-in @app/state [:grid :rows row-idx])
                                           item-id (:db/id item-row)]
                                       (js/console.log "Removing image:" image-to-remove "from item:" item-id)
-                                      
+
                                       ;; Optimistically update UI first
                                       (let [new-images (vec (remove #{image-to-remove} images))]
                                         (reset! cell-value-cursor new-images)
                                         (let [cell-key [row-idx col-idx]]
                                           (swap! app/state update-in [:grid :dirty-cells] (fnil conj #{}) cell-key)))
-                                      
+
                                       ;; Make RPC call to remove from database
                                       (async/go
                                         (try
@@ -360,12 +363,48 @@
                 :on-click #(let [input (.-previousElementSibling (.-target %))
                                  url (.-value input)]
                              (when (and (not (empty? url))
-                                        (re-matches #"^https?://.*\.(jpg|jpeg|png|gif|bmp|webp|svg)(\?.*)?$" url))
-                               (let [new-image {:image/url url}
-                                     new-images (conj images new-image)]
-                                 (reset! cell-value-cursor new-images)
-                                 (let [cell-key [row-idx col-idx]]
-                                   (swap! app/state update-in [:grid :dirty-cells] (fnil conj #{}) cell-key))
+                                        (re-matches #"(?i)^https?://.*\.(jpg|jpeg|png|gif|bmp|webp|svg)(\?.*)?$" url))
+                               (let [item-row (get-in @app/state [:grid :rows row-idx])
+                                     item-id (:db/id item-row)
+                                     uuid-val (random-uuid) ; Generate UUID value first
+                                     new-image {:image/id uuid-val
+                                                :image/url url
+                                                :image/alt ""}]
+
+                                 (js/console.log "Adding image:" new-image "to item:" item-id)
+
+                           ;; Optimistically update UI first
+                                 (let [new-images (conj images new-image)]
+                                   (reset! cell-value-cursor new-images)
+                                   (let [cell-key [row-idx col-idx]]
+                                     (swap! app/state update-in [:grid :dirty-cells] (fnil conj #{}) cell-key)))
+
+                           ;; Make RPC call to add to database
+                                 (async/go
+                                   (try
+                                     (let [response (<! (add-image-to-item item-id new-image))]
+                                       (if (:error response)
+                                         (do
+                                           (js/console.error "Failed to add image to database:" (:error response))
+                                     ;; Revert the UI change on error
+                                           (reset! cell-value-cursor images))
+                                         (do
+                                           (js/console.log "Image added to database successfully")
+                                     ;; Reload the row data to get the proper :db/id for the new image
+                                           (let [reload-response (<! (rpc/invoke-with-response 'pull item-id [:db/id :item/name :item/description :item/price {:item/images [*]}]))]
+                                             (when-not (:error reload-response)
+                                               (let [updated-row (:results reload-response)
+                                                     updated-images (:item/images updated-row)]
+                                                 (reset! cell-value-cursor updated-images)
+                                                 (swap! app/state assoc-in [:grid :rows row-idx] updated-row))))
+                                     ;; Clear the dirty flag since we've synced with DB
+                                           (let [cell-key [row-idx col-idx]]
+                                             (swap! app/state update-in [:grid :dirty-cells] disj cell-key)))))
+                                     (catch js/Error e
+                                       (js/console.error "Error adding image:" e)
+                                 ;; Revert the UI change on error
+                                       (reset! cell-value-cursor images))))
+
                                  (set! (.-value input) ""))))}
        "Add"]]]))
 
