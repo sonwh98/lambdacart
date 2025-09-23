@@ -114,8 +114,7 @@
                                             (assoc tagory :items (mapv #(nth % 4) item-data)))))] ; items are 5th element
                            (assoc catalog :tagories grouped-by-tagory)))))]
 
-        {:tenant tenant
-         :store (assoc store :catalogs grouped-by-catalog)}))))
+        (assoc store :catalogs grouped-by-catalog)))))
 
 (register-function! 'get-store
                     get-store)
