@@ -1,12 +1,30 @@
 (ns lambdacart.main
   (:require [cljs.core.async :refer [chan put! <! >! close! timeout] :as async]
             [lambdacart.app :as app]
+            [lambdacart.grid :as grid]
             [lambdacart.rpc :as rpc]
             [lambdacart.stream :as stream]
             [reagent.core :as r]
             [reagent.dom.client :as rdc]
             [goog.string :as gstring]
             [goog.string.format]))
+
+(defn get-fragment []
+  "Get the fragment identifier from the URL"
+  (let [fragment (.-hash js/location)]
+    (if (and fragment (> (.-length fragment) 1))
+      (.substring fragment 1)  ; Remove the # character
+      "default")))  ; Default view
+
+(defn set-view-from-fragment []
+  "Set the :view key in app state based on URL fragment"
+  (let [fragment (get-fragment)]
+    (swap! app/state assoc :view (keyword fragment))
+    (prn fragment)))
+
+(defn handle-hash-change []
+  "Handle browser hash change events"
+  (set-view-from-fragment))
 
 (defn get-all-items [store]
   "Get all items from all catalogs and tagories in store data"
@@ -108,8 +126,23 @@
 
 (defn main-ui [state]
   [:div
-   [header state]
-   [items-grid (r/cursor state [:display-items])]])
+   
+   (let [view (:view @state)]
+     (case view
+       :grid
+       (let [grid-state (r/cursor app/state [:grid])
+             context-menu-state (r/cursor app/state [:context-menu])]
+         [:div {:style {:background-color :white}}
+          [grid/grid-component grid-state context-menu-state]
+          [grid/context-menu-component grid-state context-menu-state]])
+       
+       ;;default
+       [:div
+        [header state]
+        [items-grid (r/cursor state [:display-items])]]
+
+       
+       ))])
 
 (defonce root (atom nil))
 
@@ -143,6 +176,7 @@
         (prn "Error loading store:" e)))))
 
 (defn init! []
+  (set-view-from-fragment)
   (mount-main-ui app/state)
 
   (let [wss (stream/map->WebSocketStream {:url "/wsstream"})
@@ -163,5 +197,6 @@
           (if (= (.-readyState (:ws wss)) 1)
             (do
               (js/console.log "WebSocket connected, loading data...")
-              (load-store "TT Cosmetics" "TT Cosmetics Downtown NYC"))
+              (load-store "TT Cosmetics" "TT Cosmetics Downtown NYC")
+              (grid/load-and-display-data))
             (js/console.error "WebSocket failed to connect after 5 seconds")))))))
