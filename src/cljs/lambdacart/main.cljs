@@ -8,9 +8,10 @@
             [goog.string :as gstring]
             [goog.string.format]))
 
-(defn get-all-items [tenant-data]
-  "Get all items from all catalogs and tagories"
-  (->> (:catalogs tenant-data)
+(defn get-all-items [store-data]
+  "Get all items from all catalogs and tagories in store data"
+  (->> store-data
+       :catalogs  
        (mapcat :tagories)
        (mapcat :items)
        (vec)))
@@ -120,26 +121,16 @@
 
     (rdc/render @root [main-ui state])))
 
-(defn load-tenant [tenant-name]
+(defn load-store [tenant-name store-name]
   (async/go
     (try
-      (js/console.log "Loading tenant:" tenant-name)
-
-      ;; Call the server-side get-tenant function via RPC
-      (let [response (<! (rpc/invoke-with-response 'get-tenant tenant-name))]
-
-        (js/console.log "Server response:" (clj->js response))
-        (when response
-          ;; Get all items using the reusable function
-          (let [all-items (get-all-items response)]
-
-            ;; Reset state with response data and initialize display-items
-            (reset! app/state (assoc response :display-items all-items))
-
-            (js/console.log "Loaded" (count all-items) "items total"))))
+      (prn "Loading store:" store-name "for tenant:" tenant-name)
+      (let [store (<! (rpc/invoke-with-response 'get-store tenant-name store-name))]
+        (when store
+          (let [all-items (get-all-items store)]
+            (reset! app/state (assoc store :display-items all-items)))))
       (catch js/Error e
-        (js/console.error "Error loading tenant:" e)
-        (js/alert (str "Error loading tenant: " (.-message e)))))))
+        (prn "Error loading store:" e)))))
 
 (defn init! []
   (mount-main-ui app/state)
@@ -162,5 +153,5 @@
           (if (= (.-readyState (:ws wss)) 1)
             (do
               (js/console.log "WebSocket connected, loading data...")
-              (load-tenant "TT Cosmetics"))
+              (load-store "TT Cosmetics" "TT Cosmetics Downtown NYC"))
             (js/console.error "WebSocket failed to connect after 5 seconds")))))))
