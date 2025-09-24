@@ -4,6 +4,7 @@
             [lambdacart.grid :as grid]
             [lambdacart.rpc :as rpc]
             [lambdacart.stream :as stream]
+            [lambdacart.wallet :as wallet]
             [reagent.core :as r]
             [reagent.dom.client :as rdc]
             [goog.string :as gstring]
@@ -135,7 +136,8 @@
          [:div {:style {:background-color :white}}
           [grid/grid-component grid-state context-menu-state]
           [grid/context-menu-component grid-state context-menu-state]])
-
+       :wallet
+       [wallet/wallet-component]
        ;;default
        [:div
         [header state]
