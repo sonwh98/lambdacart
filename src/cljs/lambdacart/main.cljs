@@ -136,8 +136,10 @@
          [:div {:style {:background-color :white}}
           [grid/grid-component grid-state context-menu-state]
           [grid/context-menu-component grid-state context-menu-state]])
+
        :wallet
        [wallet/wallet-component]
+
        ;;default
        [:div
         [header state]
