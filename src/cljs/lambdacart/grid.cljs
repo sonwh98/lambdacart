@@ -335,22 +335,28 @@
           images))])
 
      [:div {:style {:display "flex" :align-items "center" :gap "4px"}}
-      [:input {:type :file
-               :accept "image/*"
-               :style {:flex "1"
-                       :padding "4px"
+      [:label {:style {:padding "4px 8px"
                        :border "1px solid #ddd"
                        :border-radius "4px"
-                       :font-size "12px"
-                       :outline "none"}
-               :on-change #(let [file (-> % .-target .-files (aget 0))]
-                             (when file
-                               (let [url (js/URL.createObjectURL file)
-                                     new-image {:image/url url}
-                                     new-images (conj images new-image)
-                                     cell-key [row-idx col-idx]]
-                                 (reset! cell-value-cursor new-images)
-                                 (swap! app/state update-in [:grid :dirty-cells] (fnil conj #{}) cell-key))))}]]]))
+                       :background "#f5f5f5"
+                       :cursor "pointer"
+                       :font-size "12px"}}
+       "Upload Image"
+       [:input {:type :file
+                :accept "image/*"
+                :style {:display "none"}
+                :on-change #(let [file (-> % .-target .-files (aget 0))]
+                              (when file
+                                (let [url (js/URL.createObjectURL file)
+                                      new-image {:image/url url}
+                                      new-images (conj images new-image)
+                                      cell-key [row-idx col-idx]]
+                                  ;; Optimistically update UI
+                                  (reset! cell-value-cursor new-images)
+                                  (swap! app/state update-in [:grid :dirty-cells] (fnil conj #{}) cell-key))))}]]]]
+        ;; @cell-value-cursor
+        ;; div content purposely left empty. content is managed by :component-did-update
+    ))
 
 (defn readonly-cell-renderer [cell-value-cursor row-idx col-idx]
   [:div {:style {:padding "8px"
