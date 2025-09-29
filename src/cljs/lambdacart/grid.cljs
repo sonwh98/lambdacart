@@ -335,79 +335,34 @@
           images))])
 
      [:div {:style {:display "flex" :align-items "center" :gap "4px"}}
-      [:input {:type "text"
-               :placeholder "Add image URL..."
-               :style {:flex "1"
-                       :padding "4px"
+      [:label {:style {:padding "4px 8px"
                        :border "1px solid #ddd"
                        :border-radius "4px"
-                       :font-size "12px"
-                       :outline "none"}
-               :on-key-down #(when (= (.-key %) "Enter")
-                               (let [url (.. % -target -value)]
-                                 (when (and (not (empty? url))
-                                            (re-matches #"(?i)^https?://.*\.(jpg|jpeg|png|gif|bmp|webp|svg)(\?.*)?$" url))
-                                   ;; Only update UI optimistically - don't call RPC on Enter
-                                   (let [new-image {:image/url url}
-                                         new-images (conj images new-image)]
-                                     (reset! cell-value-cursor new-images)
-                                     (let [cell-key [row-idx col-idx]]
-                                       (swap! app/state update-in [:grid :dirty-cells] (fnil conj #{}) cell-key))
-                                     (set! (.. % -target -value) "")))))}]
-      [:button {:style {:padding "4px 8px"
-                        :border "1px solid #ddd"
-                        :border-radius "4px"
-                        :background "#f5f5f5"
-                        :cursor "pointer"
-                        :font-size "12px"}
-                :on-click #(let [input (.-previousElementSibling (.-target %))
-                                 url (.-value input)]
-                             (when (and (not (empty? url))
-                                        (re-matches #"(?i)^https?://.*\.(jpg|jpeg|png|gif|bmp|webp|svg)(\?.*)?$" url))
-                               (let [item-row (get-in @app/state [:grid :rows row-idx])
-                                     item-id (:db/id item-row)
-                                     uuid-val (random-uuid) ; Generate UUID value first
-                                     new-image {:image/id uuid-val
-                                                :image/url url
-                                                :image/alt ""}]
+                       :background "#f5f5f5"
+                       :cursor "pointer"
+                       :font-size "12px"}}
+       "Upload Image"
+       [:input {:type :file
+                :accept "image/*"
+                :style {:display "none"}
+                :on-change #(let [file (-> % .-target .-files (aget 0))]
+                              (when file
+                                (let [url (js/URL.createObjectURL file)
+                                      item-row (get-in @app/state [:grid :rows row-idx])
+                                      item-id (:db/id item-row)
+                                      form-data (doto (js/FormData.)
+                                                  (.append "file" file)
+                                                  (.append "item-id" item-id))
+                                      new-image {:image/url url}
+                                      new-images (conj images new-image)
+                                      cell-key [row-idx col-idx]]
 
-                                 (js/console.log "Adding image:" new-image "to item:" item-id)
-
-                           ;; Optimistically update UI first
-                                 (let [new-images (conj images new-image)]
-                                   (reset! cell-value-cursor new-images)
-                                   (let [cell-key [row-idx col-idx]]
-                                     (swap! app/state update-in [:grid :dirty-cells] (fnil conj #{}) cell-key)))
-
-                                 ;; Make RPC call to add to database
-                                 (async/go
-                                   (try
-                                     (let [response (<! (add-image-to-item item-id new-image))]
-                                       (if (:error response)
-                                         (do
-                                           (js/console.error "Failed to add image to database:" (:error response))
-                                           (reset! cell-value-cursor images))
-                                         (do
-                                           (js/console.log "Image added to database successfully")
-                                           ;;Reload the row data to get the proper :db/id for the new image
-                                           ;;error here
-                                           #_(let [reload-response (<! (rpc/invoke-with-response 'pull item-id [:db/id :item/name :item/description :item/price {:item/images [*]}]))]
-                                               (cljs.pprint/pprint {:reload-response reload-response})
-                                               #_(when-not (:error reload-response)
-                                                   (let [updated-row (:results reload-response)
-                                                         updated-images (:item/images updated-row)]
-                                                     (reset! cell-value-cursor updated-images)
-                                                     (swap! app/state assoc-in [:grid :rows row-idx] updated-row))))
-                                     ;; Clear the dirty flag since we've synced with DB
-                                           (let [cell-key [row-idx col-idx]]
-                                             (swap! app/state update-in [:grid :dirty-cells] disj cell-key)))))
-                                     (catch js/Error e
-                                       (js/console.error "Error adding image:" e)
-                                 ;; Revert the UI change on error
-                                       (reset! cell-value-cursor images))))
-
-                                 (set! (.-value input) ""))))}
-       "Add"]]]))
+                                  (js/fetch "/upload" #js {:method "POST" :body form-data})
+                                  (reset! cell-value-cursor new-images)
+                                  (swap! app/state update-in [:grid :dirty-cells] (fnil conj #{}) cell-key))))}]]]]
+        ;; @cell-value-cursor
+        ;; div content purposely left empty. content is managed by :component-did-update
+    ))
 
 (defn readonly-cell-renderer [cell-value-cursor row-idx col-idx]
   [:div {:style {:padding "8px"
