@@ -348,10 +348,10 @@
                 :on-change #(let [file (-> % .-target .-files (aget 0))]
                               (when file
                                 (let [url (js/URL.createObjectURL file)
+                                      form-data (doto (js/FormData.) (.append "file" file))
                                       new-image {:image/url url}
                                       new-images (conj images new-image)
                                       cell-key [row-idx col-idx]]
-                                  ;; Optimistically update UI
                                   (reset! cell-value-cursor new-images)
                                   (swap! app/state update-in [:grid :dirty-cells] (fnil conj #{}) cell-key))))}]]]]
         ;; @cell-value-cursor
