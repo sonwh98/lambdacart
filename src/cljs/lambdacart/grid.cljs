@@ -412,11 +412,15 @@
     (js/console.log "Loaded grid data:" rows)
     (when (seq rows)
       (let [row0 (first rows)
-            headers (keys row0)]
+            headers (->> (take 10 rows)
+                         (map #(keys %))
+                         (reduce into #{}))]
         (swap! app/state update :grid assoc
                :rows rows
                :columns (mapv (fn [header-kw]
-                                (let [sample-value (get row0 header-kw)]
+                                (let [i (rand-int 10)
+                                      row (nth rows i)
+                                      sample-value (get row header-kw)]
                                   {:name header-kw
                                    :type (detect-column-type header-kw sample-value)}))
                               headers))))))
