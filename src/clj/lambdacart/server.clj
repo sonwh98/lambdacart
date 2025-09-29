@@ -11,7 +11,8 @@
             [ring.middleware.file]
             [ring.middleware.params]
             [ring.middleware.multipart-params]
-            [ring.middleware.content-type]))
+            [ring.middleware.content-type]
+            [clojure.java.io :as io]))
 
 (defonce clients (atom []))
 
@@ -223,15 +224,50 @@
                        (println "Channel closed:" status)
                        (swap! clients #(remove #{channel} %)))))))
 
+(defn transact [tx-data]
+  (println "Executing Datomic transaction:" tx-data)
+  (try
+    (let [conn (datomic/get-connection)]
+      (if conn
+        (do
+          @(d/transact conn tx-data)
+          {:type :success
+           :message "Transaction completed successfully"
+           :tx-data tx-data
+           :timestamp (java.util.Date.)})
+        {:type :error :message "Database connection not available"}))
+    (catch Exception e
+      (println "Error executing transaction:" (.getMessage e))
+      {:type :error
+       :message (str "Transaction error: " (.getMessage e))
+       :tx-data tx-data})))
+
 (defn upload-handler [req]
-  (let [file-info (get-in req [:multipart-params "file"])]
-    (prn {:sonny-file file-info})
-    (if file-info
-      {:status 200
-       :headers {"Content-Type" "application/json"}
-       :body (pr-str {:filename (:filename file-info)
-                      :size (:size file-info)
-                      :content-type (:content-type file-info)})}
+  (let [file-info (get-in req [:multipart-params "file"])
+        item-id (get-in req [:multipart-params "item-id"])
+        upload-dir (or (c/config :image-upload-dir) "public/uploads")
+        filename (:filename file-info)
+        tempfile (:tempfile file-info)]
+    (if (and file-info tempfile filename item-id)
+      (let [dest-path (str upload-dir "/" filename)
+            image {:db/id filename
+                   :image/url (str "/images/" filename)}]
+        (try
+          (io/make-parents dest-path)
+          (io/copy tempfile (clojure.java.io/file dest-path))
+          (transact [image
+                     [:db/add (Long/valueOf item-id) :item/images filename]])
+          {:status 200
+           :headers {"Content-Type" "application/json"}
+           :body (pr-str {:filename filename
+                          :size (:size file-info)
+                          :content-type (:content-type file-info)
+                          :saved-to dest-path})}
+          (catch Exception e
+            {:status 500
+             :headers {"Content-Type" "application/json"}
+             :body (pr-str {:error "Failed to save file"
+                            :message (.getMessage e)})})))
       {:status 400
        :headers {"Content-Type" "application/json"}
        :body (pr-str {:error "No file uploaded"})})))
@@ -322,23 +358,7 @@
 
 ;; Register the Datomic transact function
 (register-function! 'transact
-                    (fn [tx-data]
-                      (println "Executing Datomic transaction:" tx-data)
-                      (try
-                        (let [conn (datomic/get-connection)]
-                          (if conn
-                            (do
-                              @(d/transact conn tx-data)
-                              {:type :success
-                               :message "Transaction completed successfully"
-                               :tx-data tx-data
-                               :timestamp (java.util.Date.)})
-                            {:type :error :message "Database connection not available"}))
-                        (catch Exception e
-                          (println "Error executing transaction:" (.getMessage e))
-                          {:type :error
-                           :message (str "Transaction error: " (.getMessage e))
-                           :tx-data tx-data}))))
+                    transact)
 
 ;; Update start-server to initialize Datomic
 (defn start-server []

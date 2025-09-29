@@ -348,7 +348,11 @@
                 :on-change #(let [file (-> % .-target .-files (aget 0))]
                               (when file
                                 (let [url (js/URL.createObjectURL file)
-                                      form-data (doto (js/FormData.) (.append "file" file))
+                                      item-row (get-in @app/state [:grid :rows row-idx])
+                                      item-id (:db/id item-row)
+                                      form-data (doto (js/FormData.)
+                                                  (.append "file" file)
+                                                  (.append "item-id" item-id))
                                       new-image {:image/url url}
                                       new-images (conj images new-image)
                                       cell-key [row-idx col-idx]]
