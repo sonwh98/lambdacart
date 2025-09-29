@@ -7,7 +7,11 @@
             [stigmergy.chp]
             [stigmergy.config :as c]
             [clojure.core.async :as async]
-            [bidi.ring :as bidi] :reload))
+            [bidi.ring :as bidi] :reload
+            [ring.middleware.file]
+            [ring.middleware.params]
+            [ring.middleware.multipart-params]
+            [ring.middleware.content-type]))
 
 (defonce clients (atom []))
 
@@ -219,6 +223,19 @@
                        (println "Channel closed:" status)
                        (swap! clients #(remove #{channel} %)))))))
 
+(defn upload-handler [req]
+  (let [file-info (get-in req [:multipart-params "file"])]
+    (prn {:sonny-file file-info})
+    (if file-info
+      {:status 200
+       :headers {"Content-Type" "application/json"}
+       :body (pr-str {:filename (:filename file-info)
+                      :size (:size file-info)
+                      :content-type (:content-type file-info)})}
+      {:status 400
+       :headers {"Content-Type" "application/json"}
+       :body (pr-str {:error "No file uploaded"})})))
+
 (defn create-app []
   (let [routes (c/config :bidi-routes)
         handler (bidi/make-handler routes)
@@ -228,6 +245,7 @@
         app (-> handler
                 (ring.middleware.file/wrap-file "public")
                 ring.middleware.params/wrap-params
+                ring.middleware.multipart-params/wrap-multipart-params
                 (ring.middleware.content-type/wrap-content-type {:mime-types mime-types}))]
     (fn [req]
       (if (= (:uri req) "/wsstream")
