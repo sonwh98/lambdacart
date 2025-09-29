@@ -5,7 +5,7 @@
             [reagent.dom.client :as rdc]
             [lambdacart.app :as app]
             [cljs.core.async :refer [chan put! <! >! close! timeout] :as async]))
-
+ 
 (defn delete-selected-rows [grid-state context-menu]
   (let [selected (-> @grid-state :selected-rows)
         rows (-> @grid-state :rows)]
@@ -352,6 +352,8 @@
                                       new-image {:image/url url}
                                       new-images (conj images new-image)
                                       cell-key [row-idx col-idx]]
+                                  
+                                  (js/fetch "/upload" #js {:method "POST" :body form-data})
                                   (reset! cell-value-cursor new-images)
                                   (swap! app/state update-in [:grid :dirty-cells] (fnil conj #{}) cell-key))))}]]]]
         ;; @cell-value-cursor
