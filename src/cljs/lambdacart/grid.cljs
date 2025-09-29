@@ -335,25 +335,24 @@
           images))])
 
      [:div {:style {:display "flex" :align-items "center" :gap "4px"}}
-      [:input {:type "text"
-               :placeholder "Add image URL..."
+      [:input {:type :file
+               :accept "image/*"
                :style {:flex "1"
                        :padding "4px"
                        :border "1px solid #ddd"
                        :border-radius "4px"
                        :font-size "12px"
                        :outline "none"}
-               :on-key-down #(when (= (.-key %) "Enter")
-                               (let [url (.. % -target -value)]
-                                 (when (and (not (empty? url))
-                                            (re-matches #"(?i)^https?://.*\.(jpg|jpeg|png|gif|bmp|webp|svg)(\?.*)?$" url))
-                                   ;; Only update UI optimistically - don't call RPC on Enter
-                                   (let [new-image {:image/url url}
-                                         new-images (conj images new-image)]
-                                     (reset! cell-value-cursor new-images)
-                                     (let [cell-key [row-idx col-idx]]
-                                       (swap! app/state update-in [:grid :dirty-cells] (fnil conj #{}) cell-key))
-                                     (set! (.. % -target -value) "")))))}]
+               :on-change #(let [file (-> % .-target .-files (aget 0))]
+                             (when file
+                               (let [url (js/URL.createObjectURL file)
+                                     new-image {:image/url url}
+                                     new-images (conj images new-image)
+                                     cell-key [row-idx col-idx]]
+                                 ;; Optimistically update UI
+                                 (prn {:sonny new-image})
+                                 (reset! cell-value-cursor new-images)
+                                 (swap! app/state update-in [:grid :dirty-cells] (fnil conj #{}) cell-key))))}]]
       [:button {:style {:padding "4px 8px"
                         :border "1px solid #ddd"
                         :border-radius "4px"
@@ -407,7 +406,7 @@
                                        (reset! cell-value-cursor images))))
 
                                  (set! (.-value input) ""))))}
-       "Add"]]]))
+       "Add"]]))
 
 (defn readonly-cell-renderer [cell-value-cursor row-idx col-idx]
   [:div {:style {:padding "8px"
