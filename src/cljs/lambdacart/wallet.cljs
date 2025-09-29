@@ -24,5 +24,4 @@
   [:div])
 
 (comment
-  (generate-algorand-account)
-  )
+  (generate-algorand-account))

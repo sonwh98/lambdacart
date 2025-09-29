@@ -392,12 +392,12 @@
                                            ;;Reload the row data to get the proper :db/id for the new image
                                            ;;error here
                                            #_(let [reload-response (<! (rpc/invoke-with-response 'pull item-id [:db/id :item/name :item/description :item/price {:item/images [*]}]))]
-                                             (cljs.pprint/pprint {:reload-response reload-response})
-                                             #_(when-not (:error reload-response)
-                                                 (let [updated-row (:results reload-response)
-                                                       updated-images (:item/images updated-row)]
-                                                   (reset! cell-value-cursor updated-images)
-                                                   (swap! app/state assoc-in [:grid :rows row-idx] updated-row))))
+                                               (cljs.pprint/pprint {:reload-response reload-response})
+                                               #_(when-not (:error reload-response)
+                                                   (let [updated-row (:results reload-response)
+                                                         updated-images (:item/images updated-row)]
+                                                     (reset! cell-value-cursor updated-images)
+                                                     (swap! app/state assoc-in [:grid :rows row-idx] updated-row))))
                                      ;; Clear the dirty flag since we've synced with DB
                                            (let [cell-key [row-idx col-idx]]
                                              (swap! app/state update-in [:grid :dirty-cells] disj cell-key)))))
