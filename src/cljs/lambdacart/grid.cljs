@@ -191,7 +191,9 @@
             (js/console.error "Error saving cell value:" e)))))))
 
 (defn load-grid-data []
-  (rpc/invoke-with-response 'q '[:find [(pull ?e [:db/id :item/name :item/description :item/price {:item/images [*]}]) ...]
+  (rpc/invoke-with-response 'q '[:find [(pull ?e [:db/id :item/name :item/description :item/price
+                                                  {:item/tagories [*]}
+                                                  {:item/images [*]}]) ...]
                                  :where
                                  [?e :item/name _]]))
 
@@ -372,6 +374,39 @@
                  :cursor "not-allowed"}}
    (str @cell-value-cursor)])
 
+(defn tagories-renderer [cell-value-cursor row-idx col-idx]
+  (let [all-tagories (r/atom [])]
+    (async/go
+      (let [response (<! (rpc/invoke-with-response 'q
+                                                   '[:find [(pull ?t [:db/id :tagory/id :tagory/name]) ...]
+                                                     :where [?t :tagory/id _]]))
+            results (:results response)]
+        (reset! all-tagories results)))
+    (fn [cell-value-cursor row-idx col-idx]
+      (let [item-tagories @cell-value-cursor
+            current-tagory (first item-tagories)
+            current-id (:tagory/id current-tagory)
+            item-row (get-in @app/state [:grid :rows row-idx])
+            item-id (:db/id item-row)]
+        [:div {:style {:padding "8px"}}
+         [:select {:default-value current-id
+                   :style {:width "100%"}
+                   :on-change (fn [e]
+                                (let [new-id (.. e -target -value)
+                                      new-tagory (first (filter #(= (str (:tagory/id %)) new-id) @all-tagories))]
+                                  ;; Retract old tagory and add new tagory in one transaction
+                                  (rpc/invoke-with-response 'transact
+                                                            [[:db/retract item-id :item/tagories (:db/id current-tagory)]
+                                                             [:db/add item-id :item/tagories (:db/id new-tagory)]])
+                                  ;; Update local state
+                                  (reset! cell-value-cursor [new-tagory])
+                                  (swap! app/state update-in [:grid :dirty-cells] (fnil conj #{}) [row-idx col-idx])))}
+          (for [tagory @all-tagories]
+            ^{:key (:tagory/id tagory)}
+            [:option {:value (:tagory/id tagory)
+                      :selected (= (:tagory/id tagory) current-id)}
+             (:tagory/name tagory)])]]))))
+
 (def types {:int {:pred integer?
                   :from-str js/parseInt
                   :to-str str
@@ -391,6 +426,13 @@
                     :from-str str
                     :to-str str
                     :renderer image-cell-renderer}
+            :tagories {:pred (fn [value]
+                               (and (map? value)
+                                    (contains? value :tagory/id)
+                                    (contains? value :tagory/name)))
+                       :from-str identity
+                       :to-str identity
+                       :renderer tagories-renderer}
             :readonly {:pred (constantly true)
                        :from-str str
                        :to-str str
@@ -405,14 +447,16 @@
          (re-matches #"^https?://.*\.(jpg|jpeg|png|gif|bmp|webp|svg)(\?.*)?$" sample-value)) (:image types)
     (integer? sample-value) (:int types)
     (number? sample-value) (:float types)
+    (and (vector? sample-value)
+         (every? #(-> % nil? not)
+                 (map :tagory/id sample-value))) (:tagories types)
     :else (:str types)))
 
 (defn process-grid-data [response]
   (let [rows (:results response)]
     (js/console.log "Loaded grid data:" rows)
     (when (seq rows)
-      (let [row0 (first rows)
-            headers (->> (take 10 rows)
+      (let [headers (->> (take 10 rows)
                          (map #(keys %))
                          (reduce into #{}))]
         (swap! app/state update :grid assoc
@@ -580,7 +624,3 @@
   "Called by shadow-cljs after code reload"
   (js/console.log "Code reloaded, refreshing grid...")
   (load-and-display-data))
-
-
-
-
