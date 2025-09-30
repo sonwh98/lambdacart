@@ -35,10 +35,24 @@
        (mapcat :items)
        (vec)))
 
-(defn add-to-cart [item]
-  "Add item to shopping cart"
-  (pprint {:action "Added to cart" :item-name (:item/name item)})
-  (js/alert (str "Added " (:item/name item) " to cart!")))
+(defn add-to-cart [new-item]
+  (swap! app/state update-in [:cart]
+         (fn [cart]
+           (let [[index line-item]
+                 (first (filter (fn [[index {:keys [item quantity] :as line-item}]]
+                                  (= (:item/id item)
+                                     (:item/id new-item)))
+                                (map-indexed vector cart)))]
+             (if (seq line-item)
+               (update-in cart [index] (fn [line-item]
+                                         (update-in line-item [:quantity] inc)))
+               (vec (conj cart {:item new-item
+                                :quantity 1})))))))
+
+(comment
+  (-> @app/state :cart)
+  (-> @app/state :cart type)
+  (-> @app/state :cart count))
 
 (defn tabs [state]
   (let [active-tagory (:active-tagory @state)
