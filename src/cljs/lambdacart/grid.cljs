@@ -192,8 +192,8 @@
 
 (defn load-grid-data []
   (rpc/invoke-with-response 'q '[:find [(pull ?e [:db/id :item/name :item/description :item/price
-                                                  {:item/images [*]}
-                                                  {:item/tagories [*]}]) ...]
+                                                  {:item/tagories [*]}
+                                                  {:item/images [*]}]) ...]
                                  :where
                                  [?e :item/name _]]))
 
@@ -375,7 +375,8 @@
    (str @cell-value-cursor)])
 
 (defn tagories-renderer[cell-value-cursor row-idx col-idx]
-  (let [tagory (first @cell-value-cursor)
+  (let [tagories @cell-value-cursor
+        tagory (first tagories)
         name (:tagory/name tagory)
         parent (:tagory/parent tagory)]
     [:div {:style {:padding "8px"}}
