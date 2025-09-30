@@ -78,10 +78,10 @@
       num])])
 
 (defn create-tab [{:keys [id class content on-click]}]
-  [:button.tab {:key id
-                :data-tagory-id id
-                :class class
-                :on-click on-click}
+  [:div.tab {:key id
+             :data-tagory-id id
+             :class class
+             :on-click on-click}
    content])
 
 (defn tabs [state]
