@@ -21,8 +21,7 @@
 (defn set-view-from-fragment []
   "Set the :view key in app state based on URL fragment"
   (let [fragment (get-fragment)]
-    (swap! app/state assoc :view (keyword fragment))
-    (pprint {:fragment fragment})))
+    (swap! app/state assoc :view (keyword fragment))))
 
 (defn handle-hash-change []
   "Handle browser hash change events"
@@ -197,7 +196,6 @@
             (recur (inc attempts)))
           (if (= (.-readyState (:ws wss)) 1)
             (do
-              (pprint {:status "WebSocket connected, loading data..."})
               (load-store "TT Cosmetics" "TT Cosmetics Downtown NYC")
               (grid/load-and-display-data))
             (pprint {:error "WebSocket failed to connect after 5 seconds"})))))))
