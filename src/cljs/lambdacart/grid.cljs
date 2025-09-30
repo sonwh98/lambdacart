@@ -374,16 +374,23 @@
                  :cursor "not-allowed"}}
    (str @cell-value-cursor)])
 
-(defn tagories-renderer[cell-value-cursor row-idx col-idx]
-  (let [tagories @cell-value-cursor
-        tagory (first tagories)
-        name (:tagory/name tagory)
-        parent (:tagory/parent tagory)]
+(defn tagories-renderer [cell-value-cursor row-idx col-idx]
+  (let [all-tagories (reduce (fn [tagories tagory]
+                               (conj tagories tagory))
+                             #{}
+                             (map #(-> % :item/tagories first)
+                                  (-> @app/state :grid :rows)))
+        item-tagories @cell-value-cursor
+        current-tagory (first item-tagories)
+        current-id (:tagory/id current-tagory)]
     [:div {:style {:padding "8px"}}
-     [:span  name]
-     (when parent
-       [:span {:style {:color "#888" :margin-left "8px"}}
-        (str "(Parent: " (:tagory/name parent) ")")])]))
+     [:select {:default-value current-id
+               :style {:width "100%"}}
+      (for [tagory all-tagories]
+        ^{:key (:tagory/id tagory)}
+        [:option {:value (:tagory/id tagory)
+                  :selected (= (:tagory/id tagory) current-id)}
+         (:tagory/name tagory)])]]))
 
 (def types {:int {:pred integer?
                   :from-str js/parseInt
