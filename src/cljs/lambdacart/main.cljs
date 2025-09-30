@@ -61,35 +61,53 @@
    [:circle {:cx "20" :cy "21" :r "1"}]
    [:path {:d "M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"}]])
 
+(defn create-tab [{:keys [id class content on-click]}]
+  [:button.tab {:key id
+                :data-tagory-id id
+                :class class
+                :on-click on-click}
+   content])
+
 (defn tabs [state]
-  (let [active-tagory (:active-tagory @state)
-        tagories (get-in @state [:store :catalogs 0 :tagories])]
-    [:div.tab-bar
-     (when (> (count tagories)
-              1)
-       [:button.tab {:class (if (or (nil? active-tagory)
-                                    (= active-tagory {:tagory/name :all}))
-                              "active")
-                     :on-click #(let [all-items (get-all-items (:store @state))]
-                                  (swap! state assoc
-                                         :active-tagory nil
-                                         :display-items all-items))}
-        "All Products"])
-     [:div
-      (for [tagory tagories
-            :let [id (:tagory/id tagory)]]
-        [:button.tab
-         {:key id
-          :data-tagory-id id
-          :class (when (or (= active-tagory tagory)
-                           (= (count tagories) 1))
-                   "active")
-          :on-click #(let [active-tagory tagory]
-                       (swap! app/state assoc
-                              :active-tagory active-tagory
-                              :display-items (:items tagory)))}
-         (:tagory/name tagory)])
-      [cart-icon]]]))
+  (let [active-tab (r/atom :all-products)]
+    (fn [state]
+      (let [tagories (get-in @state [:store :catalogs 0 :tagories])
+            tagories-tab (mapv (fn [tagory]
+                                 (let [id (:tagory/id tagory)]
+                                   (create-tab {:id id
+                                                :content (:tagory/name tagory)
+                                                :class (if (= @active-tab id)
+                                                         :active)
+                                                :on-click #(do
+                                                             (reset! active-tab id)
+                                                             (swap! app/state assoc
+                                                                    :display-items (:items tagory)))})))
+                               tagories)
+            all-tabs (if (> (count tagories) 1)
+                       (let [all-products-tab (create-tab {:id :all-products
+                                                           :content "All Products"
+                                                           :class (if (= @active-tab :all-products)
+                                                                    :active)
+                                                           :on-click #(do
+                                                                        (reset! active-tab :all-products)
+                                                                        (swap! app/state assoc
+                                                                               :display-items
+                                                                               (get-all-items (:store @app/state))))})]
+                         (concat [all-products-tab]
+                                 tagories-tab))
+                       tagories-tab)
+            cart-tab (create-tab {:id :cart
+                                  :content (cart-icon)
+                                  :class (if (= @active-tab :cart)
+                                           :active)
+                                  :on-click #(do
+                                               (reset! active-tab :cart)
+                                               (swap! app/state assoc
+                                                      :display-items []))})
+            all-tabs (concat all-tabs [cart-tab])]
+        [:div.tab-bar
+         (when (seq all-tabs)
+           all-tabs)]))))
 
 (defn items-grid [display-items]
   [:div.card-grid
