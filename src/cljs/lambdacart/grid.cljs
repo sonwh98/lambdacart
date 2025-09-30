@@ -191,7 +191,9 @@
             (js/console.error "Error saving cell value:" e)))))))
 
 (defn load-grid-data []
-  (rpc/invoke-with-response 'q '[:find [(pull ?e [:db/id :item/name :item/description :item/price {:item/images [*]}]) ...]
+  (rpc/invoke-with-response 'q '[:find [(pull ?e [:db/id :item/name :item/description :item/price
+                                                  {:item/images [*]}
+                                                  {:item/tagories [*]}]) ...]
                                  :where
                                  [?e :item/name _]]))
 
@@ -372,6 +374,16 @@
                  :cursor "not-allowed"}}
    (str @cell-value-cursor)])
 
+(defn tagories-renderer[cell-value-cursor row-idx col-idx]
+  (let [tagory (first @cell-value-cursor)
+        name (:tagory/name tagory)
+        parent (:tagory/parent tagory)]
+    [:div {:style {:padding "8px"}}
+     [:span  name]
+     (when parent
+       [:span {:style {:color "#888" :margin-left "8px"}}
+        (str "(Parent: " (:tagory/name parent) ")")])]))
+
 (def types {:int {:pred integer?
                   :from-str js/parseInt
                   :to-str str
@@ -391,6 +403,13 @@
                     :from-str str
                     :to-str str
                     :renderer image-cell-renderer}
+            :tagories {:pred (fn [value]
+                               (and (map? value)
+                                    (contains? value :tagory/id)
+                                    (contains? value :tagory/name)))
+                       :from-str identity
+                       :to-str identity
+                       :renderer tagories-renderer}
             :readonly {:pred (constantly true)
                        :from-str str
                        :to-str str
@@ -405,6 +424,9 @@
          (re-matches #"^https?://.*\.(jpg|jpeg|png|gif|bmp|webp|svg)(\?.*)?$" sample-value)) (:image types)
     (integer? sample-value) (:int types)
     (number? sample-value) (:float types)
+    (and (vector? sample-value)
+         (every? #(-> % nil? not)
+                 (map :tagory/id sample-value))) (:tagories types)
     :else (:str types)))
 
 (defn process-grid-data [response]
