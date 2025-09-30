@@ -41,21 +41,33 @@
   (js/alert (str "Added " (:item/name item) " to cart!")))
 
 (defn tabs [state]
-  (let [tagories (get-in @state [:store :catalogs 0 :tagories])
-        active-tagory (:active-tagory @state)]
-    [:div
-     (for [tagory tagories
-           :let [id (:tagory/id tagory)]]
-       [:button.tab
-        {:key id
-         :data-tagory-id id
-         :class (when (= active-tagory tagory)
-                  "active")
-         :on-click #(let [active-tagory tagory]
-                      (swap! app/state assoc
-                             :active-tagory active-tagory
-                             :display-items (:items tagory)))}
-        (:tagory/name tagory)])]))
+  (let [active-tagory (:active-tagory @state)
+        tagories (get-in @state [:store :catalogs 0 :tagories])]
+    [:div.tab-bar
+     (when (> (count tagories)
+              1)
+       [:button.tab {:class (if (or (nil? active-tagory)
+                                    (= active-tagory {:tagory/name :all}))
+                              "active")
+                     :on-click #(let [all-items (get-all-items (:store @state))]
+                                  (swap! state assoc
+                                         :active-tagory nil
+                                         :display-items all-items))}
+        "All Products"])
+     [:div
+      (for [tagory tagories
+            :let [id (:tagory/id tagory)]]
+        [:button.tab
+         {:key id
+          :data-tagory-id id
+          :class (when (or (= active-tagory tagory)
+                           (= (count tagories) 1))
+                   "active")
+          :on-click #(let [active-tagory tagory]
+                       (swap! app/state assoc
+                              :active-tagory active-tagory
+                              :display-items (:items tagory)))}
+         (:tagory/name tagory)])]]))
 
 (defn items-grid [display-items]
   [:div.card-grid
@@ -113,17 +125,7 @@
    [:button.menu-toggle {:on-click toggle-menu}
     [:span.hamburger]]
    [:nav.navigation
-    (let [active-tagory (:active-tagory @state)]
-      [:div.tab-bar
-       [:button.tab {:class (if (or (nil? active-tagory)
-                                    (= active-tagory {:tagory/name :all}))
-                              "active")
-                     :on-click #(let [all-items (get-all-items (:store @state))]
-                                  (swap! state assoc
-                                         :active-tagory nil
-                                         :display-items all-items))}
-        "All Products"]
-       [tabs state]])]])
+    [tabs state]]])
 
 (defn main-ui [state]
   [:div
