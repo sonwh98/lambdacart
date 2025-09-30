@@ -54,12 +54,28 @@
   (-> @app/state :cart type)
   (-> @app/state :cart count))
 
-(defn cart-icon []
-  [:svg {:xmlns "http://www.w3.org/2000/svg"
-         :width "24" :height "24" :viewBox "0 0 24 24" :fill "none" :stroke "currentColor" :stroke-width "2" :stroke-linecap "round" :stroke-linejoin "round" :style {:vertical-align "middle" :margin-right "4px"}}
-   [:circle {:cx "9" :cy "21" :r "1"}]
-   [:circle {:cx "20" :cy "21" :r "1"}]
-   [:path {:d "M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"}]])
+(defn cart-icon [num]
+  [:span {:style {:position "relative" :display "inline-block"}}
+   [:svg {:xmlns "http://www.w3.org/2000/svg"
+          :width "24" :height "24" :viewBox "0 0 24 24" :fill "none" :stroke "currentColor" :stroke-width "2" :stroke-linecap "round" :stroke-linejoin "round" :style {:vertical-align "middle" :margin-right "4px"}}
+    [:circle {:cx "9" :cy "21" :r "1"}]
+    [:circle {:cx "20" :cy "21" :r "1"}]
+    [:path {:d "M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"}]]
+   (when (and num (pos? num))
+     [:span {:style {:position "absolute"
+                     :top "-4px"
+                     :right "-4px"
+                     :background "#e91e63"
+                     :color "white"
+                     :border-radius "50%"
+                     :padding "0 3px"
+                     :font-size "9px"
+                     :font-weight "bold"
+                     :min-width "12px"
+                     :text-align "center"
+                     :line-height "1.2"
+                     :z-index 1}}
+      num])])
 
 (defn create-tab [{:keys [id class content on-click]}]
   [:button.tab {:key id
@@ -96,8 +112,9 @@
                          (concat [all-products-tab]
                                  tagories-tab))
                        tagories-tab)
+            cart-count (reduce + (map :quantity (:cart @app/state)))
             cart-tab (create-tab {:id :cart
-                                  :content (cart-icon)
+                                  :content (cart-icon cart-count)
                                   :class (if (= @active-tab :cart)
                                            :active)
                                   :on-click #(do
