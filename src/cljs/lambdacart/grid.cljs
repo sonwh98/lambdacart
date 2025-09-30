@@ -434,8 +434,7 @@
   (let [rows (:results response)]
     (js/console.log "Loaded grid data:" rows)
     (when (seq rows)
-      (let [row0 (first rows)
-            headers (->> (take 10 rows)
+      (let [headers (->> (take 10 rows)
                          (map #(keys %))
                          (reduce into #{}))]
         (swap! app/state update :grid assoc
