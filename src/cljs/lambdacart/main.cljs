@@ -122,39 +122,57 @@
                      :z-index 1}}
       num])])
 
+;; Cart content with pay button and QR code
 (defn cart-content [cart-line-items]
-  (let [sub-total (reduce + (map (fn [{:keys [item quantity]}]
-                                   (* quantity (:item/price item)))
-                                 cart-line-items))]
-    [:div.cart-content {:style {:background-color :white
-                                :width "80%"
-                                :max-width "600px"
-                                :margin :auto #_"0 auto"
-                                :padding "24px"
-                                :border-radius "8px"
-                                :box-shadow "0 2px 8px rgba(0,0,0,0.08)"}}
-     [:h2 {:style {:margin-bottom "16px"}} "Your Cart"]
-     (if (seq cart-line-items)
-       [:table {:style {:width "100%" :border-collapse "collapse"}}
-        [:thead
-         [:tr
-          [:th {:style {:text-align "left" :padding-bottom "8px"}} "Item"]
-          [:th {:style {:text-align "right" :padding-bottom "8px"}} "Subtotal"]]]
-        [:tbody
-         (doall
-          (for [{:keys [item quantity]} cart-line-items]
-            ^{:key (str (:item/id item))}
-            [:tr
-             [:td {:style {:padding "8px 0"}}
-              [:div {:style {:font-weight "bold"}} (:item/name item)]
-              [:div {:style {:font-size "0.95em" :color "#555"}}
-               (str quantity " × $" (gstring/format "%.2f" (/ (:item/price item) 100.0)))]]
-             [:td {:style {:text-align "right" :font-weight "bold"}}
-              (str "$" (gstring/format "%.2f" (/ (* quantity (:item/price item)) 100.0)))]]))]]
-       [:div {:style {:color "#888" :padding "32px" :text-align "center"}} "Your cart is empty."])
-     (when (seq cart-line-items)
-       [:div {:style {:marginTop "24px" :textAlign "right" :fontWeight "bold" :fontSize "1.2em"}}
-        "Subtotal: " [:span {:style {:color "#e91e63"}} (str "$" (gstring/format "%.2f" (/ sub-total 100.0)))]])]))
+  (let [show-qr? (r/atom false)
+        algo-address "algorand://F7YGGVYNO6NIUZ35UTQQ7GMQPUOELTERYHGGLESYSABC6E5P2ZYMRJPWOQ?amount=1&note=order123"]
+    (let [sub-total (reduce + (map (fn [{:keys [item quantity]}]
+                                     (* quantity (:item/price item)))
+                                   cart-line-items))]
+      [:div.cart-content {:style {:background-color :white
+                                  :width "80%"
+                                  :max-width "600px"
+                                  :margin :auto #_"0 auto"
+                                  :padding "24px"
+                                  :border-radius "8px"
+                                  :box-shadow "0 2px 8px rgba(0,0,0,0.08)"}}
+       [:h2 {:style {:margin-bottom "16px"}} "Your Cart"]
+       (if (seq cart-line-items)
+         [:table {:style {:width "100%" :border-collapse "collapse"}}
+          [:thead
+           [:tr
+            [:th {:style {:text-align "left" :padding-bottom "8px"}} "Item"]
+            [:th {:style {:text-align "right" :padding-bottom "8px"}} "Subtotal"]]]
+          [:tbody
+           (doall
+            (for [{:keys [item quantity]} cart-line-items]
+              ^{:key (str (:item/id item))}
+              [:tr
+               [:td {:style {:padding "8px 0"}}
+                [:div {:style {:font-weight "bold"}} (:item/name item)]
+                [:div {:style {:font-size "0.95em" :color "#555"}}
+                 (str quantity " × $" (gstring/format "%.2f" (/ (:item/price item) 100.0)))]]
+               [:td {:style {:text-align "right" :font-weight "bold"}}
+                (str "$" (gstring/format "%.2f" (/ (* quantity (:item/price item)) 100.0)))]]))]]
+         [:div {:style {:color "#888" :padding "32px" :text-align "center"}} "Your cart is empty."])
+       (when (seq cart-line-items)
+         [:div {:style {:marginTop "24px" :textAlign "right" :fontWeight "bold" :fontSize "1.2em"}}
+          "Subtotal: " [:span {:style {:color "#e91e63"}} (str "$" (gstring/format "%.2f" (/ sub-total 100.0)))]
+          [:br]
+          (if @show-qr?
+            [:button {:style {:marginTop "16px" :background "#00aaff" :color "white" :border "none" :borderRadius "5px" :padding "10px 24px" :fontWeight "bold" :fontSize "1em" :cursor "pointer"}
+                      :on-click #(reset! show-qr? true)}
+             "Pay"]
+            [:div {:style {:marginTop "16px" :textAlign "center"}}
+             [:div {:style {:marginBottom "8px" :fontWeight "bold" :fontSize "1.1em" :color "#333"}}
+              "Send payment to:"]
+             [:div {:style {:marginBottom "8px" :fontFamily "monospace" :fontSize "1em" :wordBreak "break-all"}}
+              algo-address]
+             [wallet/generate-payment-qr-code algo-address]
+             [:div {:style {:marginTop "8px"}}
+              [:button {:style {:background "#e91e63" :color "white" :border "none" :borderRadius "5px" :padding "6px 18px" :fontWeight "bold" :fontSize "0.95em" :cursor "pointer"}
+                        :on-click #(reset! show-qr? false)}
+               "Hide QR"]]])])])))
 
 (defn create-tab [{:keys [id class content on-click]}]
   [:div.tab {:key id
