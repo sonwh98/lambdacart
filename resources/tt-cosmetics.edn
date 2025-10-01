@@ -74,7 +74,7 @@
   :item/id #uuid "550e8400-e29b-41d4-a716-446655440010"
   :item/name "Matte Liquid Lipstick - Ruby Red"
   :item/description "Long-lasting matte liquid lipstick with rich, vibrant color that stays put all day. Comfortable, non-drying formula."
-  :item/price 2499
+    :item/price 1
   :item/catalog "catalog-1"
   :item/tagories ["tagory-1"]}
 
@@ -83,7 +83,7 @@
   :item/id #uuid "550e8400-e29b-41d4-a716-446655440011"
   :item/name "Glossy Lip Tint - Pink Blush"
   :item/description "Lightweight glossy lip tint with buildable color. Hydrating formula with a natural shine finish."
-  :item/price 1899
+    :item/price 2
   :item/catalog "catalog-1"
   :item/tagories ["tagory-1"]}
 
@@ -91,7 +91,7 @@
   :item/id #uuid "550e8400-e29b-41d4-a716-446655440012"
   :item/name "Velvet Lipstick - Berry Crush"
   :item/description "Creamy velvet lipstick with full coverage. Rich berry shade perfect for evening looks."
-  :item/price 2299
+    :item/price 3
   :item/catalog "catalog-1"
   :item/tagories ["tagory-1"]}
 
@@ -99,7 +99,7 @@
   :item/id #uuid "550e8400-e29b-41d4-a716-446655440013"
   :item/name "Lip Liner - Classic Nude"
   :item/description "Precision lip liner pencil for defining lips. Long-wearing formula prevents feathering."
-  :item/price 1599
+    :item/price 1
   :item/catalog "catalog-1"
   :item/tagories ["tagory-1"]}
 
@@ -107,7 +107,7 @@
   :item/id #uuid "550e8400-e29b-41d4-a716-446655440014"
   :item/name "Lip Gloss - Crystal Clear"
   :item/description "High-shine lip gloss with mirror-like finish. Non-sticky formula adds instant glamour."
-  :item/price 1799
+    :item/price 2
   :item/catalog "catalog-1"
   :item/tagories ["tagory-1"]}
 
@@ -115,7 +115,7 @@
   :item/id #uuid "550e8400-e29b-41d4-a716-446655440015"
   :item/name "Lip Balm - Vanilla Mint"
   :item/description "Nourishing lip balm with vanilla mint scent. SPF 15 protection with moisturizing shea butter."
-  :item/price 899
+    :item/price 3
   :item/catalog "catalog-1"
   :item/tagories ["tagory-1"]}
 
@@ -124,7 +124,7 @@
   :item/id #uuid "550e8400-e29b-41d4-a716-446655440016"
   :item/name "Waterproof Mascara - Jet Black"
   :item/description "Volumizing waterproof mascara that lengthens and separates lashes. Smudge-proof formula lasts all day."
-  :item/price 2999
+    :item/price 1
   :item/catalog "catalog-1"
   :item/tagories ["tagory-2"]}
 
@@ -132,7 +132,7 @@
   :item/id #uuid "550e8400-e29b-41d4-a716-446655440017"
   :item/name "Eyeshadow Palette - Smoky Nights"
   :item/description "12-shade eyeshadow palette with matte and shimmer finishes. Perfect for creating dramatic smoky looks."
-  :item/price 4599
+    :item/price 2
   :item/catalog "catalog-1"
   :item/tagories ["tagory-2"]}
 
@@ -140,7 +140,7 @@
   :item/id #uuid "550e8400-e29b-41d4-a716-446655440018"
   :item/name "Liquid Eyeliner - Precision Black"
   :item/description "Ultra-fine tip liquid eyeliner for precise application. Quick-dry, long-wearing formula."
-  :item/price 2199
+    :item/price 3
   :item/catalog "catalog-1"
   :item/tagories ["tagory-2"]}
 
@@ -148,7 +148,7 @@
   :item/id #uuid "550e8400-e29b-41d4-a716-446655440019"
   :item/name "Eyebrow Pencil - Medium Brown"
   :item/description "Retractable eyebrow pencil with spoolie brush. Buildable formula for natural-looking brows."
-  :item/price 1699
+    :item/price 1
   :item/catalog "catalog-1"
   :item/tagories ["tagory-2"]}
 
@@ -156,7 +156,7 @@
   :item/id #uuid "550e8400-e29b-41d4-a716-446655440020"
   :item/name "Eye Primer - Neutral Base"
   :item/description "Smoothing eye primer that extends eyeshadow wear. Creates perfect base for color application."
-  :item/price 2599
+    :item/price 2
   :item/catalog "catalog-1"
   :item/tagories ["tagory-2"]}
 
