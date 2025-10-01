@@ -122,8 +122,10 @@
                      :z-index 1}}
       num])])
 
+;; Cart content with pay button and QR code
 (defn cart-content [cart-line-items]
-  (let [sub-total (reduce + (map (fn [{:keys [item quantity]}]
+  (let [algo-address "algorand://F7YGGVYNO6NIUZ35UTQQ7GMQPUOELTERYHGGLESYSABC6E5P2ZYMRJPWOQ?amount=1&note=order123"
+        sub-total (reduce + (map (fn [{:keys [item quantity]}]
                                    (* quantity (:item/price item)))
                                  cart-line-items))]
     [:div.cart-content {:style {:background-color :white
@@ -154,7 +156,17 @@
        [:div {:style {:color "#888" :padding "32px" :text-align "center"}} "Your cart is empty."])
      (when (seq cart-line-items)
        [:div {:style {:marginTop "24px" :textAlign "right" :fontWeight "bold" :fontSize "1.2em"}}
-        "Subtotal: " [:span {:style {:color "#e91e63"}} (str "$" (gstring/format "%.2f" (/ sub-total 100.0)))]])]))
+        "Subtotal: " [:span {:style {:color "#e91e63"}} (str "$" (gstring/format "%.2f" (/ sub-total 100.0)))]
+        [:br]
+        [:div {:style {:marginTop "16px" :textAlign "center"}}
+         [:div {:style {:marginBottom "8px" :fontWeight "bold" :fontSize "1.1em" :color "#333"}}
+          "Send payment to:"]
+         [:div {:style {:marginBottom "8px" :fontFamily "monospace" :fontSize "1em" :wordBreak "break-all"}}
+          algo-address]
+         [wallet/generate-payment-qr-code algo-address]
+         ]
+        
+        ])]))
 
 (defn create-tab [{:keys [id class content on-click]}]
   [:div.tab {:key id
