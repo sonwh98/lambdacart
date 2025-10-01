@@ -49,86 +49,9 @@
                (vec (conj cart {:item new-item
                                 :quantity 1})))))))
 
-(comment
-  (-> @app/state :cart)
-  (-> @app/state :cart type)
-  (-> @app/state :cart count))
-
-(defn cart-icon [num]
-  [:span {:style {:position "relative" :display "inline-block"}}
-   [:svg {:xmlns "http://www.w3.org/2000/svg"
-          :width "24" :height "24" :viewBox "0 0 24 24" :fill "none" :stroke "currentColor" :stroke-width "2" :stroke-linecap "round" :stroke-linejoin "round" :style {:vertical-align "middle" :margin-right "4px"}}
-    [:circle {:cx "9" :cy "21" :r "1"}]
-    [:circle {:cx "20" :cy "21" :r "1"}]
-    [:path {:d "M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"}]]
-   (when (and num (pos? num))
-     [:span {:style {:position "absolute"
-                     :top "-4px"
-                     :right "-4px"
-                     :background "#e91e63"
-                     :color "white"
-                     :border-radius "50%"
-                     :padding "0 3px"
-                     :font-size "9px"
-                     :font-weight "bold"
-                     :min-width "12px"
-                     :text-align "center"
-                     :line-height "1.2"
-                     :z-index 1}}
-      num])])
-
-(defn create-tab [{:keys [id class content on-click]}]
-  [:button.tab {:key id
-                :data-tagory-id id
-                :class class
-                :on-click on-click}
-   content])
-
-(defn tabs [state]
-  (let [active-tab (r/atom :all-products)]
-    (fn [state]
-      (let [tagories (get-in @state [:store :catalogs 0 :tagories])
-            tagories-tab (mapv (fn [tagory]
-                                 (let [id (:tagory/id tagory)]
-                                   (create-tab {:id id
-                                                :content (:tagory/name tagory)
-                                                :class (if (= @active-tab id)
-                                                         :active)
-                                                :on-click #(do
-                                                             (reset! active-tab id)
-                                                             (swap! app/state assoc
-                                                                    :display-items (:items tagory)))})))
-                               tagories)
-            all-tabs (if (> (count tagories) 1)
-                       (let [all-products-tab (create-tab {:id :all-products
-                                                           :content "All Products"
-                                                           :class (if (= @active-tab :all-products)
-                                                                    :active)
-                                                           :on-click #(do
-                                                                        (reset! active-tab :all-products)
-                                                                        (swap! app/state assoc
-                                                                               :display-items
-                                                                               (get-all-items (:store @app/state))))})]
-                         (concat [all-products-tab]
-                                 tagories-tab))
-                       tagories-tab)
-            cart-count (reduce + (map :quantity (:cart @app/state)))
-            cart-tab (create-tab {:id :cart
-                                  :content (cart-icon cart-count)
-                                  :class (if (= @active-tab :cart)
-                                           :active)
-                                  :on-click #(do
-                                               (reset! active-tab :cart)
-                                               (swap! app/state assoc
-                                                      :display-items []))})
-            all-tabs (concat all-tabs [cart-tab])]
-        [:div.tab-bar
-         (when (seq all-tabs)
-           all-tabs)]))))
-
 (defn items-grid [display-items]
   [:div.card-grid
-   (for [item @display-items]
+   (for [item display-items]
      [:div.card {:key (:item/id item)
                  :data-item-id (str (:id item))
                  :style {:display "flex"
@@ -171,6 +94,116 @@
                   :width "100%"}
           :on-click #(add-to-cart item)}
          "Add to Cart"]]]])])
+(comment
+  (-> @app/state :cart)
+  (-> @app/state :cart type)
+  (-> @app/state :cart count))
+
+(defn cart-icon [num]
+  [:span {:style {:position "relative" :display "inline-block"}}
+   [:svg {:xmlns "http://www.w3.org/2000/svg"
+          :width "24" :height "24" :viewBox "0 0 24 24" :fill "none" :stroke "currentColor" :stroke-width "2" :stroke-linecap "round" :stroke-linejoin "round" :style {:vertical-align "middle" :margin-right "4px"}}
+    [:circle {:cx "9" :cy "21" :r "1"}]
+    [:circle {:cx "20" :cy "21" :r "1"}]
+    [:path {:d "M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"}]]
+   (when (and num (pos? num))
+     [:span {:style {:position "absolute"
+                     :top "-4px"
+                     :right "-4px"
+                     :background "#e91e63"
+                     :color "white"
+                     :border-radius "50%"
+                     :padding "0 3px"
+                     :font-size "9px"
+                     :font-weight "bold"
+                     :min-width "12px"
+                     :text-align "center"
+                     :line-height "1.2"
+                     :z-index 1}}
+      num])])
+
+(defn cart-content [cart-line-items]
+  (let [sub-total (reduce + (map (fn [{:keys [item quantity]}]
+                                   (* quantity (:item/price item)))
+                                 cart-line-items))]
+    [:div.cart-content {:style {:background-color :white
+                                :width "100%"
+                                :max-width "600px"
+                                :margin "0 auto"
+                                :padding "24px"
+                                :border-radius "8px"
+                                :box-shadow "0 2px 8px rgba(0,0,0,0.08)"}}
+     [:h2 {:style {:margin-bottom "16px"}} "Your Cart"]
+     (if (seq cart-line-items)
+       [:table {:style {:width "100%" :border-collapse "collapse"}}
+        [:thead
+         [:tr
+          [:th {:style {:text-align "left" :padding-bottom "8px"}} "Product"]
+          [:th {:style {:text-align "center" :padding-bottom "8px"}} "Qty"]
+          [:th {:style {:text-align "right" :padding-bottom "8px"}} "Price"]
+          [:th {:style {:text-align "right" :padding-bottom "8px"}} "Total"]]]
+        [:tbody
+         (doall
+          (for [{:keys [item quantity]} cart-line-items]
+            ^{:key (str (:item/id item))}
+            [:tr
+             [:td {:style {:padding "8px 0"}} (:item/name item)]
+             [:td {:style {:text-align "center"}} quantity]
+             [:td {:style {:text-align "right"}} (str "$" (gstring/format "%.2f" (/ (:item/price item) 100.0)))]
+             [:td {:style {:text-align "right"}} (str "$" (gstring/format "%.2f" (/ (* quantity (:item/price item)) 100.0)))]]))]]
+       [:div {:style {:color "#888" :padding "32px" :text-align "center"}} "Your cart is empty."])
+     (when (seq cart-line-items)
+       [:div {:style {:marginTop "24px" :textAlign "right" :fontWeight "bold" :fontSize "1.2em"}}
+        "Subtotal: " [:span {:style {:color "#e91e63"}} (str "$" (gstring/format "%.2f" (/ sub-total 100.0)))]])]))
+
+(defn create-tab [{:keys [id class content on-click]}]
+  [:div.tab {:key id
+             :data-tagory-id id
+             :class class
+             :on-click on-click}
+   content])
+
+(defn tabs [state]
+  (let [active-tab (r/atom :all-products)]
+    (fn [state]
+      (let [tagories (get-in @state [:store :catalogs 0 :tagories])
+            tagories-tab (mapv (fn [tagory]
+                                 (let [id (:tagory/id tagory)]
+                                   (create-tab {:id id
+                                                :content (:tagory/name tagory)
+                                                :class (if (= @active-tab id)
+                                                         :active)
+                                                :on-click #(do
+                                                             (reset! active-tab id)
+                                                             (swap! app/state assoc
+                                                                    :content (items-grid (:items tagory))))})))
+                               tagories)
+            all-tabs (if (> (count tagories) 1)
+                       (let [all-products-tab (create-tab {:id :all-products
+                                                           :content "All Products"
+                                                           :class (if (= @active-tab :all-products)
+                                                                    :active)
+                                                           :on-click #(do
+                                                                        (reset! active-tab :all-products)
+                                                                        (swap! app/state assoc
+                                                                               :content (items-grid
+                                                                                         (get-all-items (:store @app/state)))))})]
+                         (concat [all-products-tab]
+                                 tagories-tab))
+                       tagories-tab)
+            cart-count (reduce + (map :quantity (:cart @app/state)))
+            cart-tab (create-tab {:id :cart
+                                  :content (cart-icon cart-count)
+                                  :class (if (= @active-tab :cart)
+                                           :active)
+                                  :on-click #(do
+                                               (reset! active-tab :cart)
+                                               (swap! app/state assoc
+                                                      :content (cart-content (:cart @state))))})
+            all-tabs (concat all-tabs [cart-tab])]
+        [:div.tab-bar
+         (when (seq all-tabs)
+           all-tabs)]))))
 
 (defn toggle-menu []
   (.. js/document (querySelector ".navigation") -classList (toggle "active")))
@@ -201,7 +234,8 @@
        ;;default
        [:div
         [header state]
-        [items-grid (r/cursor state [:display-items])]]))])
+        (:content @state)
+        #_[items-grid (r/cursor state [:display-items])]]))])
 
 (defonce root (atom nil))
 
@@ -230,7 +264,7 @@
           (let [all-items (get-all-items store)]
             (swap! app/state assoc
                    :store store
-                   :display-items all-items))))
+                   :content (items-grid all-items)))))
       (catch js/Error e
         (pprint {:error "Error loading store" :exception e})))))
 
