@@ -127,9 +127,9 @@
                                    (* quantity (:item/price item)))
                                  cart-line-items))]
     [:div.cart-content {:style {:background-color :white
-                                :width "100%"
+                                :width "80%"
                                 :max-width "600px"
-                                :margin "0 auto"
+                                :margin :auto #_"0 auto"
                                 :padding "24px"
                                 :border-radius "8px"
                                 :box-shadow "0 2px 8px rgba(0,0,0,0.08)"}}
@@ -138,19 +138,19 @@
        [:table {:style {:width "100%" :border-collapse "collapse"}}
         [:thead
          [:tr
-          [:th {:style {:text-align "left" :padding-bottom "8px"}} "Product"]
-          [:th {:style {:text-align "center" :padding-bottom "8px"}} "Qty"]
-          [:th {:style {:text-align "right" :padding-bottom "8px"}} "Price"]
-          [:th {:style {:text-align "right" :padding-bottom "8px"}} "Total"]]]
+          [:th {:style {:text-align "left" :padding-bottom "8px"}} "Item"]
+          [:th {:style {:text-align "right" :padding-bottom "8px"}} "Subtotal"]]]
         [:tbody
          (doall
           (for [{:keys [item quantity]} cart-line-items]
             ^{:key (str (:item/id item))}
             [:tr
-             [:td {:style {:padding "8px 0"}} (:item/name item)]
-             [:td {:style {:text-align "center"}} quantity]
-             [:td {:style {:text-align "right"}} (str "$" (gstring/format "%.2f" (/ (:item/price item) 100.0)))]
-             [:td {:style {:text-align "right"}} (str "$" (gstring/format "%.2f" (/ (* quantity (:item/price item)) 100.0)))]]))]]
+             [:td {:style {:padding "8px 0"}}
+              [:div {:style {:font-weight "bold"}} (:item/name item)]
+              [:div {:style {:font-size "0.95em" :color "#555"}}
+               (str quantity " × $" (gstring/format "%.2f" (/ (:item/price item) 100.0)))]]
+             [:td {:style {:text-align "right" :font-weight "bold"}}
+              (str "$" (gstring/format "%.2f" (/ (* quantity (:item/price item)) 100.0)))]]))]]
        [:div {:style {:color "#888" :padding "32px" :text-align "center"}} "Your cart is empty."])
      (when (seq cart-line-items)
        [:div {:style {:marginTop "24px" :textAlign "right" :fontWeight "bold" :fontSize "1.2em"}}
