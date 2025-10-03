@@ -29,15 +29,11 @@
                                         "="
                                         (URLEncoder/encode (str v) "UTF-8"))))
           uri (URI. (str base-url "?" query-string))
-          _ (prn {:sonny-url uri})
           request (-> (HttpRequest/newBuilder uri)
                       (.header "Accept" "application/json")
                       (.build))
-          _ (prn :sonny2)
+
           response (.send client request (HttpResponse$BodyHandlers/ofString))]
-      (prn {:sonny-body (-> (.body response)
-                            (json/read-str :key-fn keyword)
-                            :transactions)})
       (when (= 200 (.statusCode response))
         (-> (.body response)
             (json/read-str :key-fn keyword)

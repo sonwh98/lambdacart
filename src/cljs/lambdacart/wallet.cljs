@@ -66,8 +66,8 @@
           (let [[response _] (async/alts! [(rpc/invoke-with-response 'fetch-transactions {:address address :since since})
                                            (async/timeout 4000)])]
             (if response
-              (let [raw-txs (:results response) ;;TODO refactor should not need :results
-                    decoded-txs (map decode-tx-note raw-txs)]
+              (let [raw-txs response ;;(:results response) ;;TODO refactor should not need :results
+                    decoded-txs (map #(-> % decode-tx-note decode-tx-note) raw-txs)]
                 (when (seq decoded-txs)
                   (callback decoded-txs))
                 (let [max-rt (when (seq raw-txs)
@@ -75,8 +75,7 @@
                   (recur (or max-rt since))))
               (do (js/console.warn "fetch-transactions timed out, retrying...")
                   (recur since)))))))
-    {:stop stop})
-  )
+    {:stop stop}))
 
 (defn wallet-component []
   [:div])
@@ -89,9 +88,8 @@
   (def monitor (monitor-transactions
                 "F7YGGVYNO6NIUZ35UTQQ7GMQPUOELTERYHGGLESYSABC6E5P2ZYMRJPWOQ"
                 (fn [txs]
-                  (prn "New transactions received:")
+                  (js/alert "Payment received:")
                   (cljs.pprint/pprint txs))
                 {:interval-ms 5000}))
 
-   (async/close! (:stop monitor))
-  )
+  (async/close! (:stop monitor)))
