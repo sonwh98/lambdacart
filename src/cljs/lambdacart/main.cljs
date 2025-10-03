@@ -126,18 +126,19 @@
 (defn cart-content [cart-line-items]
   (let [payment-status (r/atom :pending) ; :pending, :monitoring, :confirmed
         monitor-chan (r/atom nil)
-        order-number-atom (r/atom nil)]
+        store-id (-> @app/state :store :store/id)
+        store-name (-> @app/state :store :store/name)
+        order-num (r/cursor app/state [:order-num])]
     (fn [cart-line-items]
-      (let [store-id (-> @app/state :store :store/id)
-            store-name (-> @app/state :store :store/name)
-            order-number (when store-id
-                           (str (subs (str store-id) 0 8) "-" (quot (.now js/Date) 1000)))
-            algo-address "F7YGGVYNO6NIUZ35UTQQ7GMQPUOELTERYHGGLESYSABC6E5P2ZYMRJPWOQ"
+      (when (and store-id (not @order-num))
+        (reset! order-num
+                (str (subs (str store-id) 0 8) "-" (quot (.now js/Date) 1000))))
+      (prn {:cart-content-order-num @order-num})
+      (let [algo-address "F7YGGVYNO6NIUZ35UTQQ7GMQPUOELTERYHGGLESYSABC6E5P2ZYMRJPWOQ"
             sub-total (reduce + (map (fn [{:keys [item quantity]}]
                                        (* quantity (:item/price item)))
                                      cart-line-items))
-            note order-number
-            algo-url (gstring/format "algorand://%s?amount=%s&note=%s" algo-address sub-total (js/encodeURIComponent note))]
+            algo-url (gstring/format "algorand://%s?amount=%s&note=%s" algo-address sub-total (js/encodeURIComponent @order-num))]
         [:div.cart-content {:style {:background-color :white
                                     :width "80%"
                                     :max-width "600px"
@@ -172,29 +173,19 @@
               [:div {:style {:textAlign "center"}}
                [:button {:on-click (fn []
                                      (reset! payment-status :monitoring)
-                                     (reset! order-number-atom order-number)
                                      (let [monitor (wallet/monitor-transactions
                                                     algo-address
                                                     (fn [txs]
                                                       (let [tx (first txs)
-                                                            order-num (:note-decoded tx)]
-                                                        (cljs.pprint/pprint {:sonny-tx tx
-                                                                             :sonny-order-num order-num
-                                                                             :sonny-order-number order-number
-                                                                             :order-num @order-number-atom})
-                                                        (when-let [stop-ch @monitor-chan]
+                                                            tx-order-num (:note-decoded tx)
+                                                            receiver (-> tx :payment-transaction :receiver)]
+                                                        (when (and (= tx-order-num @order-num)
+                                                                   (= receiver algo-address))
+                                                          (reset! payment-status :confirmed)
+                                                          (reset! order-num nil)
+                                                          (when-let [stop-ch @monitor-chan]
                                                             (async/close! stop-ch)
-                                                            (reset! monitor-chan nil))
-                                                        (reset! payment-status :confirmed)
-                                                        
-                                                        #_(when (some #(and (= (:note-decoded %) @order-number-atom)
-                                                                            (= (:payment-transaction/receiver %) algo-address))
-                                                                      (first txs))
-                                                            (js/console.log "Payment confirmed for order:" @order-number-atom)
-                                                            (when-let [stop-ch @monitor-chan]
-                                                              (async/close! stop-ch)
-                                                              (reset! monitor-chan nil))
-                                                            (reset! payment-status :confirmed))))
+                                                            (reset! monitor-chan nil)))))
                                                     {:interval-ms 5000})]
                                        (reset! monitor-chan (:stop monitor))))
                          :style {:background "#e91e63"
