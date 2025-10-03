@@ -185,8 +185,7 @@
       (let [{:keys [request-id function args]} data
             fn-impl (get @available-functions function)]
         (if fn-impl
-          (let [
-                result (apply fn-impl args)
+          (let [result (apply fn-impl args)
 
                 response {:type :rpc-response
                           :results result
@@ -202,8 +201,7 @@
           (if fn-impl
             (let [result (apply fn-impl args)]
               (send-response channel result))
-            (send-error channel (str "Unknown function: " fn-name)))
-          )
+            (send-error channel (str "Unknown function: " fn-name))))
         (send-error channel "Invalid message format")))
     (catch Exception e
       (send-error channel (str "Server error: " (.getMessage e))))))
