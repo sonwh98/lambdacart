@@ -194,7 +194,7 @@
   (rpc/invoke-with-response 'q '[:find [(pull ?e [:db/id :item/name :item/description :item/price
                                                   {:item/tagories [*]}
                                                   {:item/images [*]}])
-                                ...]
+                                        ...]
                                  :where
                                  [?e :item/name _]]))
 
@@ -380,8 +380,7 @@
     (async/go
       (let [{:keys [results]} (<! (rpc/invoke-with-response 'q
                                                             '[:find [(pull ?t [:db/id :tagory/id :tagory/name]) ...]
-                                                              :where [?t :tagory/id _]]))
-            ]
+                                                              :where [?t :tagory/id _]]))]
         (reset! all-tagories results)))
     (fn [cell-value-cursor row-idx col-idx]
       (let [item-tagories @cell-value-cursor
@@ -454,9 +453,8 @@
     :else (:str types)))
 
 (defn process-grid-data [response]
-  (let [;;TODO refactor response structure
-        rows (if (map? response)
-               (-> response :results :results)
+  (let [rows (if (map? response)
+               (-> response :results)
                response)]
     (when (seq rows)
       (let [headers (->> (take 10 rows)
