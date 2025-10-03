@@ -124,49 +124,98 @@
 
 ;; Cart content with pay button and QR code
 (defn cart-content [cart-line-items]
-  (let [algo-address "algorand://F7YGGVYNO6NIUZ35UTQQ7GMQPUOELTERYHGGLESYSABC6E5P2ZYMRJPWOQ?amount=1&note=order123"
-        sub-total (reduce + (map (fn [{:keys [item quantity]}]
-                                   (* quantity (:item/price item)))
-                                 cart-line-items))]
-    [:div.cart-content {:style {:background-color :white
-                                :width "80%"
-                                :max-width "600px"
-                                :margin :auto #_"0 auto"
-                                :padding "24px"
-                                :border-radius "8px"
-                                :box-shadow "0 2px 8px rgba(0,0,0,0.08)"}}
-     [:h2 {:style {:margin-bottom "16px"}} "Your Cart"]
-     (if (seq cart-line-items)
-       [:table {:style {:width "100%" :border-collapse "collapse"}}
-        [:thead
-         [:tr
-          [:th {:style {:text-align "left" :padding-bottom "8px"}} "Item"]
-          [:th {:style {:text-align "right" :padding-bottom "8px"}} "Subtotal"]]]
-        [:tbody
-         (doall
-          (for [{:keys [item quantity]} cart-line-items]
-            ^{:key (str (:item/id item))}
-            [:tr
-             [:td {:style {:padding "8px 0"}}
-              [:div {:style {:font-weight "bold"}} (:item/name item)]
-              [:div {:style {:font-size "0.95em" :color "#555"}}
-               (str quantity " × $" (gstring/format "%.2f" (/ (:item/price item) 100.0)))]]
-             [:td {:style {:text-align "right" :font-weight "bold"}}
-              (str "$" (gstring/format "%.2f" (/ (* quantity (:item/price item)) 100.0)))]]))]]
-       [:div {:style {:color "#888" :padding "32px" :text-align "center"}} "Your cart is empty."])
-     (when (seq cart-line-items)
-       [:div {:style {:marginTop "24px" :textAlign "right" :fontWeight "bold" :fontSize "1.2em"}}
-        "Subtotal: " [:span {:style {:color "#e91e63"}} (str "$" (gstring/format "%.2f" (/ sub-total 100.0)))]
-        [:br]
-        [:div {:style {:marginTop "16px" :textAlign "center"}}
-         [:div {:style {:marginBottom "8px" :fontWeight "bold" :fontSize "1.1em" :color "#333"}}
-          "Send payment to:"]
-         [:div {:style {:marginBottom "8px" :fontFamily "monospace" :fontSize "1em" :wordBreak "break-all"}}
-          algo-address]
-         [wallet/generate-payment-qr-code algo-address]
-         ]
-        
-        ])]))
+  (let [payment-status (r/atom :pending) ; :pending, :monitoring, :confirmed
+        monitor-chan (r/atom nil)
+        store-id (-> @app/state :store :store/id)
+        store-name (-> @app/state :store :store/name)
+        order-num (r/cursor app/state [:order-num])]
+    (fn [cart-line-items]
+      (when (and store-id (not @order-num))
+        (reset! order-num
+                (str (subs (str store-id) 0 8) "-" (quot (.now js/Date) 1000))))
+      (prn {:cart-content-order-num @order-num})
+      (let [algo-address "F7YGGVYNO6NIUZ35UTQQ7GMQPUOELTERYHGGLESYSABC6E5P2ZYMRJPWOQ"
+            sub-total (reduce + (map (fn [{:keys [item quantity]}]
+                                       (* quantity (:item/price item)))
+                                     cart-line-items))
+            algo-url (gstring/format "algorand://%s?amount=%s&note=%s" algo-address sub-total (js/encodeURIComponent @order-num))]
+        [:div.cart-content {:style {:background-color :white
+                                    :width "80%"
+                                    :max-width "600px"
+                                    :margin :auto
+                                    :padding "24px"
+                                    :border-radius "8px"
+                                    :box-shadow "0 2px 8px rgba(0,0,0,0.08)"}}
+         [:h2 {:style {:margin-bottom "16px"}} "Your Cart"]
+         (if (seq cart-line-items)
+           [:table {:style {:width "100%" :border-collapse "collapse"}}
+            [:thead
+             [:tr
+              [:th {:style {:text-align "left" :padding-bottom "8px"}} "Item"]
+              [:th {:style {:text-align "right" :padding-bottom "8px"}} "Subtotal"]]]
+            [:tbody
+             (doall
+              (for [{:keys [item quantity]} cart-line-items]
+                ^{:key (str (:item/id item))}
+                [:tr
+                 [:td {:style {:padding "8px 0"}}
+                  [:div {:style {:font-weight "bold"}} (:item/name item)]
+                  [:div {:style {:font-size "0.95em" :color "#555"}}
+                   (str quantity " × $" (gstring/format "%.2f" (/ (:item/price item) 100.0)))]]
+                 [:td {:style {:text-align "right" :font-weight "bold"}}
+                  (str "$" (gstring/format "%.2f" (/ (* quantity (:item/price item)) 100.0)))]]))]]
+           [:div {:style {:color "#888" :padding "32px" :text-align "center"}} "Your cart is empty."])
+         (when (seq cart-line-items)
+           [:div {:style {:marginTop "24px" :textAlign "right" :fontWeight "bold" :fontSize "1.2em"}}
+            "Subtotal: " [:span {:style {:color "#e91e63"}} (str "$" (gstring/format "%.2f" (/ sub-total 100.0)))]
+            (case @payment-status
+              :pending
+              [:div {:style {:textAlign "center"}}
+               [:button {:on-click (fn []
+                                     (reset! payment-status :monitoring)
+                                     (let [monitor (wallet/monitor-transactions
+                                                    algo-address
+                                                    (fn [txs]
+                                                      (let [tx (first txs)
+                                                            tx-order-num (:note-decoded tx)
+                                                            receiver (-> tx :payment-transaction :receiver)]
+                                                        (when (and (= tx-order-num @order-num)
+                                                                   (= receiver algo-address))
+                                                          (reset! payment-status :confirmed)
+                                                          (reset! order-num nil)
+                                                          (when-let [stop-ch @monitor-chan]
+                                                            (async/close! stop-ch)
+                                                            (reset! monitor-chan nil)))))
+                                                    {:interval-ms 5000})]
+                                       (reset! monitor-chan (:stop monitor))))
+                         :style {:background "#e91e63"
+                                 :color "white"
+                                 :border "none"
+                                 :border-radius "5px"
+                                 :padding "10px 20px"
+                                 :cursor "pointer"
+                                 :font-size "1.1em"
+                                 :margin-top "16px"}}
+                "Pay with Algo"]]
+              :monitoring
+              [:div {:style {:marginTop "16px" :textAlign "center"}}
+               [:div {:style {:marginBottom "8px" :fontWeight "bold" :fontSize "1.1em" :color "#333"}}
+                "Send payment to:"]
+               [:div {:style {:marginBottom "8px" :fontFamily "monospace" :fontSize "1em" :wordBreak "break-all"}}
+                algo-address]
+               [wallet/generate-payment-qr-code algo-url]
+               [:div {:style {:marginTop "12px" :color "#555"}}
+                "Waiting for payment..."]]
+              :confirmed
+              [:div {:style {:marginTop "24px"
+                             :padding "20px"
+                             :background "#e8f5e9"
+                             :border-left "5px solid #4caf50"
+                             :textAlign "center"
+                             :color "#2e7d32"
+                             :font-size "1.1em"}}
+               "Thank you! Your payment has been confirmed."])])])
+      )))
 
 (defn create-tab [{:keys [id class content on-click]}]
   [:div.tab {:key id
@@ -210,8 +259,7 @@
                                            :active)
                                   :on-click #(do
                                                (reset! active-tab :cart)
-                                               (swap! app/state assoc
-                                                      :content (cart-content (:cart @state))))})
+                                               (swap! app/state assoc :content [cart-content (:cart @state)]))})
             all-tabs (concat all-tabs [cart-tab])]
         [:div.tab-bar
          (when (seq all-tabs)
@@ -270,7 +318,6 @@
 (defn load-store [tenant-name store-name]
   (async/go
     (try
-      (pprint {:action "Loading store" :store-name store-name :tenant tenant-name})
       (let [store (<! (rpc/invoke-with-response 'get-store tenant-name store-name))]
         (when store
           (let [all-items (get-all-items store)]
@@ -304,3 +351,6 @@
               (load-store "TT Cosmetics" "TT Cosmetics Downtown NYC")
               (grid/load-and-display-data))
             (pprint {:error "WebSocket failed to connect after 5 seconds"})))))))
+
+(comment
+  (-> @app/state keys))

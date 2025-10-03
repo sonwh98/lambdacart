@@ -39,7 +39,7 @@
         response-chan (chan 1)]
     (if wss
       (do
-        (js/console.log "Invoking function with ID:" fn-name request-id)
+        (prn {:fn-call fn-call})
         (swap! pending-requests assoc request-id response-chan)
         (stream/write wss fn-call {})
         response-chan)
@@ -70,7 +70,7 @@
         (if-let [response-chan (get @pending-requests request-id)]
           (do
             (js/console.log "Found matching request, sending response")
-            (put! response-chan response)
+            (put! response-chan (:results response))
             (swap! pending-requests dissoc request-id))
           (js/console.warn "No pending request for ID:" request-id))
         ;; Handle broadcasts and notifications

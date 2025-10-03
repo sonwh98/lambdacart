@@ -193,7 +193,8 @@
 (defn load-grid-data []
   (rpc/invoke-with-response 'q '[:find [(pull ?e [:db/id :item/name :item/description :item/price
                                                   {:item/tagories [*]}
-                                                  {:item/images [*]}]) ...]
+                                                  {:item/images [*]}])
+                                        ...]
                                  :where
                                  [?e :item/name _]]))
 
@@ -377,10 +378,9 @@
 (defn tagories-renderer [cell-value-cursor row-idx col-idx]
   (let [all-tagories (r/atom [])]
     (async/go
-      (let [response (<! (rpc/invoke-with-response 'q
-                                                   '[:find [(pull ?t [:db/id :tagory/id :tagory/name]) ...]
-                                                     :where [?t :tagory/id _]]))
-            results (:results response)]
+      (let [{:keys [results]} (<! (rpc/invoke-with-response 'q
+                                                            '[:find [(pull ?t [:db/id :tagory/id :tagory/name]) ...]
+                                                              :where [?t :tagory/id _]]))]
         (reset! all-tagories results)))
     (fn [cell-value-cursor row-idx col-idx]
       (let [item-tagories @cell-value-cursor
@@ -453,8 +453,9 @@
     :else (:str types)))
 
 (defn process-grid-data [response]
-  (let [rows (:results response)]
-    (js/console.log "Loaded grid data:" rows)
+  (let [rows (if (map? response)
+               (-> response :results)
+               response)]
     (when (seq rows)
       (let [headers (->> (take 10 rows)
                          (map #(keys %))
@@ -590,10 +591,8 @@
 
 (defn load-and-display-data []
   (async/go
-    (js/console.log "Loading grid data...")
     (let [response (<! (load-grid-data))]
-      (process-grid-data response)
-      (js/console.log "Grid data loaded and displayed"))))
+      (process-grid-data response))))
 
 (defn init! []
   (mount-grid)

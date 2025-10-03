@@ -31,7 +31,6 @@
                 ;; Parse the transit data before putting it in the channel
                 (let [raw-data (.-data event)
                       edn-data (serde/transit->edn raw-data)]
-                  (js/console.log "Received and parsed message:" edn-data)
                   (put! in edn-data))
                 (catch js/Error e
                   (js/console.error "Error parsing transit message:" e)
