@@ -1,9 +1,12 @@
 (ns lambdacart.algorand
-  (:require [clj-http.client :as httpc]
-            [clojure.core.async :as async :refer [go-loop timeout alts!]])
-  (:import [java.util Base64]))
+  (:require [clojure.core.async :as async :refer [go-loop timeout alts!]]
+            [clojure.data.json :as json])
+  (:import [java.util Base64]
+           [java.net URI]
+           [java.net.http HttpClient HttpRequest HttpResponse$BodyHandlers]))
 
 (def indexer-base "https://mainnet-idx.algonode.cloud")
+(defonce client (HttpClient/newHttpClient))
 
 (defn decode-note
   "If tx has a base64 :note field, decode it and assoc it as :note-decoded.
@@ -20,13 +23,15 @@
   "Returns a vector of transactions for `address`, or nil on error."
   [address]
   (try
-    (let [url (str indexer-base "/v2/transactions")
-          resp (httpc/get url
-                          {:query-params {"address" address
-                                          "limit" 25}
-                           :accept :json
-                           :as :json})]
-      (get-in resp [:body :transactions]))
+    (let [uri (URI. (str indexer-base "/v2/transactions?address=" address "&limit=25"))
+          request (-> (HttpRequest/newBuilder uri)
+                      (.header "Accept" "application/json")
+                      (.build))
+          response (.send client request (HttpResponse$BodyHandlers/ofString))]
+      (when (= 200 (.statusCode response))
+        (-> (.body response)
+            (json/read-str :key-fn keyword)
+            :transactions)))
     (catch Exception e
       (println "Error fetching transactions:" (.getMessage e))
       nil)))
