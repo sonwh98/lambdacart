@@ -49,6 +49,12 @@
                (vec (conj cart {:item new-item
                                 :quantity 1})))))))
 
+(defn remove-from-cart [item-to-remove]
+  (swap! app/state update :cart
+         (fn [cart]
+           (vec (remove #(= (:item/id (:item %)) (:item/id item-to-remove))
+                        cart)))))
+
 (defn items-grid [display-items]
   [:div.card-grid
    (for [item display-items]
@@ -152,18 +158,24 @@
             [:thead
              [:tr
               [:th {:style {:text-align "left" :padding-bottom "8px"}} "Item"]
-              [:th {:style {:text-align "right" :padding-bottom "8px"}} "Subtotal"]]]
+              [:th {:style {:text-align "right" :padding-bottom "8px"}} "Subtotal"]
+              [:th {:style {:width "30px"}}]]]
             [:tbody
              (doall
               (for [{:keys [item quantity]} cart-line-items]
                 ^{:key (str (:item/id item))}
                 [:tr
                  [:td {:style {:padding "8px 0"}}
-                  [:div {:style {:font-weight "bold"}} (:item/name item)]
-                  [:div {:style {:font-size "0.95em" :color "#555"}}
-                   (str quantity " × $" (gstring/format "%.2f" (/ (:item/price item) 100.0)))]]
+                   [:div {:style {:font-weight "bold"}} (:item/name item)]
+                   [:div {:style {:font-size "0.95em" :color "#555"}}
+                    (str quantity " × $" (gstring/format "%.2f" (/ (:item/price item) 100.0)))]]
                  [:td {:style {:text-align "right" :font-weight "bold"}}
-                  (str "$" (gstring/format "%.2f" (/ (* quantity (:item/price item)) 100.0)))]]))]]
+                   (str "$" (gstring/format "%.2f" (/ (* quantity (:item/price item)) 100.0)))]
+                 [:td {:style {:text-align "center"}}
+                  [:button {:on-click #(remove-from-cart item)
+                            :style {:background "none" :border "none" :color "#ff4444"
+                                    :cursor "pointer" :font-size "1.2em"}}
+                   "×"]]]))]] 
            [:div {:style {:color "#888" :padding "32px" :text-align "center"}} "Your cart is empty."])
          (when (seq cart-line-items)
            [:div {:style {:marginTop "24px" :textAlign "right" :fontWeight "bold" :fontSize "1.2em"}}
