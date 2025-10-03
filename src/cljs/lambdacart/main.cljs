@@ -163,10 +163,7 @@
           "Send payment to:"]
          [:div {:style {:marginBottom "8px" :fontFamily "monospace" :fontSize "1em" :wordBreak "break-all"}}
           algo-address]
-         [wallet/generate-payment-qr-code algo-address]
-         ]
-        
-        ])]))
+         [wallet/generate-payment-qr-code algo-address]]])]))
 
 (defn create-tab [{:keys [id class content on-click]}]
   [:div.tab {:key id
