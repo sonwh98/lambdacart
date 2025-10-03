@@ -17,6 +17,7 @@
   "Returns a vector of transactions. Expects a map with :address and optional :since (epoch seconds)."
   [{:keys [address since]}]
   (try
+    (prn "fetch-transactions" address " " since)
     (let [base-url (str indexer-base "/v2/transactions")
           ;; Build query params, adding after-time if :since is provided
           query-params (cond-> {"address" address, "limit" 25}
@@ -28,10 +29,15 @@
                                         "="
                                         (URLEncoder/encode (str v) "UTF-8"))))
           uri (URI. (str base-url "?" query-string))
+          _ (prn {:sonny-url uri})
           request (-> (HttpRequest/newBuilder uri)
                       (.header "Accept" "application/json")
                       (.build))
+          _ (prn :sonny2)
           response (.send client request (HttpResponse$BodyHandlers/ofString))]
+      (prn {:sonny-body (-> (.body response)
+                            (json/read-str :key-fn keyword)
+                            :transactions)})
       (when (= 200 (.statusCode response))
         (-> (.body response)
             (json/read-str :key-fn keyword)

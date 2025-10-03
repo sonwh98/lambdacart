@@ -266,9 +266,9 @@
 
 (defn load-store [tenant-name store-name]
   (async/go
-    (try
-      (pprint {:action "Loading store" :store-name store-name :tenant tenant-name})
-      (let [store (<! (rpc/invoke-with-response 'get-store tenant-name store-name))]
+    (try 
+      (let [store (:results (<! (rpc/invoke-with-response 'get-store tenant-name store-name)))]
+        ;;TODO refactor above. should not have to call :results
         (when store
           (let [all-items (get-all-items store)]
             (swap! app/state assoc
@@ -301,3 +301,8 @@
               (load-store "TT Cosmetics" "TT Cosmetics Downtown NYC")
               (grid/load-and-display-data))
             (pprint {:error "WebSocket failed to connect after 5 seconds"})))))))
+
+
+(comment
+  (-> @app/state keys)
+  )

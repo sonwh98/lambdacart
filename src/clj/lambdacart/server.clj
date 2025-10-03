@@ -2,6 +2,7 @@
   (:require [datomic.api :as d]
             [lambdacart.datomic :as datomic]
             [lambdacart.serde :as serde]
+            [lambdacart.algorand :as algo]
             [org.httpkit.server :as http]
             [stigmergy.server]
             [stigmergy.chp]
@@ -184,8 +185,12 @@
       (let [{:keys [request-id function args]} data
             fn-impl (get @available-functions function)]
         (if fn-impl
-          (let [result (apply fn-impl args)
-                response (assoc result :request-id request-id)]
+          (let [
+                result (apply fn-impl args)
+
+                response {:type :rpc-response
+                          :results result
+                          :request-id request-id}]
             (send-response channel response))
           (send-error channel (str "Unknown function: " function) request-id)))
       ;; Handle old format (list)
@@ -193,10 +198,12 @@
         (let [fn-name (first data)
               args (rest data)
               fn-impl (get @available-functions fn-name)]
+          (prn :foo4)
           (if fn-impl
             (let [result (apply fn-impl args)]
               (send-response channel result))
-            (send-error channel (str "Unknown function: " fn-name))))
+            (send-error channel (str "Unknown function: " fn-name)))
+          )
         (send-error channel "Invalid message format")))
     (catch Exception e
       (send-error channel (str "Server error: " (.getMessage e))))))
@@ -359,6 +366,9 @@
 ;; Register the Datomic transact function
 (register-function! 'transact
                     transact)
+
+(register-function! 'fetch-transactions
+                    algo/fetch-transactions)
 
 ;; Update start-server to initialize Datomic
 (defn start-server []
