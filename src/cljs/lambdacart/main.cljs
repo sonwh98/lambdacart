@@ -361,21 +361,13 @@
     (swap! app/state assoc :wss wss)
     (rpc/start-response-handler wss)
 
-    ;; Wait for WebSocket to be ready, then load data
     (async/go
-      (pprint {:status "Waiting for WebSocket connection..."})
-      ;; Wait for the WebSocket to be in OPEN state
-      (loop [attempts 0]
-        (if (and (< attempts 50) ; Max 5 seconds
-                 (not= (.-readyState (:ws wss)) 1)) ; 1 = OPEN
-          (do
-            (<! (async/timeout 100))
-            (recur (inc attempts)))
-          (if (= (.-readyState (:ws wss)) 1)
-            (do
-              (load-store "TT Cosmetics" "TT Cosmetics Downtown NYC")
-              (grid/load-and-display-data))
-            (pprint {:error "WebSocket failed to connect after 5 seconds"})))))))
+      (loop []
+        (when (not= (:status (stream/status wss)) :connected)
+          (<! (async/timeout 100))
+          (recur)))
+      (load-store "TT Cosmetics" "TT Cosmetics Downtown NYC")
+      (grid/load-and-display-data))))
 
 (comment
   (-> @app/state keys))
