@@ -148,11 +148,11 @@
         [:div.cart-content {:style {:background-color :white
                                     :width "80%"
                                     :max-width "600px"
-                                    :margin :auto
+                                    :margin "20px auto"
                                     :padding "24px"
                                     :border-radius "8px"
                                     :box-shadow "0 2px 8px rgba(0,0,0,0.08)"}}
-         [:h2 {:style {:margin-bottom "16px"}} "Your Cart"]
+         #_[:h2 {:style {:margin-bottom "16px"}} "Your Cart"]
          (if (seq @cart)
            [:table {:style {:width "100%" :border-collapse "collapse"}}
             [:thead
