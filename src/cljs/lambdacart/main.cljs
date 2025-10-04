@@ -283,7 +283,7 @@
                                                            :on-click #(do
                                                                         (reset! active-tab :all-products)
                                                                         (hide-menu!)
-                                                                        (swap! app/state assoc 
+                                                                        (swap! app/state assoc
                                                                                :content (items-grid
                                                                                          (get-all-items (:store @app/state)))))})]
                          (concat [all-products-tab]
