@@ -18,9 +18,12 @@
           out-chan (or (:out this) (chan))
           internal-state-atom (or (:state-atom this) (atom {:attempt 0 :status :connecting}))
           connect! (fn connect-fn! []
-                     (let [full-url (if (re-matches #"^wss?://.*" url)
-                                      url
-                                      (str "//" (.-host js/location) url))
+                     (let [secure? (= "https:" (.-protocol js/location))
+                           full-url (if (re-matches #"^wss?://.*" url)
+                                      (if secure?
+                                        (.replace url #"^ws:" "wss:")
+                                        url)
+                                      (str (if secure? "wss://" "ws://") (.-host js/location) url))
                            new-ws (js/WebSocket. full-url)]
                        (swap! internal-state-atom assoc :status :connecting)
                        (reset! ws-atom new-ws)
