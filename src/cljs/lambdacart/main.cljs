@@ -241,11 +241,12 @@
                "Thank you! Your payment has been confirmed."])])]))))
 
 (defn contact-page []
-  [:div {:style {:padding "20px" :background-color "white" :margin "20px" :border-radius "8px"}}
-   [:h2 "Contact Us"]
-   [:p "For any inquiries, please reach out to us at "
+  [:div {:style {:padding "20px" :background-color "white" :margin "20px auto"
+                 :border-radius "8px" :text-align "center" :max-width "600px"}}
+   [:h2 {:style {:margin-bottom "16px"}} "Contact Us"]
+   [:p {:style {:margin "8px 0"}} "For any inquiries, please reach out to us at "
     [:a {:href "mailto:tt@ttgamestock.com"} "tt@ttgamestock.com"] "."]
-   [:p "WhatsApp: " [:a {:href "https://wa.me/8613928458941" :target "_blank" :rel "noopener noreferrer"} "+86 139 2845 8941"]]])
+   [:p {:style {:margin "8px 0"}} "WhatsApp: " [:a {:href "https://wa.me/8613928458941" :target "_blank" :rel "noopener noreferrer"} "+86 139 2845 8941"]]])
 
 (defn create-tab [{:keys [id class content on-click]}]
   [:div.tab {:key id
