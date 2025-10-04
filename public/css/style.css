@@ -140,6 +140,10 @@ body::before {
 .hamburger::after { bottom: -6px; }
 
 @media (max-width: 768px) {
+  body {
+    padding-top: 80px;
+  }
+
   .menu-toggle {
     display: block;
     position: absolute;
