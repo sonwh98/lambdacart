@@ -49,10 +49,10 @@
                (vec (conj cart {:item new-item
                                 :quantity 1})))))))
 
-(defn remove-from-cart [item-to-remove]
+(defn remove-from-cart [item]
   (swap! app/state update :cart
          (fn [cart]
-           (vec (remove #(= (:item/id (:item %)) (:item/id item-to-remove))
+           (vec (remove #(= (:item/id (:item %)) (:item/id item))
                         cart)))))
 
 (defn items-grid [display-items]
@@ -129,13 +129,13 @@
       num])])
 
 ;; Cart content with pay button and QR code
-(defn cart-content [cart-line-items]
+(defn cart-content [cart]
   (let [payment-status (r/atom :pending) ; :pending, :monitoring, :confirmed
         monitor-chan (r/atom nil)
         store-id (-> @app/state :store :store/id)
         store-name (-> @app/state :store :store/name)
         order-num (r/cursor app/state [:order-num])]
-    (fn [cart-line-items]
+    (fn [cart]
       (when (and store-id (not @order-num))
         (reset! order-num
                 (str (subs (str store-id) 0 8) "-" (quot (.now js/Date) 1000))))
@@ -143,7 +143,7 @@
       (let [algo-address "F7YGGVYNO6NIUZ35UTQQ7GMQPUOELTERYHGGLESYSABC6E5P2ZYMRJPWOQ"
             sub-total (reduce + (map (fn [{:keys [item quantity]}]
                                        (* quantity (:item/price item)))
-                                     cart-line-items))
+                                     @cart))
             algo-url (gstring/format "algorand://%s?amount=%s&note=%s" algo-address sub-total (js/encodeURIComponent @order-num))]
         [:div.cart-content {:style {:background-color :white
                                     :width "80%"
@@ -153,7 +153,7 @@
                                     :border-radius "8px"
                                     :box-shadow "0 2px 8px rgba(0,0,0,0.08)"}}
          [:h2 {:style {:margin-bottom "16px"}} "Your Cart"]
-         (if (seq cart-line-items)
+         (if (seq @cart)
            [:table {:style {:width "100%" :border-collapse "collapse"}}
             [:thead
              [:tr
@@ -162,7 +162,7 @@
               [:th {:style {:width "30px"}}]]]
             [:tbody
              (doall
-              (for [{:keys [item quantity]} cart-line-items]
+              (for [{:keys [item quantity]} @cart]
                 ^{:key (str (:item/id item))}
                 [:tr
                  [:td {:style {:padding "8px 0"}}
@@ -177,7 +177,7 @@
                                     :cursor "pointer" :font-size "1.2em"}}
                    "×"]]]))]] 
            [:div {:style {:color "#888" :padding "32px" :text-align "center"}} "Your cart is empty."])
-         (when (seq cart-line-items)
+         (when (seq @cart)
            [:div {:style {:marginTop "24px" :textAlign "right" :fontWeight "bold" :fontSize "1.2em"}}
             "Subtotal: " [:span {:style {:color "#e91e63"}} (str "$" (gstring/format "%.2f" (/ sub-total 100.0)))]
             (case @payment-status
@@ -271,7 +271,7 @@
                                            :active)
                                   :on-click #(do
                                                (reset! active-tab :cart)
-                                               (swap! app/state assoc :content [cart-content (:cart @state)]))})
+                                               (swap! app/state assoc :content [cart-content (r/cursor state [:cart])]))})
             all-tabs (concat all-tabs [cart-tab])]
         [:div.tab-bar
          (when (seq all-tabs)
