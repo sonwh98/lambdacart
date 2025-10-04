@@ -152,7 +152,7 @@
                                     :padding "24px"
                                     :border-radius "8px"
                                     :box-shadow "0 2px 8px rgba(0,0,0,0.08)"}}
-         #_[:h2 {:style {:margin-bottom "16px"}} "Your Cart"]
+         [:h2 {:style {:margin-bottom "16px"}} "Your Cart"]
          (if (seq @cart)
            [:table {:style {:width "100%" :border-collapse "collapse"}}
             [:thead
@@ -240,13 +240,9 @@
                              :font-size "1.1em"}}
                "Thank you! Your payment has been confirmed."])])]))))
 
-(defn contact-page []
-  [:div {:style {:padding "20px" :background-color "white" :margin "20px auto"
-                 :border-radius "8px" :text-align "center" :max-width "600px"}}
-   [:h2 {:style {:margin-bottom "16px"}} "Contact Us"]
-   [:p {:style {:margin "8px 0"}} "For any inquiries, please reach out to us at "
-    [:a {:href "mailto:tt@ttgamestock.com"} "tt@ttgamestock.com"] "."]
-   [:p {:style {:margin "8px 0"}} "WhatsApp: " [:a {:href "https://wa.me/8613928458941" :target "_blank" :rel "noopener noreferrer"} "+86 139 2845 8941"]]])
+(defn hide-menu! []
+  (when-let [nav-el (.querySelector js/document ".navigation.active")]
+    (.remove (.-classList nav-el) "active")))
 
 (defn create-tab [{:keys [id class content on-click]}]
   [:div.tab {:key id
@@ -254,6 +250,14 @@
              :class class
              :on-click on-click}
    content])
+
+(defn contact-page []
+  [:div {:style {:padding "20px" :background-color "white" :margin "20px auto"
+                 :border-radius "8px" :text-align "center" :max-width "600px"}}
+   [:h2 {:style {:margin-bottom "16px"}} "Contact Us"]
+   [:p {:style {:margin "8px 0"}} "For any inquiries, please reach out to us at "
+    [:a {:href "mailto:tt@ttgamestock.com"} "tt@ttgamestock.com"] "."]
+   [:p {:style {:margin "8px 0"}} "WhatsApp: " [:a {:href "https://wa.me/8613928458941" :target "_blank" :rel "noopener noreferrer"} "+86 139 2845 8941"]]])
 
 (defn tabs [state]
   (let [active-tab (r/atom :all-products)]
@@ -266,6 +270,7 @@
                                                 :class (if (= @active-tab id)
                                                          :active)
                                                 :on-click #(do
+                                                             (hide-menu!)
                                                              (reset! active-tab id)
                                                              (swap! app/state assoc
                                                                     :content (items-grid (:items tagory))))})))
@@ -277,7 +282,8 @@
                                                                     :active)
                                                            :on-click #(do
                                                                         (reset! active-tab :all-products)
-                                                                        (swap! app/state assoc
+                                                                        (hide-menu!)
+                                                                        (swap! app/state assoc 
                                                                                :content (items-grid
                                                                                          (get-all-items (:store @app/state)))))})]
                          (concat [all-products-tab]
@@ -290,12 +296,14 @@
                                            :active)
                                   :on-click #(do
                                                (reset! active-tab :cart)
+                                               (hide-menu!)
                                                (swap! app/state assoc :content [cart-content (r/cursor state [:cart])]))})
             contact-tab (create-tab {:id :contact
                                      :content "Contact"
                                      :class (if (= @active-tab :contact)
                                               :active)
                                      :on-click #(do
+                                                  (hide-menu!)
                                                   (reset! active-tab :contact)
                                                   (swap! app/state assoc :content [contact-page]))})
             all-tabs (concat all-tabs [cart-tab contact-tab])] \
