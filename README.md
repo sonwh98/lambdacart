@@ -30,6 +30,7 @@ then open browser http://localhost:3001/grid.chp
 #recompiles cljs to js on change
 % clj -M:cljs -m shadow.cljs.devtools.cli watch grid
 % clj -M:dev -m shadow.cljs.devtools.cli watch grid-remote
+% clj -M:dev -m shadow.cljs.devtools.cli watch main-remote
 
 #compile cljs
 % clj -M:cljs -m shadow.cljs.devtools.cli compile app

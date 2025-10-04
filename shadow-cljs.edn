@@ -7,6 +7,13 @@
                  :output-dir "public/js"
                  :modules {:main {:init-fn lambdacart.main/init!}}}
 
+          :main-remote {:target :browser
+                        :output-dir "public/js"
+                        :modules {:main {:init-fn lambdacart.main/init!}}
+                        :devtools {:devtools-url "/shadow-cljs" ;;behind nginx reverse proxy
+                                   :after-load lambdacart.grid/init!
+                                   :preloads [lambdacart.patches]}}
+
           :grid {:target :browser
                  :output-dir "public/js"
                  :modules {:grid {:init-fn lambdacart.grid/init!}}
