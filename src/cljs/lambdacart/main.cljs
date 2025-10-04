@@ -232,7 +232,7 @@
   [:div {:style {:padding "20px" :background-color "white" :margin "20px" :border-radius "8px"}}
    [:h2 "Contact Us"]
    [:p "For any inquiries, please reach out to us at "
-    [:a {:href "mailto:contact@lambdacart.com"} "contact@lambdacart.com"] "."]
+    [:a {:href "mailto:contact@lambdacart.com"} "tt@ttgamestock.com"] "."]
    [:p "WhatsApp: " [:a {:href "https://wa.me/8613928458941" :target "_blank" :rel "noopener noreferrer"} "+86 139 2845 8941"]]])
 
 (defn create-tab [{:keys [id class content on-click]}]
