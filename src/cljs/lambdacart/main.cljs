@@ -166,16 +166,16 @@
                 ^{:key (str (:item/id item))}
                 [:tr
                  [:td {:style {:padding "8px 0"}}
-                   [:div {:style {:font-weight "bold"}} (:item/name item)]
-                   [:div {:style {:font-size "0.95em" :color "#555"}}
-                    (str quantity " × $" (gstring/format "%.2f" (/ (:item/price item) 100.0)))]]
+                  [:div {:style {:font-weight "bold"}} (:item/name item)]
+                  [:div {:style {:font-size "0.95em" :color "#555"}}
+                   (str quantity " × $" (gstring/format "%.2f" (/ (:item/price item) 100.0)))]]
                  [:td {:style {:text-align "right" :font-weight "bold"}}
-                   (str "$" (gstring/format "%.2f" (/ (* quantity (:item/price item)) 100.0)))]
+                  (str "$" (gstring/format "%.2f" (/ (* quantity (:item/price item)) 100.0)))]
                  [:td {:style {:text-align "center"}}
                   [:button {:on-click #(remove-from-cart item)
                             :style {:background "none" :border "none" :color "#ff4444"
                                     :cursor "pointer" :font-size "1.2em"}}
-                   "×"]]]))]] 
+                   "×"]]]))]]
            [:div {:style {:color "#888" :padding "32px" :text-align "center"}} "Your cart is empty."])
          (when (seq @cart)
            [:div {:style {:marginTop "24px" :textAlign "right" :fontWeight "bold" :fontSize "1.2em"}}
@@ -226,8 +226,14 @@
                              :textAlign "center"
                              :color "#2e7d32"
                              :font-size "1.1em"}}
-               "Thank you! Your payment has been confirmed."])])])
-      )))
+               "Thank you! Your payment has been confirmed."])])]))))
+
+(defn contact-page []
+  [:div {:style {:padding "20px" :background-color "white" :margin "20px" :border-radius "8px"}}
+   [:h2 "Contact Us"]
+   [:p "For any inquiries, please reach out to us at "
+    [:a {:href "mailto:contact@lambdacart.com"} "contact@lambdacart.com"] "."]
+   [:p "WhatsApp: " [:a {:href "https://wa.me/8613928458941" :target "_blank" :rel "noopener noreferrer"} "+86 139 2845 8941"]]])
 
 (defn create-tab [{:keys [id class content on-click]}]
   [:div.tab {:key id
@@ -272,10 +278,17 @@
                                   :on-click #(do
                                                (reset! active-tab :cart)
                                                (swap! app/state assoc :content [cart-content (r/cursor state [:cart])]))})
-            all-tabs (concat all-tabs [cart-tab])]
-        [:div.tab-bar
-         (when (seq all-tabs)
-           all-tabs)]))))
+            contact-tab (create-tab {:id :contact
+                                     :content "Contact"
+                                     :class (if (= @active-tab :contact)
+                                              :active)
+                                     :on-click #(do
+                                                  (reset! active-tab :contact)
+                                                  (swap! app/state assoc :content [contact-page]))})
+            all-tabs (concat all-tabs [cart-tab contact-tab])] \
+ [:div.tab-bar
+  (when (seq all-tabs)
+    all-tabs)]))))
 
 (defn toggle-menu []
   (.. js/document (querySelector ".navigation") -classList (toggle "active")))
