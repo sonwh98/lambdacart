@@ -10,17 +10,20 @@
   (close [this] "Close the stream.")
   (status [this] "Returns the current status of the stream, e.g., :connecting, :connected."))
 
-(defrecord WebSocketStream [url ws in out state-atom]
+(defrecord WebSocketStream [url ws-atom in out state-atom]
   Stream
   (open [this _]
-    (let [in-chan (chan)
-          out-chan (chan)
-          internal-state-atom (atom {:attempt 0 :status :connecting})
+    (let [ws-atom (or (:ws-atom this) (atom nil))
+          in-chan (or (:in this) (chan))
+          out-chan (or (:out this) (chan))
+          internal-state-atom (or (:state-atom this) (atom {:attempt 0 :status :connecting}))
           connect! (fn connect-fn! []
                      (let [full-url (if (re-matches #"^wss?://.*" url)
                                       url
                                       (str "//" (.-host js/location) url))
                            new-ws (js/WebSocket. full-url)]
+                       (swap! internal-state-atom assoc :status :connecting)
+                       (reset! ws-atom new-ws)
                        (set! (.-onopen new-ws)
                              (fn [_]
                                (js/console.log "WebSocket connection opened.")
@@ -33,25 +36,31 @@
                                    (async/put! in-chan edn-data))
                                  (catch js/Error e
                                    (js/console.error "Error parsing transit message:" e)
-                                   (async/put! in (.-data event))))))
+                                   (async/put! in-chan (.-data event))))))
                        (set! (.-onclose new-ws)
                              (fn [event]
-                               (js/console.warn "WebSocket connection closed. Reconnecting...")
-                               (swap! internal-state-atom update :attempt inc)
-                               (let [delay-ms (* (min 60 (* 2 (:attempt @internal-state-atom))) 1000)]
-                                 (js/console.log (str "Reconnecting in " (/ delay-ms 1000) "s..."))
-                                 (js/setTimeout connect-fn! delay-ms))))
+                               (when (not= (:status @internal-state-atom) :closed)
+                                 (js/console.warn "WebSocket connection closed. Reconnecting...")
+                                 (swap! internal-state-atom
+                                        (fn [{:keys [attempt] :as state}]
+                                          (-> state
+                                              (update :attempt (fnil inc 0))
+                                              (assoc :status :connecting))))
+                                 (let [delay-ms (* (min 60 (* 2 (:attempt @internal-state-atom))) 1000)]
+                                   (js/console.log (str "Reconnecting in " (/ delay-ms 1000) "s..."))
+                                   (js/setTimeout connect-fn! delay-ms)))))
                        (set! (.-onerror new-ws)
                              (fn [error]
                                (js/console.error "WebSocket error:" error)))
-                       (assoc this :ws new-ws :in in-chan :out out-chan :state-atom internal-state-atom)))]
-      (let [new-this (connect!)] ; This returns the stream with the internal state-atom
+                       new-ws))]
+      (connect!)
+      (let [new-this (assoc this :ws-atom ws-atom :in in-chan :out out-chan :state-atom internal-state-atom)] ; This returns the stream with the internal state-atom
         ;; This go-loop handles messages from the `out` channel and sends them
         ;; through the WebSocket. It's independent of the connection status.
         (async/go-loop []
-          (when-let [msg (<! (:out new-this))]
-            (when-let [current-ws (:ws new-this)]
-              (when (= (.-readyState current-ws) 1) ; 1 = OPEN
+          (when-let [msg (<! out-chan)]
+            (when-let [current-ws @ws-atom]
+              (when (= (.-readyState current-ws) js/WebSocket.OPEN)
                 (.send current-ws msg)))
             (recur)))
         new-this)))
@@ -81,7 +90,7 @@
   (close [this]
     ;; Prevent reconnection by setting a flag
     (swap! (:state-atom this) assoc :status :closed)
-    (when-let [ws (:ws this)]
+    (when-let [ws @(:ws-atom this)]
       (set! (.-onclose ws) nil) ; Remove onclose handler to stop reconnection
       (.close ws))
     (close! (:in this))
@@ -89,3 +98,14 @@
 
   (status [this]
     @(:state-atom this)))
+
+(defn current-ws
+  "Return the underlying WebSocket instance, if connected."
+  [stream]
+  (some-> stream :ws-atom deref))
+
+(defn connected?
+  "True when the stream currently has an open WebSocket connection."
+  [stream]
+  (let [ws (current-ws stream)]
+    (and ws (= (.-readyState ws) js/WebSocket.OPEN))))

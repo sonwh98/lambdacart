@@ -2,7 +2,9 @@
 (ns lambdacart.wallet
   (:require [reagent.core :as r]
             [cljs.core.async :refer [chan put! <! >! close! timeout] :as async]
+            [lambdacart.app :as app]
             [lambdacart.rpc :as rpc]
+            [lambdacart.stream :as stream]
             [cljs.pprint :refer [pprint]]
             [clojure.string :as str]
             ["algosdk" :as algosdk]
@@ -63,18 +65,23 @@
         (js/console.log "monitor-transactions tick, v=" v)
         (if (= ch stop)
           (js/console.log "Stopping transaction monitor for" address)
-          (let [[response _] (async/alts! [(rpc/invoke-with-response 'fetch-transactions {:address address :since since})
-                                           (async/timeout 4000)])]
-            (if response
-              (let [raw-txs response ;;(:results response) ;;TODO refactor should not need :results
-                    decoded-txs (map #(-> % decode-tx-note decode-tx-note) raw-txs)]
-                (when (seq decoded-txs)
-                  (callback decoded-txs))
-                (let [max-rt (when (seq raw-txs)
-                               (apply max (map :round-time raw-txs)))]
-                  (recur (or max-rt since))))
-              (do (js/console.warn "fetch-transactions timed out, retrying...")
-                  (recur since)))))))
+          (let [wss (-> @app/state :wss)]
+            (if (and wss (stream/connected? wss))
+              (let [[response _] (async/alts! [(rpc/invoke-with-response 'fetch-transactions {:address address :since since})
+                                               (async/timeout 4000)])]
+                (if response
+                  (let [raw-txs response ;;(:results response) ;;TODO refactor should not need :results
+                        decoded-txs (map #(-> % decode-tx-note decode-tx-note) raw-txs)]
+                    (when (seq decoded-txs)
+                      (callback decoded-txs))
+                    (let [max-rt (when (seq raw-txs)
+                                   (apply max (map :round-time raw-txs)))]
+                      (recur (or max-rt since))))
+                  (do (js/console.warn "fetch-transactions timed out, retrying...")
+                      (recur since))))
+              (do
+                (js/console.warn "WebSocket disconnected, waiting before retrying fetch-transactions...")
+                (recur since)))))))
     {:stop stop}))
 
 (defn wallet-component []

@@ -608,11 +608,11 @@
       ;; Wait for the WebSocket to be in OPEN state
       (loop [attempts 0]
         (if (and (< attempts 50) ; Max 5 seconds
-                 (not= (.-readyState (:ws wss)) 1)) ; 1 = OPEN
+                 (not (stream/connected? wss)))
           (do
             (<! (async/timeout 100))
             (recur (inc attempts)))
-          (if (= (.-readyState (:ws wss)) 1)
+          (if (stream/connected? wss)
             (do
               (js/console.log "WebSocket connected, loading data...")
               (load-and-display-data))
