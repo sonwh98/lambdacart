@@ -19,9 +19,7 @@
           connect! (fn connect-fn! []
                      (let [full-url (if (re-matches #"^wss?://.*" url)
                                       url
-                                      (let [protocol (if (= (.-protocol js/location) "https:") "wss:" "ws:")
-                                            host (.-host js/location)]
-                                        (str protocol "//" host url)))
+                                      (str "//" (.-host js/location) url))
                            new-ws (js/WebSocket. full-url)]
                        (set! (.-onopen new-ws)
                              (fn [_]
