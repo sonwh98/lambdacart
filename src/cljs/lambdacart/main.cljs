@@ -217,7 +217,19 @@
                 algo-address]
                [wallet/generate-payment-qr-code algo-url]
                [:div {:style {:marginTop "12px" :color "#555"}}
-                "Waiting for payment..."]]
+                "Waiting for payment..."]
+               [:button {:on-click (fn []
+                                     (reset! payment-status :pending)
+                                     (when-let [stop-ch @monitor-chan]
+                                       (async/close! stop-ch)
+                                       (reset! monitor-chan nil)))
+                         :style {:background "#aaa"
+                                 :color "white"
+                                 :border "none"
+                                 :border-radius "5px"
+                                 :padding "8px 16px"
+                                 :cursor "pointer"
+                                 :margin-top "10px"}} "Cancel Payment"]]
               :confirmed
               [:div {:style {:marginTop "24px"
                              :padding "20px"
