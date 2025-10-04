@@ -130,8 +130,8 @@
 
 ;; Cart content with pay button and QR code
 (defn cart-content [cart]
-  (let [payment-status (r/atom :pending) ; :pending, :monitoring, :confirmed
-        monitor-chan (r/atom nil)
+  (let [payment-status (r/cursor app/state [:payment-status])
+        monitor-chan (r/cursor app/state [:monitor-chan])
         store-id (-> @app/state :store :store/id)
         store-name (-> @app/state :store :store/name)
         order-num (r/cursor app/state [:order-num])]
@@ -343,6 +343,8 @@
 
     (swap! app/state assoc
            :context-menu {:visible? false :x 0 :y 0}
+           :payment-status :pending
+           :monitor-chan nil
            :grid {:rows []
                   :columns []
                   :selected-rows (sorted-set)
