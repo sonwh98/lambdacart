@@ -1,15 +1,15 @@
 (ns lambdacart.wallet
-  (:require [reagent.core :as r]
-            [cljs.core.async :refer [chan put! <! >! close! timeout] :as async]
-            [lambdacart.app :as app]
-            [lambdacart.rpc :as rpc]
-            [lambdacart.stream :as stream]
-            [cljs.pprint :refer [pprint]]
-            [clojure.string :as str]
+  (:require ["@perawallet/connect" :refer [PeraWalletConnect]]
             ["algosdk" :as algosdk]
             ["bip39" :as bip39]
             ["qrcode" :as qrcode]
-            ["@perawallet/connect" :refer [PeraWalletConnect]]))
+            [cljs.core.async :refer [chan put! <! >! close! timeout] :as async]
+            [cljs.pprint :refer [pprint]]
+            [clojure.string :as str]
+            [lambdacart.app :as app]
+            [lambdacart.rpc :as rpc]
+            [lambdacart.stream :as stream]
+            [reagent.core :as r]))
 
 (defn generate-payment-qr-code [address]
   (let [qr-ref (r/atom nil)]
