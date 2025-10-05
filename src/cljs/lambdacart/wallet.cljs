@@ -155,7 +155,7 @@
          ;; Not connected state
            [:div
             [:p {:style {:margin "16px 0" :color "#666"}}
-             "Connect your PeraWallet by scanning the QR code that appears in the popup."]
+             "Your account is associated with your PeraWallet. Canning the QR code that appears in the popup to authenticate."]
 
             [:button {:on-click (fn []
                                   (reset! connecting? true)

@@ -306,18 +306,18 @@
                                                   (hide-menu!)
                                                   (reset! active-tab :contact)
                                                   (swap! app/state assoc :content [contact-page]))})
-            pera-wallet-tab (create-tab {:id :pera-wallet
-                                         :content "PeraWallet"
-                                         :class (if (= @active-tab :pera-wallet)
-                                                  :active)
-                                         :on-click #(do
-                                                      (hide-menu!)
-                                                      (reset! active-tab :pera-wallet)
-                                                      (swap! app/state assoc :content [wallet/pera-wallet-connect-component]))})
-            all-tabs (concat all-tabs [cart-tab pera-wallet-tab contact-tab])] \
- [:div.tab-bar
-  (when (seq all-tabs)
-    all-tabs)]))))
+            account-tab (create-tab {:id :pera-wallet
+                                     :content "Account"
+                                     :class (if (= @active-tab :account)
+                                              :active)
+                                     :on-click #(do
+                                                  (hide-menu!)
+                                                  (reset! active-tab :account)
+                                                  (swap! app/state assoc :content [wallet/pera-wallet-connect-component]))})
+            all-tabs (concat all-tabs [cart-tab account-tab contact-tab])]
+        [:div.tab-bar
+         (when (seq all-tabs)
+           all-tabs)]))))
 
 (defn toggle-menu []
   (.. js/document (querySelector ".navigation") -classList (toggle "active")))
