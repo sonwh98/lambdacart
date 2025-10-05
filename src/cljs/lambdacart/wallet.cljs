@@ -1,4 +1,3 @@
-
 (ns lambdacart.wallet
   (:require [reagent.core :as r]
             [cljs.core.async :refer [chan put! <! >! close! timeout] :as async]
@@ -9,7 +8,8 @@
             [clojure.string :as str]
             ["algosdk" :as algosdk]
             ["bip39" :as bip39]
-            ["qrcode" :as qrcode]))
+            ["qrcode" :as qrcode]
+            ["@perawallet/connect" :refer [PeraWalletConnect]]))
 
 (defn generate-payment-qr-code [address]
   (let [qr-ref (r/atom nil)]
@@ -83,6 +83,111 @@
                 (js/console.warn "WebSocket disconnected, waiting before retrying fetch-transactions...")
                 (recur since)))))))
     {:stop stop}))
+
+(defonce pera-wallet (atom nil))
+
+(defn init-pera-wallet []
+  (when-not @pera-wallet
+    (try
+      (reset! pera-wallet (PeraWalletConnect.))
+      (catch js/Error e
+        (js/console.error "Failed to initialize PeraWallet:" e)
+        nil))))
+
+(defn pera-wallet-connect-component []
+  (let [connected-address (r/atom nil)
+        error-msg (r/atom nil)
+        connecting? (r/atom false)
+        wallet-initialized? (init-pera-wallet)]
+    (fn []
+      [:div {:style {:padding "20px"
+                     :background-color "white"
+                     :margin "20px auto"
+                     :border-radius "8px"
+                     :max-width "600px"
+                     :text-align "center"}}
+       [:h2 {:style {:margin-bottom "16px"}} "PeraWallet Connect"]
+
+       (if-not @pera-wallet
+         ;; PeraWallet not available
+         [:div {:style {:padding "20px"
+                        :background "#fff3cd"
+                        :border-left "5px solid #ffc107"
+                        :border-radius "4px"
+                        :color "#856404"}}
+          [:div {:style {:font-weight "bold" :margin-bottom "8px"}}
+           "PeraWallet Unavailable"]
+          [:div {:style {:font-size "0.9em"}}
+           "PeraWallet Connect requires HTTPS. Please make sure you're accessing this page over a secure connection (https://) or use localhost for development."]]
+
+         (if @connected-address
+         ;; Connected state
+           [:div
+            [:div {:style {:padding "20px"
+                           :background "#e8f5e9"
+                           :border-left "5px solid #4caf50"
+                           :margin-bottom "20px"
+                           :border-radius "4px"}}
+             [:div {:style {:font-weight "bold" :color "#2e7d32" :margin-bottom "8px"}}
+              "Connected!"]
+             [:div {:style {:font-family "monospace"
+                            :font-size "0.9em"
+                            :word-break "break-all"
+                            :color "#555"}}
+              @connected-address]]
+
+            [:button {:on-click (fn []
+                                  (-> @pera-wallet
+                                      (.disconnect)
+                                      (.then #(do
+                                                (reset! connected-address nil)
+                                                (reset! error-msg nil)))
+                                      (.catch #(reset! error-msg (str "Disconnect error: " (.-message %))))))
+                      :style {:background "#ff4444"
+                              :color "white"
+                              :border "none"
+                              :border-radius "5px"
+                              :padding "12px 24px"
+                              :cursor "pointer"
+                              :font-size "1em"}}
+             "Disconnect"]]
+
+         ;; Not connected state
+           [:div
+            [:p {:style {:margin "16px 0" :color "#666"}}
+             "Connect your PeraWallet by scanning the QR code that appears in the popup."]
+
+            [:button {:on-click (fn []
+                                  (reset! connecting? true)
+                                  (reset! error-msg nil)
+                                  (-> @pera-wallet
+                                      (.connect)
+                                      (.then (fn [accounts]
+                                               (when (seq accounts)
+                                                 (reset! connected-address (first accounts))
+                                                 (reset! connecting? false))))
+                                      (.catch (fn [error]
+                                                (reset! error-msg (str "Connection error: " (.-message error)))
+                                                (reset! connecting? false)))))
+                      :disabled @connecting?
+                      :style {:background (if @connecting? "#aaa" "#e91e63")
+                              :color "white"
+                              :border "none"
+                              :border-radius "5px"
+                              :padding "12px 24px"
+                              :cursor (if @connecting? "not-allowed" "pointer")
+                              :font-size "1em"}}
+             (if @connecting? "Connecting..." "Connect PeraWallet")]]))
+
+       (when @error-msg
+         [:div {:style {:margin-top "16px"
+                        :padding "12px"
+                        :background "#ffebee"
+                        :border-left "5px solid #f44336"
+                        :color "#c62828"
+                        :text-align "left"
+                        :border-radius "4px"}}
+          @error-msg])])))
 
 (defn wallet-component []
   [:div])

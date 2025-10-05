@@ -306,7 +306,15 @@
                                                   (hide-menu!)
                                                   (reset! active-tab :contact)
                                                   (swap! app/state assoc :content [contact-page]))})
-            all-tabs (concat all-tabs [cart-tab contact-tab])] \
+            pera-wallet-tab (create-tab {:id :pera-wallet
+                                         :content "PeraWallet"
+                                         :class (if (= @active-tab :pera-wallet)
+                                                  :active)
+                                         :on-click #(do
+                                                      (hide-menu!)
+                                                      (reset! active-tab :pera-wallet)
+                                                      (swap! app/state assoc :content [wallet/pera-wallet-connect-component]))})
+            all-tabs (concat all-tabs [cart-tab pera-wallet-tab contact-tab])] \
  [:div.tab-bar
   (when (seq all-tabs)
     all-tabs)]))))
