@@ -155,7 +155,7 @@
          ;; Not connected state
            [:div
             [:p {:style {:margin "16px 0" :color "#666"}}
-             "Your account is associated with your PeraWallet. Canning the QR code that appears in the popup to authenticate."]
+             "Your account is associated with your PeraWallet. Scan the QR code that appears in the popup to authenticate."]
 
             [:button {:on-click (fn []
                                   (reset! connecting? true)
@@ -203,5 +203,6 @@
                   (js/alert "Payment received:")
                   (cljs.pprint/pprint txs))
                 {:interval-ms 5000}))
+
 
   (async/close! (:stop monitor)))
