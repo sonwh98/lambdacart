@@ -250,11 +250,53 @@
   :db/doc "Wallets linked to this account. First wallet creates the account, others can be added later."
   :db.install/_attribute :db.part/db}
 
+ {:db/ident :account/oauth-accounts
+  :db/valueType :db.type/ref
+  :db/cardinality :db.cardinality/many
+  :db/doc "OAuth accounts (Google, Facebook) linked to this account"
+  :db.install/_attribute :db.part/db}
+
  {:db/ident :account/logins
   :db/valueType :db.type/ref
   :db/cardinality :db.cardinality/many
   :db/isComponent true
   :db/doc "Login history for this account"
+  :db.install/_attribute :db.part/db}
+
+ ;; OAuth provider enum
+ {:db/ident :oauth.provider/google}
+ {:db/ident :oauth.provider/facebook}
+
+ ;; OAuth account schema
+ {:db/ident :oauth-account/provider-id
+  :db/valueType :db.type/string
+  :db/cardinality :db.cardinality/one
+  :db/unique :db.unique/identity
+  :db/doc "Unique ID from OAuth provider (format: provider:id, e.g., 'google:123456789')"
+  :db.install/_attribute :db.part/db}
+
+ {:db/ident :oauth-account/provider
+  :db/valueType :db.type/ref
+  :db/cardinality :db.cardinality/one
+  :db/doc "OAuth provider: google or facebook"
+  :db.install/_attribute :db.part/db}
+
+ {:db/ident :oauth-account/email
+  :db/valueType :db.type/string
+  :db/cardinality :db.cardinality/one
+  :db/doc "Email from OAuth provider"
+  :db.install/_attribute :db.part/db}
+
+ {:db/ident :oauth-account/name
+  :db/valueType :db.type/string
+  :db/cardinality :db.cardinality/one
+  :db/doc "Name from OAuth provider"
+  :db.install/_attribute :db.part/db}
+
+ {:db/ident :oauth-account/picture
+  :db/valueType :db.type/string
+  :db/cardinality :db.cardinality/one
+  :db/doc "Profile picture URL from OAuth provider"
   :db.install/_attribute :db.part/db}
 
  ;; Login session schema (component of account)
