@@ -249,4 +249,30 @@
   :db/cardinality :db.cardinality/many
   :db/doc "Wallets linked to this account. First wallet creates the account, others can be added later."
   :db.install/_attribute :db.part/db}
+
+ {:db/ident :account/logins
+  :db/valueType :db.type/ref
+  :db/cardinality :db.cardinality/many
+  :db/isComponent true
+  :db/doc "Login history for this account"
+  :db.install/_attribute :db.part/db}
+
+ ;; Login session schema (component of account)
+ {:db/ident :login/wallet
+  :db/valueType :db.type/ref
+  :db/cardinality :db.cardinality/one
+  :db/doc "Wallet used for this login"
+  :db.install/_attribute :db.part/db}
+
+ {:db/ident :login/timestamp
+  :db/valueType :db.type/instant
+  :db/cardinality :db.cardinality/one
+  :db/doc "When the login occurred"
+  :db.install/_attribute :db.part/db}
+
+ {:db/ident :login/ip-address
+  :db/valueType :db.type/string
+  :db/cardinality :db.cardinality/one
+  :db/doc "IP address of the login"
+  :db.install/_attribute :db.part/db}
 ]
