@@ -208,4 +208,45 @@
   :db/valueType :db.type/string
   :db/cardinality :db.cardinality/one
   :db/doc "Alternative text for the image"
-  :db.install/_attribute :db.part/db}]
+  :db.install/_attribute :db.part/db}
+
+ ;; Wallet type enum
+ {:db/ident :wallet.type/algorand}
+ {:db/ident :wallet.type/bitcoin}
+ {:db/ident :wallet.type/ethereum}
+ {:db/ident :wallet.type/solana}
+
+ ;; Wallet schema
+ {:db/ident :wallet/address
+  :db/valueType :db.type/string
+  :db/cardinality :db.cardinality/one
+  :db/unique :db.unique/identity
+  :db/doc "Wallet address (unique across all wallet types)"
+  :db.install/_attribute :db.part/db}
+
+ {:db/ident :wallet/type
+  :db/valueType :db.type/ref
+  :db/cardinality :db.cardinality/one
+  :db/doc "Type of wallet: algorand, bitcoin, ethereum, solana, etc."
+  :db.install/_attribute :db.part/db}
+
+ {:db/ident :wallet/last-connected-at
+  :db/valueType :db.type/instant
+  :db/cardinality :db.cardinality/one
+  :db/doc "Last time the wallet was connected"
+  :db.install/_attribute :db.part/db}
+
+ ;; Account schema
+ {:db/ident :account/id
+  :db/valueType :db.type/uuid
+  :db/cardinality :db.cardinality/one
+  :db/unique :db.unique/identity
+  :db/doc "External UUID identifier for account"
+  :db.install/_attribute :db.part/db}
+
+ {:db/ident :account/wallets
+  :db/valueType :db.type/ref
+  :db/cardinality :db.cardinality/many
+  :db/doc "Wallets linked to this account. First wallet creates the account, others can be added later."
+  :db.install/_attribute :db.part/db}
+]
