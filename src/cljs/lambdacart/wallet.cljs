@@ -99,7 +99,7 @@
                      (when (seq accounts)
                        (let [address (first accounts)]
                          (swap! app/state assoc :algorand-wallet {:address address
-                                                                   :type :pera-wallet})))))
+                                                                  :type :pera-wallet})))))
             (.catch (fn [error]
                       (js/console.log "No existing session to reconnect:" (.-message error))))))
       (catch js/Error e
@@ -177,9 +177,19 @@
                                         (.then (fn [accounts]
                                                  (when (seq accounts)
                                                    (let [address (first accounts)]
-                                                     (swap! app/state assoc :algorand-wallet {:address address
-                                                                                              :type :pera-wallet})
-                                                     (reset! connecting? false)))))
+                                                     ;; Check if account exists, create if it doesn't
+                                                     (async/go
+                                                       (let [response (<! (rpc/invoke-with-response 'get-or-create-account {:algorand-wallet address}))]
+                                                         (if response
+                                                           (do
+                                                             (cljs.pprint/pprint {:response response})
+                                                             (swap! app/state assoc :algorand-wallet {:address address
+                                                                                                      :type :pera-wallet})
+                                                             (reset! connecting? false))
+                                                           (do
+                                                             (js/console.error "Failed to verify/create account")
+                                                             (reset! error-msg "Failed to verify account with server")
+                                                             (reset! connecting? false)))))))))
                                         (.catch (fn [error]
                                                   (reset! error-msg (str "Connection error: " (.-message error)))
                                                   (reset! connecting? false)))))
