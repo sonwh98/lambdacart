@@ -89,8 +89,19 @@
 (defn init-pera-wallet []
   (when-not @pera-wallet
     (try
-      (reset! pera-wallet (PeraWalletConnect. #js {:compactMode true
-                                                   :singleAccount true}))
+      (let [wallet (PeraWalletConnect. #js {:compactMode true
+                                            :singleAccount true})]
+        (reset! pera-wallet wallet)
+        ;; Try to reconnect to existing session
+        (-> wallet
+            (.reconnectSession)
+            (.then (fn [accounts]
+                     (when (seq accounts)
+                       (let [address (first accounts)]
+                         (swap! app/state assoc :algorand-wallet {:address address
+                                                                   :type :pera-wallet})))))
+            (.catch (fn [error]
+                      (js/console.log "No existing session to reconnect:" (.-message error))))))
       (catch js/Error e
         (js/console.error "Failed to initialize PeraWallet:" e)
         nil))))
