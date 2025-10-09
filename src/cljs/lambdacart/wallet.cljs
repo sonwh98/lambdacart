@@ -86,6 +86,16 @@
 
 (defonce pera-wallet (atom nil))
 
+(defn set-account [addresses]
+  (when (seq addresses)
+    (let [algo-address (first addresses)]
+      (async/go
+        (let [account (<! (rpc/invoke-with-response 'get-or-create-account algo-address))]
+          (cljs.pprint/pprint {:account account})
+          (if account
+            (swap! app/state assoc :account account)
+            (prn "Failed to verify/create account")))))))
+
 (defn init-pera-wallet []
   (when-not @pera-wallet
     (try
@@ -98,8 +108,8 @@
             (.then (fn [accounts]
                      (when (seq accounts)
                        (let [address (first accounts)]
-                         (swap! app/state assoc :algorand-wallet {:address address
-                                                                  :type :pera-wallet})))))
+                         (swap! app/state assoc :account {:address address
+                                                          :type :pera-wallet})))))
             (.catch (fn [error]
                       (js/console.log "No existing session to reconnect:" (.-message error))))))
       (catch js/Error e
@@ -111,7 +121,7 @@
         connecting? (r/atom false)
         wallet-initialized? (init-pera-wallet)]
     (fn []
-      (let [wallet-info (:algorand-wallet @app/state)]
+      (let [account (:account @app/state)]
         [:div {:style {:padding "20px"
                        :background-color "white"
                        :margin "20px auto"
@@ -132,7 +142,7 @@
             [:div {:style {:font-size "0.9em"}}
              "PeraWallet Connect requires HTTPS. Please make sure you're accessing this page over a secure connection (https://) or use localhost for development."]]
 
-           (if wallet-info
+           (if account
              ;; Connected state
              [:div
               [:div {:style {:padding "20px"
@@ -146,13 +156,13 @@
                               :font-size "0.9em"
                               :word-break "break-all"
                               :color "#555"}}
-                (:address wallet-info)]]
+                account]]
 
               [:button {:on-click (fn []
                                     (-> @pera-wallet
                                         (.disconnect)
                                         (.then #(do
-                                                  (swap! app/state dissoc :algorand-wallet)
+                                                  (swap! app/state dissoc :account)
                                                   (reset! error-msg nil)))
                                         (.catch #(reset! error-msg (str "Disconnect error: " (.-message %))))))
                         :style {:background "#ff4444"
@@ -170,29 +180,11 @@
                "Your account is associated with your PeraWallet. Scan the QR code that appears in the popup to authenticate."]
 
               [:button {:on-click (fn []
-                                    (reset! connecting? true)
-                                    (reset! error-msg nil)
                                     (-> @pera-wallet
                                         (.connect)
-                                        (.then (fn [accounts]
-                                                 (when (seq accounts)
-                                                   (let [address (first accounts)]
-                                                     ;; Check if account exists, create if it doesn't
-                                                     (async/go
-                                                       (let [response (<! (rpc/invoke-with-response 'get-or-create-account {:algorand-wallet address}))]
-                                                         (if response
-                                                           (do
-                                                             (cljs.pprint/pprint {:response response})
-                                                             (swap! app/state assoc :algorand-wallet {:address address
-                                                                                                      :type :pera-wallet})
-                                                             (reset! connecting? false))
-                                                           (do
-                                                             (js/console.error "Failed to verify/create account")
-                                                             (reset! error-msg "Failed to verify account with server")
-                                                             (reset! connecting? false)))))))))
+                                        (.then set-account)
                                         (.catch (fn [error]
-                                                  (reset! error-msg (str "Connection error: " (.-message error)))
-                                                  (reset! connecting? false)))))
+                                                  (js/console.error (str "Connection error: " (.-message error)))))))
                         :disabled @connecting?
                         :style {:background (if @connecting? "#aaa" "#e91e63")
                                 :color "white"
@@ -228,4 +220,5 @@
                   (cljs.pprint/pprint txs))
                 {:interval-ms 5000}))
 
-  (async/close! (:stop monitor)))
+  (async/close! (:stop monitor))
+  (-> @app/state keys))
