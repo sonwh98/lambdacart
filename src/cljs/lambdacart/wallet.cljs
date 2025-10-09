@@ -124,7 +124,7 @@
                        :border-radius "8px"
                        :max-width "600px"
                        :text-align "center"}}
-         [:h2 {:style {:margin-bottom "16px"}} "PeraWallet Connect"]
+         [:h2 {:style {:margin-bottom "16px"}} "Account"]
 
          (if-not @pera-wallet
            ;; PeraWallet not available
