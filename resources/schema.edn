@@ -263,6 +263,12 @@
   :db/doc "Login history for this account"
   :db.install/_attribute :db.part/db}
 
+{:db/ident :account/orders
+  :db/valueType :db.type/ref
+  :db/cardinality :db.cardinality/many
+  :db/doc "Orders placed by this account"
+  :db.install/_attribute :db.part/db}
+
  ;; OAuth provider enum
  {:db/ident :oauth.provider/google}
  {:db/ident :oauth.provider/facebook}
@@ -299,4 +305,108 @@
   :db/cardinality :db.cardinality/one
   :db/doc "When the login occurred"
   :db.install/_attribute :db.part/db}
+
+;; Order status enum
+{:db/ident :order.status/cart}
+{:db/ident :order.status/pending}
+{:db/ident :order.status/confirmed}
+{:db/ident :order.status/processing}
+{:db/ident :order.status/shipped}
+{:db/ident :order.status/delivered}
+{:db/ident :order.status/cancelled}
+{:db/ident :order.status/refunded}
+
+;; Order schema
+{:db/ident :order/id
+ :db/valueType :db.type/uuid
+ :db/cardinality :db.cardinality/one
+ :db/unique :db.unique/identity
+ :db/doc "External UUID identifier for order"
+ :db.install/_attribute :db.part/db}
+
+{:db/ident :order/status
+ :db/valueType :db.type/ref
+ :db/cardinality :db.cardinality/one
+ :db/doc "Current status of the order"
+ :db.install/_attribute :db.part/db}
+
+{:db/ident :order/store
+ :db/valueType :db.type/ref
+ :db/cardinality :db.cardinality/one
+ :db/doc "Store where this order was placed"
+ :db.install/_attribute :db.part/db}
+
+{:db/ident :order/line-items
+ :db/valueType :db.type/ref
+ :db/cardinality :db.cardinality/many
+ :db/isComponent true
+ :db/doc "Line items in this order"
+ :db.install/_attribute :db.part/db}
+
+{:db/ident :order/subtotal
+ :db/valueType :db.type/long
+ :db/cardinality :db.cardinality/one
+ :db/doc "Subtotal amount in cents before tax and fees"
+ :db.install/_attribute :db.part/db}
+
+{:db/ident :order/tax
+ :db/valueType :db.type/long
+ :db/cardinality :db.cardinality/one
+ :db/doc "Tax amount in cents"
+ :db.install/_attribute :db.part/db}
+
+{:db/ident :order/total
+ :db/valueType :db.type/long
+ :db/cardinality :db.cardinality/one
+ :db/doc "Total amount in cents"
+ :db.install/_attribute :db.part/db}
+
+{:db/ident :order/created-at
+ :db/valueType :db.type/instant
+ :db/cardinality :db.cardinality/one
+ :db/doc "When the order was created"
+ :db.install/_attribute :db.part/db}
+
+{:db/ident :order/confirmed-at
+ :db/valueType :db.type/instant
+ :db/cardinality :db.cardinality/one
+ :db/doc "When the order was confirmed/paid"
+ :db.install/_attribute :db.part/db}
+
+{:db/ident :order/shipping-address
+ :db/valueType :db.type/ref
+ :db/cardinality :db.cardinality/one
+ :db/doc "Shipping address for this order"
+ :db.install/_attribute :db.part/db}
+
+{:db/ident :order/notes
+ :db/valueType :db.type/string
+ :db/cardinality :db.cardinality/one
+ :db/doc "Customer notes or special instructions"
+ :db.install/_attribute :db.part/db}
+
+;; Line item schema (component of order)
+{:db/ident :line-item/item
+ :db/valueType :db.type/ref
+ :db/cardinality :db.cardinality/one
+ :db/doc "Reference to the catalog item"
+ :db.install/_attribute :db.part/db}
+
+{:db/ident :line-item/quantity
+ :db/valueType :db.type/long
+ :db/cardinality :db.cardinality/one
+ :db/doc "Quantity of this item"
+ :db.install/_attribute :db.part/db}
+
+{:db/ident :line-item/price
+ :db/valueType :db.type/long
+ :db/cardinality :db.cardinality/one
+ :db/doc "Price per unit in cents at time of order"
+ :db.install/_attribute :db.part/db}
+
+{:db/ident :line-item/total
+ :db/valueType :db.type/long
+ :db/cardinality :db.cardinality/one
+ :db/doc "Total price for this line item (quantity × price) in cents"
+ :db.install/_attribute :db.part/db}
 ]
