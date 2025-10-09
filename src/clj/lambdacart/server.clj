@@ -370,53 +370,38 @@
 
 (defn get-or-create-account
   "Check if an account with the given algorand wallet exists. If not, create one."
-  [{:keys [algorand-wallet]}]
-  (let [db (datomic/get-db)
-        conn (datomic/get-connection)]
-    (if-not (and db conn)
-      {:type :error :message "Database not available"}
-      (try
-        ;; Check if wallet exists
-        (let [existing-wallet (d/q '[:find (pull ?w [:db/id
-                                                     :wallet/address
-                                                     :wallet/type
-                                                     {:account/_wallets [:account/id]}])
-                                     :in $ ?address
-                                     :where
-                                     [?w :wallet/address ?address]]
-                                   db algorand-wallet)]
-          (if (seq existing-wallet)
-            ;; Wallet exists, return associated account
-            (let [wallet-data (ffirst existing-wallet)
-                  account (first (:account/_wallets wallet-data))]
-              {:type :success
-               :message "Account found"
-               :wallet-address algorand-wallet
-               :account-id (:account/id account)
-               :existing true})
-            ;; Wallet doesn't exist, create new wallet and account
-            (let [account-id (java.util.UUID/randomUUID)
-                  wallet-tempid (d/tempid :db.part/user)
-                  account-tempid (d/tempid :db.part/user)
-                  tx-data [{:db/id wallet-tempid
-                            :wallet/address algorand-wallet
-                            :wallet/type :wallet.type/algorand
-                            :wallet/last-connected-at (java.util.Date.)}
-                           {:db/id account-tempid
-                            :account/id account-id
-                            :account/wallets wallet-tempid}]
-                  tx-result @(d/transact conn tx-data)]
-              {:type :success
-               :message "Account created"
-               :wallet-address algorand-wallet
-               :account-id account-id
-               :existing false
-               :timestamp (java.util.Date.)})))
-        (catch Exception e
-          (println "Error in get-or-create-account:" (.getMessage e))
-          (.printStackTrace e)
-          {:type :error
-           :message (str "Error: " (.getMessage e))})))))
+  [algorand-wallet]
+  (try
+    (if-let [account (first (d/q '[:find [(pull ?account [:account/id
+                                                          {:account/wallets [:wallet/address
+                                                                             :wallet/type
+                                                                             :wallet/last-connected-at]}]) ...]
+                                   :in $ ?address
+                                   :where
+                                   [?wallet :wallet/address ?address]
+                                   [?account :account/wallets ?wallet]]
+                                 (datomic/get-db)
+                                 algorand-wallet))]
+      account
+      (let [account-id (java.util.UUID/randomUUID)
+            wallet-tempid (d/tempid :db.part/user)
+            account-tempid (d/tempid :db.part/user)
+            tx-data [{:db/id wallet-tempid
+                      :wallet/address algorand-wallet
+                      :wallet/type :wallet.type/algorand
+                      :wallet/last-connected-at (java.util.Date.)}
+                     {:db/id account-tempid
+                      :account/id account-id
+                      :account/wallets wallet-tempid}]
+            conn (datomic/get-connection)
+            tx-result @(d/transact conn tx-data)]
+        {:account/id account-id
+         :account/wallets [{:wallet/address algorand-wallet}]}))
+    (catch Exception e
+      (println "Error in get-or-create-account:" (.getMessage e))
+      (.printStackTrace e)
+      {:type :error
+       :message (str "Error: " (.getMessage e))})))
 
 (register-function! 'get-or-create-account
                     get-or-create-account)
