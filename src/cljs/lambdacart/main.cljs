@@ -202,32 +202,35 @@
             (case @payment-status
               :pending
               [:div {:style {:textAlign "center"}}
-               [:button {:on-click (fn []
-                                     (reset! payment-status :monitoring)
-                                     (let [monitor (wallet/monitor-transactions
-                                                    algo-address
-                                                    (fn [txs]
-                                                      (let [tx (first txs)
-                                                            tx-order-num (:note-decoded tx)
-                                                            receiver (-> tx :payment-transaction :receiver)]
-                                                        (when (and (= tx-order-num @order-num)
-                                                                   (= receiver algo-address))
-                                                          (reset! payment-status :confirmed)
-                                                          (reset! order-num nil)
-                                                          (submit-cart @cart tx)
-                                                          (when-let [stop-ch @monitor-chan]
-                                                            (async/close! stop-ch)
-                                                            (reset! monitor-chan nil)))))
-                                                    {:interval-ms 5000})]
-                                       (reset! monitor-chan (:stop monitor))))
-                         :style {:background "#e91e63"
-                                 :color "white"
-                                 :border "none"
-                                 :border-radius "5px"
-                                 :padding "10px 20px"
-                                 :cursor "pointer"
-                                 :font-size "1.1em"
-                                 :margin-top "16px"}}
+               [:a {:href algo-url
+                    :on-click (fn []
+                                (reset! payment-status :monitoring)
+                                (let [monitor (wallet/monitor-transactions
+                                               algo-address
+                                               (fn [txs]
+                                                 (let [tx (first txs)
+                                                       tx-order-num (:note-decoded tx)
+                                                       receiver (-> tx :payment-transaction :receiver)]
+                                                   (when (and (= tx-order-num @order-num)
+                                                              (= receiver algo-address))
+                                                     (reset! payment-status :confirmed)
+                                                     (reset! order-num nil)
+                                                     (submit-cart @cart tx)
+                                                     (when-let [stop-ch @monitor-chan]
+                                                       (async/close! stop-ch)
+                                                       (reset! monitor-chan nil)))))
+                                               {:interval-ms 5000})]
+                                  (reset! monitor-chan (:stop monitor))))
+                    :style {:display "inline-block"
+                            :background "#e91e63"
+                            :color "white"
+                            :border "none"
+                            :border-radius "5px"
+                            :padding "10px 20px"
+                            :cursor "pointer"
+                            :font-size "1.1em"
+                            :margin-top "16px"
+                            :text-decoration "none"}}
                 "Pay with Algo"]]
               :monitoring
               [:div {:style {:marginTop "16px" :textAlign "center"}}
