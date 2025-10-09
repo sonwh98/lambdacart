@@ -75,4 +75,25 @@
        (get-db))
 
   (d/q '[:find [?e ...] :where [?e :item/name _]]
-       (get-db)))
+       (get-db))
+
+  (d/q '[:find (pull ?account [*
+                               {:account/orders [*]}
+                               {:account/wallets [:wallet/address
+                                                  :wallet/type
+                                                  :wallet/last-connected-at]}])
+         :where
+         [?wallet :wallet/address ?address]
+         [?account :account/wallets _]]
+       (get-db))
+
+  (d/q '[:find [(pull ?account [:account/id
+                                {:account/wallets [:wallet/address
+                                                   :wallet/type
+                                                   :wallet/last-connected-at]}]) ...]
+         :in $ ?address
+         :where
+         [?wallet :wallet/address ?address]
+         [?account :account/wallets ?wallet]]
+       (get-db)
+       "F7YGGVYNO6NIUZ35UTQQ7GMQPUOELTERYHGGLESYSABC6E5P2ZYMRJPWOQ"))
