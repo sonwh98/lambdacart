@@ -375,7 +375,12 @@
     (if-let [account (first (d/q '[:find [(pull ?account [:account/id
                                                           {:account/wallets [:wallet/address
                                                                              :wallet/type
-                                                                             :wallet/last-connected-at]}]) ...]
+                                                                             :wallet/last-connected-at]}
+                                                          {:account/orders [*
+                                                                            {:order/status [*]}
+                                                                            {:order/line-items [*
+                                                                                                {:line-item/item [*
+                                                                                                                  {:item/images [:image/url :image/alt]}]}]}]}]) ...]
                                    :in $ ?address
                                    :where
                                    [?wallet :wallet/address ?address]
@@ -405,6 +410,104 @@
 
 (register-function! 'get-or-create-account
                     get-or-create-account)
+
+(defn create-order
+  "Create an order from cart data with payment transaction info"
+  [{:keys [store-id account-id cart tx]}]
+  (try
+    (let [conn (datomic/get-connection)
+          db (datomic/get-db)
+          order-id (java.util.UUID/randomUUID)
+          order-tempid (d/tempid :db.part/user)
+
+          ;; Calculate totals
+          subtotal (reduce + (map (fn [{:keys [item quantity]}]
+                                    (* quantity (:item/price item)))
+                                  cart))
+          tax 0 ; TODO: calculate tax
+          total subtotal
+
+          ;; Create line items
+          line-items (mapv (fn [{:keys [item quantity]}]
+                            (let [item-total (* quantity (:item/price item))]
+                              {:db/id (d/tempid :db.part/user)
+                               :line-item/item [:item/id (:item/id item)]
+                               :line-item/quantity quantity
+                               :line-item/price (:item/price item)
+                               :line-item/total item-total}))
+                          cart)
+
+          ;; Get sender address from transaction
+          sender-address (:sender tx)
+
+          ;; Look up account by wallet address, or use provided account-id
+          existing-account (when sender-address
+                            (first (d/q '[:find [(pull ?account [:account/id]) ...]
+                                          :in $ ?address
+                                          :where
+                                          [?wallet :wallet/address ?address]
+                                          [?account :account/wallets ?wallet]]
+                                        db sender-address)))
+
+          ;; Determine account reference
+          [account-ref additional-tx-data]
+          (cond
+            ;; Use existing account found by wallet address
+            existing-account
+            [[:account/id (:account/id existing-account)] []]
+
+            ;; Create new account from transaction sender
+            sender-address
+            (let [new-account-id (java.util.UUID/randomUUID)
+                  wallet-tempid (d/tempid :db.part/user)
+                  account-tempid (d/tempid :db.part/user)]
+              [account-tempid
+               [{:db/id wallet-tempid
+                 :wallet/address sender-address
+                 :wallet/type :wallet.type/algorand
+                 :wallet/last-connected-at (java.util.Date.)}
+                {:db/id account-tempid
+                 :account/id new-account-id
+                 :account/wallets wallet-tempid}]])
+
+            ;; No account info available
+            :else
+            (throw (ex-info "Cannot create order: no account information available"
+                           {:account-id account-id
+                            :sender-address sender-address})))
+
+          ;; Build order transaction
+          order-tx (concat
+                    [{:db/id order-tempid
+                      :order/id order-id
+                      :order/status :order.status/confirmed
+                      :order/store [:store/id store-id]
+                      :order/line-items line-items
+                      :order/subtotal subtotal
+                      :order/tax tax
+                      :order/total total
+                      :order/created-at (java.util.Date.)
+                      :order/confirmed-at (java.util.Date.)}
+                     ;; Link order to account
+                     [:db/add account-ref :account/orders order-tempid]]
+                    additional-tx-data)
+
+          _tx-result @(d/transact conn order-tx)]
+
+      (println "Order created:" order-id)
+      {:type :success
+       :message "Order created successfully"
+       :order-id order-id
+       :total total
+       :timestamp (java.util.Date.)})
+    (catch Exception e
+      (println "Error creating order:" (.getMessage e))
+      (.printStackTrace e)
+      {:type :error
+       :message (str "Error creating order: " (.getMessage e))})))
+
+(register-function! 'create-order
+                    create-order)
 
 ;; Update start-server to initialize Datomic
 (defn start-server []

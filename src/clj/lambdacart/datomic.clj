@@ -77,7 +77,8 @@
   (d/q '[:find [?e ...] :where [?e :item/name _]]
        (get-db))
 
-  (d/q '[:find (pull ?account [:account/id
+  (d/q '[:find (pull ?account [*
+                               {:account/orders [*]}
                                {:account/wallets [:wallet/address
                                                   :wallet/type
                                                   :wallet/last-connected-at]}])

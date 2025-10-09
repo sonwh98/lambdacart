@@ -128,6 +128,25 @@
                      :z-index 1}}
       num])])
 
+(defn submit-cart
+  "submit cart to backend to create an order. tx is the algorand transaction information"
+  [cart tx]
+  (let [store-id (-> @app/state :store :store/id)
+        account-id (-> @app/state :account :account/id)
+        order-data {:store-id store-id
+                    :account-id account-id
+                    :cart cart
+                    :tx tx}]
+    (async/go
+      (try
+        (let [response (<! (rpc/invoke-with-response 'create-order order-data))]
+          (pprint {:create-order-response response})
+          (when (= (:type response) :success)
+            ;; Clear the cart after successful order creation
+            (swap! app/state assoc :cart [])))
+        (catch js/Error e
+          (pprint {:error "Error submitting order" :exception e})))))
+  )
 ;; Cart content with pay button and QR code
 (defn cart-content [cart]
   (let [payment-status (r/cursor app/state [:payment-status])
@@ -195,6 +214,7 @@
                                                                    (= receiver algo-address))
                                                           (reset! payment-status :confirmed)
                                                           (reset! order-num nil)
+                                                          (submit-cart @cart tx)
                                                           (when-let [stop-ch @monitor-chan]
                                                             (async/close! stop-ch)
                                                             (reset! monitor-chan nil)))))
@@ -401,4 +421,48 @@
       (grid/load-and-display-data))))
 
 (comment
-  (-> @app/state keys))
+  (-> @app/state keys)
+
+  {:submit-cart
+   [{:item
+     {:item/id #uuid "550e8400-e29b-41d4-a716-446655440010",
+      :item/name "Matte Liquid Lipstick - Ruby Red",
+      :item/description
+      "Long-lasting matte liquid lipstick with rich, vibrant color that stays put all day. Comfortable, non-drying formula.",
+      :item/price 1,
+      :item/images
+      [{:image/id #uuid "550e8400-e29b-41d4-a716-446655440100",
+        :image/url
+        "https://images.unsplash.com/photo-1586495777744-4413f21062fa?w=400&h=400&fit=crop&crop=center",
+        :image/alt "Matte Liquid Lipstick Ruby Red"}
+       {:image/id #uuid "550e8400-e29b-41d4-a716-446655440101",
+        :image/url
+        "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=400&fit=crop&crop=center",
+        :image/alt "Lipstick application close-up"}]},
+     :quantity 1}],
+   :tx
+   {:fee 1000,
+    :genesis-hash "wGHE2Pwdvd7S12BL5FaOP20EGYesN73ktiC1qzkkit8=",
+    :sender-rewards 0,
+    :closing-amount 0,
+    :note-decoded "550e8400-1759999919",
+    :signature
+    {:sig
+     "kPykyq4Ux3gmMTZVMpBHgnKEqnKSvAlTGauKR/NWAipZzTDB6xuQy2JleM4Cgmmhm6YXZgzszO86Z12UGBw7Bg=="},
+    :tx-type "pay",
+    :intra-round-offset 16,
+    :payment-transaction
+    {:amount 1,
+     :close-amount 0,
+     :receiver
+     "F7YGGVYNO6NIUZ35UTQQ7GMQPUOELTERYHGGLESYSABC6E5P2ZYMRJPWOQ"},
+    :confirmed-round 54439014,
+    :note "NTUwZTg0MDAtMTc1OTk5OTkxOQ==",
+    :receiver-rewards 0,
+    :round-time 1759999962,
+    :last-valid 54440012,
+    :close-rewards 0,
+    :id "TQ2MXR6VNC4ZYOIZCWR3YD2ORVWTHAW3PU3PC46ZJSRMUPQV3RCQ",
+    :genesis-id "mainnet-v1.0",
+    :sender "4BJZEDCUP5S6IILRDCXJJFE6VDGA5GRPF4WRXQSG7RDPHASOQCT4IO3DZE",
+    :first-valid 54439012}})

@@ -105,11 +105,7 @@
         ;; Try to reconnect to existing session
         (-> wallet
             (.reconnectSession)
-            (.then (fn [accounts]
-                     (when (seq accounts)
-                       (let [address (first accounts)]
-                         (swap! app/state assoc :account {:address address
-                                                          :type :pera-wallet})))))
+            (.then set-account)
             (.catch (fn [error]
                       (js/console.log "No existing session to reconnect:" (.-message error))))))
       (catch js/Error e
@@ -156,7 +152,45 @@
                               :font-size "0.9em"
                               :word-break "break-all"
                               :color "#555"}}
-                account]]
+                (if-let [orders (:account/orders account)]
+                  (if (seq orders)
+                    [:div {:style {:font-family "inherit"}}
+                     [:div {:style {:margin-bottom "16px" :font-weight "bold" :color "#333"}}
+                      (str (count orders) " order(s)")]
+                     (for [order orders]
+                       ^{:key (:order/id order)}
+                       [:div {:style {:margin-bottom "24px" :padding "16px" :background "white" :border "1px solid #ddd" :border-radius "4px"}}
+                        [:div {:style {:display "flex" :justify-content "space-between" :margin-bottom "12px" :padding-bottom "8px" :border-bottom "1px solid #eee"}}
+                         [:div
+                          [:div {:style {:font-weight "bold" :color "#333"}}
+                           "Order #" (subs (str (:order/id order)) 0 8)]
+                          [:div {:style {:color "#666" :font-size "0.85em" :margin-top "4px"}}
+                           (let [date (js/Date. (:order/created-at order))]
+                             (str (.toLocaleDateString date) " " (.toLocaleTimeString date)))]]
+                         [:div {:style {:color "#666" :font-size "0.9em" :text-align "right"}}
+                          "Status: " [:span {:style {:color "#4caf50"}} (-> order :order/status :db/ident name)]]]
+                        (when-let [line-items (:order/line-items order)]
+                          [:table {:style {:width "100%" :border-collapse "collapse"}}
+                           [:thead
+                            [:tr
+                             [:th {:style {:text-align "left" :padding-bottom "8px" :font-weight "normal" :color "#666" :font-size "0.9em"}} "Item"]
+                             [:th {:style {:text-align "right" :padding-bottom "8px" :font-weight "normal" :color "#666" :font-size "0.9em"}} "Subtotal"]]]
+                           [:tbody
+                            (doall
+                             (for [line-item line-items]
+                               ^{:key (str (:order/id order) "-" (get-in line-item [:line-item/item :item/id]))}
+                               [:tr
+                                [:td {:style {:padding "8px 0"}}
+                                 [:div {:style {:font-weight "bold" :color "#333"}} (get-in line-item [:line-item/item :item/name])]
+                                 [:div {:style {:font-size "0.95em" :color "#555"}}
+                                  (str (:line-item/quantity line-item) " × $" (.toFixed (/ (:line-item/price line-item) 100.0) 2))]]
+                                [:td {:style {:text-align "right" :font-weight "bold" :color "#333"}}
+                                 (str "$" (.toFixed (/ (:line-item/total line-item) 100.0) 2))]]))]])
+                        [:div {:style {:margin-top "12px" :padding-top "12px" :border-top "1px solid #eee" :text-align "right" :font-weight "bold" :font-size "1.1em" :color "#333"}}
+                         "Total: " [:span {:style {:color "#e91e63"}} (str "$" (.toFixed (/ (:order/total order) 100.0) 2))]]])]
+                    [:div "No orders yet"])
+                  [:div (str (:account/id account))])]]
+
 
               [:button {:on-click (fn []
                                     (-> @pera-wallet
