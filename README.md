@@ -28,12 +28,15 @@ then open browser http://localhost:3001/grid.chp
 % clj -M:fmt
 
 #recompiles cljs to js on change
-% clj -M:cljs -m shadow.cljs.devtools.cli watch grid
+% 
 % clj -M:dev -m shadow.cljs.devtools.cli watch grid-remote
+
+% clj -M:dev -m shadow.cljs.devtools.cli watch main
 % clj -M:dev -m shadow.cljs.devtools.cli watch main-remote
 
 #compile cljs
-% clj -M:cljs -m shadow.cljs.devtools.cli compile grid
+% clj -M:cljs -m shadow.cljs.devtools.cli compile grid-prod
+% clj -M:cljs -m shadow.cljs.devtools.cli compile main-prod
 
 # starts CHP and websocket server
 % clj -M:server
