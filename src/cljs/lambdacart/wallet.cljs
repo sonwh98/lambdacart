@@ -86,16 +86,7 @@
 
 (defonce pera-wallet (atom nil))
 
-(defn set-account [addresses]
-  (when (seq addresses)
-    (let [algo-address (first addresses)]
-      (async/go
-        (let [account (<! (rpc/invoke-with-response 'get-or-create-account algo-address))]
-          (if account
-            (swap! app/state assoc :account account)
-            (prn "Failed to verify/create account")))))))
-
-(defn init-pera-wallet []
+(defn init-pera-wallet [{:keys [on-success]}]
   (when-not @pera-wallet
     (try
       (let [wallet (PeraWalletConnect. #js {:compactMode true
@@ -104,17 +95,17 @@
         ;; Try to reconnect to existing session
         (-> wallet
             (.reconnectSession)
-            (.then set-account)
+            (.then on-success)
             (.catch (fn [error]
                       (js/console.log "No existing session to reconnect:" (.-message error))))))
       (catch js/Error e
         (js/console.error "Failed to initialize PeraWallet:" e)
         nil))))
 
-(defn pera-wallet-connect-component []
+(defn pera-wallet-connect-component [{:keys [on-success] :as param}]
   (let [error-msg (r/atom nil)
         connecting? (r/atom false)
-        wallet-initialized? (init-pera-wallet)]
+        wallet-initialized? (init-pera-wallet param)]
     (fn []
       (let [account (:account @app/state)]
         [:div {:style {:padding "20px"
@@ -214,7 +205,7 @@
               [:button {:on-click (fn []
                                     (-> @pera-wallet
                                         (.connect)
-                                        (.then set-account)
+                                        (.then on-success)
                                         (.catch (fn [error]
                                                   (js/console.error (str "Connection error: " (.-message error)))))))
                         :disabled @connecting?
