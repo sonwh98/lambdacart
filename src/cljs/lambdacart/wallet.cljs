@@ -191,7 +191,6 @@
                     [:div "No orders yet"])
                   [:div (str (:account/id account))])]]
 
-
               [:button {:on-click (fn []
                                     (-> @pera-wallet
                                         (.disconnect)
@@ -238,9 +237,6 @@
                           :text-align "left"
                           :border-radius "4px"}}
             @error-msg])]))))
-
-(defn wallet-component []
-  [:div])
 
 (comment
   (generate-algorand-account)

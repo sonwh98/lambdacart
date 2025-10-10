@@ -145,8 +145,7 @@
             ;; Clear the cart after successful order creation
             (swap! app/state assoc :cart [])))
         (catch js/Error e
-          (pprint {:error "Error submitting order" :exception e})))))
-  )
+          (pprint {:error "Error submitting order" :exception e}))))))
 ;; Cart content with pay button and QR code
 (defn cart-content [cart]
   (let [payment-status (r/cursor app/state [:payment-status])
@@ -364,9 +363,6 @@
          [:div {:style {:background-color :white}}
           [grid/grid-component grid-state context-menu-state]
           [grid/context-menu-component grid-state context-menu-state]])
-
-       :wallet
-       [wallet/wallet-component]
 
        ;;default
        [:div
