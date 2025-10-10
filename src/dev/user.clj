@@ -5,9 +5,9 @@
 
 
 (defn start-dev []
-  (println "Starting development environment...")
+  (println "Starting server development environment...")
   (server/start-server)
-  (println "Server started. You can now run: (shadow/watch :grid)"))
+  (println "Server started."))
 
 (defn stop-dev []
   (println "Stopping development environment...")

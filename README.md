@@ -33,7 +33,7 @@ then open browser http://localhost:3001/grid.chp
 % clj -M:dev -m shadow.cljs.devtools.cli watch main-remote
 
 #compile cljs
-% clj -M:cljs -m shadow.cljs.devtools.cli compile app
+% clj -M:cljs -m shadow.cljs.devtools.cli compile grid
 
 # starts CHP and websocket server
 % clj -M:server
