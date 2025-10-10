@@ -429,25 +429,25 @@
 
           ;; Create line items
           line-items (mapv (fn [{:keys [item quantity]}]
-                            (let [item-total (* quantity (:item/price item))]
-                              {:db/id (d/tempid :db.part/user)
-                               :line-item/item [:item/id (:item/id item)]
-                               :line-item/quantity quantity
-                               :line-item/price (:item/price item)
-                               :line-item/total item-total}))
-                          cart)
+                             (let [item-total (* quantity (:item/price item))]
+                               {:db/id (d/tempid :db.part/user)
+                                :line-item/item [:item/id (:item/id item)]
+                                :line-item/quantity quantity
+                                :line-item/price (:item/price item)
+                                :line-item/total item-total}))
+                           cart)
 
           ;; Get sender address from transaction
           sender-address (:sender tx)
 
           ;; Look up account by wallet address, or use provided account-id
           existing-account (when sender-address
-                            (first (d/q '[:find [(pull ?account [:account/id]) ...]
-                                          :in $ ?address
-                                          :where
-                                          [?wallet :wallet/address ?address]
-                                          [?account :account/wallets ?wallet]]
-                                        db sender-address)))
+                             (first (d/q '[:find [(pull ?account [:account/id]) ...]
+                                           :in $ ?address
+                                           :where
+                                           [?wallet :wallet/address ?address]
+                                           [?account :account/wallets ?wallet]]
+                                         db sender-address)))
 
           ;; Determine account reference
           [account-ref additional-tx-data]
@@ -473,8 +473,8 @@
             ;; No account info available
             :else
             (throw (ex-info "Cannot create order: no account information available"
-                           {:account-id account-id
-                            :sender-address sender-address})))
+                            {:account-id account-id
+                             :sender-address sender-address})))
 
           ;; Build order transaction
           order-tx (concat
