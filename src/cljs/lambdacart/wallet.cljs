@@ -91,7 +91,6 @@
     (let [algo-address (first addresses)]
       (async/go
         (let [account (<! (rpc/invoke-with-response 'get-or-create-account algo-address))]
-          (cljs.pprint/pprint {:account account})
           (if account
             (swap! app/state assoc :account account)
             (prn "Failed to verify/create account")))))))
