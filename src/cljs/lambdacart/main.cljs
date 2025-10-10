@@ -1,7 +1,6 @@
 (ns lambdacart.main
   (:require [cljs.core.async :refer [chan put! <! >! close! timeout] :as async]
             [lambdacart.app :as app]
-            [lambdacart.grid :as grid]
             [lambdacart.rpc :as rpc]
             [lambdacart.stream :as stream]
             [lambdacart.wallet :as wallet]
@@ -355,20 +354,8 @@
 
 (defn main-ui [state]
   [:div
-   (let [view (:view @state)]
-     (case view
-       :grid
-       (let [grid-state (r/cursor app/state [:grid])
-             context-menu-state (r/cursor app/state [:context-menu])]
-         [:div {:style {:background-color :white}}
-          [grid/grid-component grid-state context-menu-state]
-          [grid/context-menu-component grid-state context-menu-state]])
-
-       ;;default
-       [:div
-        [header state]
-        (:content @state)
-        #_[items-grid (r/cursor state [:display-items])]]))])
+   [header state]
+   (:content @state)])
 
 (defonce root (atom nil))
 
@@ -416,8 +403,7 @@
         (when (not= (:status (stream/status wss)) :connected)
           (<! (async/timeout 100))
           (recur)))
-      (load-store "TT Cosmetics" "TT Cosmetics Downtown NYC")
-      (grid/load-and-display-data))))
+      (load-store "TT Cosmetics" "TT Cosmetics Downtown NYC"))))
 
 (comment
   (-> @app/state keys)
