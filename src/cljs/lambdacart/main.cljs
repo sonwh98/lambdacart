@@ -280,6 +280,15 @@
     [:a {:href "mailto:tt@ttgamestock.com"} "tt@ttgamestock.com"] "."]
    [:p {:style {:margin "8px 0"}} "WhatsApp: " [:a {:href "https://wa.me/8613928458941" :target "_blank" :rel "noopener noreferrer"} "+86 139 2845 8941"]]])
 
+(defn set-account [addresses]
+  (when (seq addresses)
+    (let [algo-address (first addresses)]
+      (async/go
+        (let [account (<! (rpc/invoke-with-response 'get-or-create-account algo-address))]
+          (if account
+            (swap! app/state assoc :account account)
+            (prn "Failed to verify/create account")))))))
+
 (defn tabs [state]
   (let [active-tab (r/atom :all-products)]
     (fn [state]
@@ -334,7 +343,7 @@
                                      :on-click #(do
                                                   (hide-menu!)
                                                   (reset! active-tab :account)
-                                                  (swap! app/state assoc :content [wallet/pera-wallet-connect-component]))})
+                                                  (swap! app/state assoc :content [wallet/pera-wallet-connect-component {:on-success set-account}]))})
             all-tabs (concat all-tabs [cart-tab account-tab contact-tab])]
         [:div.tab-bar
          (when (seq all-tabs)
