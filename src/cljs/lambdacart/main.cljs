@@ -1,7 +1,6 @@
 (ns lambdacart.main
   (:require [cljs.core.async :refer [chan put! <! >! close! timeout] :as async]
             [lambdacart.app :as app]
-            [lambdacart.grid :as grid]
             [lambdacart.rpc :as rpc]
             [lambdacart.stream :as stream]
             [lambdacart.wallet :as wallet]
