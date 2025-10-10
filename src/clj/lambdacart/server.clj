@@ -368,45 +368,66 @@
 (register-function! 'fetch-transactions
                     algo/fetch-transactions)
 
-(defn get-or-create-account
-  "Check if an account with the given algorand wallet exists. If not, create one."
+(defn get-account
+  "Get an account by algorand wallet address. Returns nil if not found."
   [algorand-wallet]
   (try
-    (if-let [account (first (d/q '[:find [(pull ?account [:account/id
-                                                          {:account/wallets [:wallet/address
-                                                                             :wallet/type
-                                                                             :wallet/last-connected-at]}
-                                                          {:account/orders [*
-                                                                            {:order/status [*]}
-                                                                            {:order/line-items [*
-                                                                                                {:line-item/item [*
-                                                                                                                  {:item/images [:image/url :image/alt]}]}]}]}]) ...]
-                                   :in $ ?address
-                                   :where
-                                   [?wallet :wallet/address ?address]
-                                   [?account :account/wallets ?wallet]]
-                                 (datomic/get-db)
-                                 algorand-wallet))]
-      account
-      (let [account-id (java.util.UUID/randomUUID)
-            wallet-tempid (d/tempid :db.part/user)
-            account-tempid (d/tempid :db.part/user)
-            tx-data [{:db/id wallet-tempid
-                      :wallet/address algorand-wallet
-                      :wallet/type :wallet.type/algorand
-                      :wallet/last-connected-at (java.util.Date.)}
-                     {:db/id account-tempid
-                      :account/id account-id
-                      :account/wallets wallet-tempid}]
-            conn (datomic/get-connection)
-            tx-result @(d/transact conn tx-data)]
-        {:account/id account-id
-         :account/wallets [{:wallet/address algorand-wallet}]}))
+    (first (d/q '[:find [(pull ?account [:account/id
+                                          {:account/wallets [:wallet/address
+                                                             :wallet/type
+                                                             :wallet/last-connected-at]}
+                                          {:account/orders [*
+                                                            {:order/status [*]}
+                                                            {:order/line-items [*
+                                                                                {:line-item/item [*
+                                                                                                  {:item/images [:image/url :image/alt]}]}]}]}]) ...]
+                  :in $ ?address
+                  :where
+                  [?wallet :wallet/address ?address]
+                  [?account :account/wallets ?wallet]]
+                (datomic/get-db)
+                algorand-wallet))
     (catch Exception e
-      (println "Error in get-or-create-account:" (.getMessage e))
+      (println "Error in get-account:" (.getMessage e))
+      (.printStackTrace e)
+      nil)))
+
+(defn create-account
+  "Create a new account with the given algorand wallet address."
+  [algorand-wallet]
+  (try
+    (let [account-id (java.util.UUID/randomUUID)
+          wallet-tempid (d/tempid :db.part/user)
+          account-tempid (d/tempid :db.part/user)
+          tx-data [{:db/id wallet-tempid
+                    :wallet/address algorand-wallet
+                    :wallet/type :wallet.type/algorand
+                    :wallet/last-connected-at (java.util.Date.)}
+                   {:db/id account-tempid
+                    :account/id account-id
+                    :account/wallets wallet-tempid}]
+          conn (datomic/get-connection)]
+      @(d/transact conn tx-data)
+      {:account/id account-id
+       :account/wallets [{:wallet/address algorand-wallet}]})
+    (catch Exception e
+      (println "Error in create-account:" (.getMessage e))
       (.printStackTrace e)
       {:type :error
        :message (str "Error: " (.getMessage e))})))
+
+(defn get-or-create-account
+  "Check if an account with the given algorand wallet exists. If not, create one."
+  [algorand-wallet]
+  (if-let [account (get-account algorand-wallet)]
+    account
+    (create-account algorand-wallet)))
+
+(register-function! 'get-account
+                    get-account)
+
+(register-function! 'create-account
+                    create-account)
 
 (register-function! 'get-or-create-account
                     get-or-create-account)
@@ -549,4 +570,7 @@
   (register-function! 'get-time
                       (fn []
                         {:type :time-response :time (java.util.Date.)}))
-  (serde/edn->transit [17592186045427 17592186045430 17592186045418 17592186045421 17592186045424]))
+  (serde/edn->transit [17592186045427 17592186045430 17592186045418 17592186045421 17592186045424])
+
+  (get-account "F7YGGVYNO6NIUZ35UTQQ7GMQPUOELTERYHGGLESYSABC6E5P2ZYMRJPWOQ")
+  )
