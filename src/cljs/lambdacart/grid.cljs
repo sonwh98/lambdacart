@@ -29,7 +29,120 @@
             :on-click #(delete-selected-rows grid-state context-menu)}
       "Delete"]]))
 
-(defn header [grid-state]
+(defn slide-out-menu [side-menu-state]
+  (let [is-open? (:open? @side-menu-state)]
+    [:<>
+     ;; Backdrop overlay
+     (when is-open?
+       [:div {:style {:position "fixed"
+                      :top "0"
+                      :left "0"
+                      :width "100vw"
+                      :height "100vh"
+                      :background "rgba(0,0,0,0.4)"
+                      :z-index 1999
+                      :transition "opacity 0.3s ease-in-out"}
+              :on-click #(swap! side-menu-state assoc :open? false)}])
+
+     ;; Slide-out menu panel
+     [:div {:style {:position "fixed"
+                    :top "0"
+                    :right (if is-open? "0" "-300px")
+                    :width "300px"
+                    :height "100vh"
+                    :background "white"
+                    :box-shadow "-2px 0 10px rgba(0,0,0,0.3)"
+                    :z-index 2000
+                    :transition "right 0.3s ease-in-out"
+                    :display "flex"
+                    :flex-direction "column"}}
+      ;; Menu header
+      [:div {:style {:padding "20px"
+                     :background "#f8f9fa"
+                     :border-bottom "1px solid #dee2e6"
+                     :display "flex"
+                     :justify-content "space-between"
+                     :align-items "center"}}
+       [:h3 {:style {:margin "0"
+                     :font-size "18px"
+                     :font-weight "600"}}
+        "Menu"]
+       [:button {:style {:background "transparent"
+                         :border "none"
+                         :font-size "24px"
+                         :cursor "pointer"
+                         :padding "0"
+                         :width "30px"
+                         :height "30px"
+                         :display "flex"
+                         :align-items "center"
+                         :justify-content "center"}
+                 :on-click #(swap! side-menu-state assoc :open? false)}
+        "×"]]
+
+      ;; Menu content
+      [:div {:style {:flex "1"
+                     :padding "20px"
+                     :overflow-y "auto"}}
+       [:div {:style {:margin-bottom "20px"}}
+        [:h4 {:style {:margin "0 0 10px 0"
+                      :font-size "14px"
+                      :font-weight "600"
+                      :color "#6c757d"}}
+         "Options"]
+        [:div {:style {:display "flex"
+                       :flex-direction "column"
+                       :gap "10px"}}
+         [:button {:style {:padding "10px 15px"
+                           :background "#007bff"
+                           :color "white"
+                           :border "none"
+                           :border-radius "4px"
+                           :cursor "pointer"
+                           :font-size "14px"
+                           :transition "background 0.2s"}
+                   :on-mouse-over #(set! (-> % .-target .-style .-background) "#0056b3")
+                   :on-mouse-out #(set! (-> % .-target .-style .-background) "#007bff")}
+          "Action 1"]
+         [:button {:style {:padding "10px 15px"
+                           :background "#6c757d"
+                           :color "white"
+                           :border "none"
+                           :border-radius "4px"
+                           :cursor "pointer"
+                           :font-size "14px"
+                           :transition "background 0.2s"}
+                   :on-mouse-over #(set! (-> % .-target .-style .-background) "#545b62")
+                   :on-mouse-out #(set! (-> % .-target .-style .-background) "#6c757d")}
+          "Action 2"]]]
+
+       [:div {:style {:margin-bottom "20px"}}
+        [:h4 {:style {:margin "0 0 10px 0"
+                      :font-size "14px"
+                      :font-weight "600"
+                      :color "#6c757d"}}
+         "Settings"]
+        [:div {:style {:display "flex"
+                       :flex-direction "column"
+                       :gap "10px"}}
+         [:label {:style {:display "flex"
+                          :align-items "center"
+                          :gap "8px"
+                          :cursor "pointer"}}
+          [:input {:type "checkbox"
+                   :style {:cursor "pointer"}}]
+          [:span {:style {:font-size "14px"}}
+           "Option 1"]]
+         [:label {:style {:display "flex"
+                          :align-items "center"
+                          :gap "8px"
+                          :cursor "pointer"}}
+          [:input {:type "checkbox"
+                   :style {:cursor "pointer"}}]
+          [:span {:style {:font-size "14px"}}
+           "Option 2"]]]]]]]))
+
+(defn header [grid-state side-menu-state]
   (let [columns (-> @grid-state :columns)
         sort-col (-> @grid-state :sort-col)
         sort-dir (-> @grid-state :sort-dir)]
@@ -42,7 +155,23 @@
                    :font-weight "bold"
                    :border-bottom "1px solid #ccc"}}
 
-     [:div {:style {:width "20px" :height "20px" :padding "10px" :border-right "1px solid #ddd"}} ""]
+     [:div {:style {:width "20px" :height "20px" :padding "10px" :border-right "1px solid #ddd"
+                    :display "flex"
+                    :align-items "center"
+                    :justify-content "center"}}
+      [:button {:style {:background "transparent"
+                        :border "none"
+                        :cursor "pointer"
+                        :font-size "16px"
+                        :padding "0"
+                        :display "flex"
+                        :align-items "center"
+                        :justify-content "center"}
+                :title "Open menu"
+                :on-click #(do
+                             (.stopPropagation %)
+                             (swap! side-menu-state assoc :open? true))}
+       "☰"]]
      (doall
       (map-indexed
        (fn [i column]
@@ -544,11 +673,11 @@
         [cell-component row-cursor row-idx col-idx]])
      @columns-cursor))])
 
-(defn grid-component [grid-state context-menu-state]
+(defn grid-component [grid-state context-menu-state side-menu-state]
   [:div {:on-click #(when (:visible? @context-menu-state)
                       (swap! context-menu-state assoc :visible? false))
          :on-context-menu #(.preventDefault %)}
-   [header grid-state]
+   [header grid-state side-menu-state]
    [:div {:style {:width "100%"
                   :height "90%"
                   :border "1px solid #ccc"
@@ -566,10 +695,12 @@
 
 (defn app-component []
   (let [grid-state (r/cursor app/state [:grid])
-        context-menu-state (r/cursor app/state [:context-menu])]
+        context-menu-state (r/cursor app/state [:context-menu])
+        side-menu-state (r/cursor app/state [:side-menu])]
     [:div
-     [grid-component grid-state context-menu-state]
-     [context-menu-component grid-state context-menu-state]]))
+     [grid-component grid-state context-menu-state side-menu-state]
+     [context-menu-component grid-state context-menu-state]
+     [slide-out-menu side-menu-state]]))
 
 (defonce root (atom nil))
 
@@ -580,6 +711,7 @@
 
     (swap! app/state assoc
            :context-menu {:visible? false :x 0 :y 0}
+           :side-menu {:open? false}
            :grid {:rows []
                   :columns []
                   :selected-rows (sorted-set)
