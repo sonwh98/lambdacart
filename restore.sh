@@ -14,7 +14,7 @@ tar -xzf $BACKUP_TAR
 
 # Build Datomic URIs
 SRC_URI=file:$(pwd)/$BACKUP_DIR
-DST_URI=$(printf 'datomic:sql://lambdacart_restore?jdbc:postgresql://localhost:5432/datomic?user=%s&password=%s' \
+DST_URI=$(printf 'datomic:sql://lambdacart?jdbc:postgresql://localhost:5432/datomic?user=%s&password=%s' \
               "$DATOMIC_USER" "$DATOMIC_PASSWORD")
 
 # Restore database
