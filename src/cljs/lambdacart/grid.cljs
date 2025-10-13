@@ -355,13 +355,16 @@
   "Create a new empty item in the database with optional default tagory"
   [default-tagory-id]
   (let [temp-id (str "temp-item-" (random-uuid))
+        item-id (random-uuid)
         empty-item (if default-tagory-id
                      {:db/id temp-id
+                      :item/id item-id
                       :item/name ""
                       :item/description ""
                       :item/price 0.0
                       :item/tagories default-tagory-id}
                      {:db/id temp-id
+                      :item/id item-id
                       :item/name ""
                       :item/description ""
                       :item/price 0.0})]
@@ -661,7 +664,9 @@
                                  (when (and tagories (seq tagories))
                                    (first tagories))))
                              existing-rows)
+        item-id (random-uuid)
         temp-row {:db/id (str "temp-" (random-uuid))
+                  :item/id item-id
                   :item/name ""
                   :item/description ""
                   :item/price 0.0
