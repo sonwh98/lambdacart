@@ -57,7 +57,7 @@
 (defn items-grid [display-items]
   [:div.card-grid
    (for [item display-items]
-     [:div.card {:key (or (:item/id item) (:item/name item))
+     [:div.card {:key (:item/id item)
                  :data-item-id (str (:id item))
                  :style {:display "flex"
                          :flex-direction "column"
