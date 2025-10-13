@@ -57,7 +57,7 @@
 (defn items-grid [display-items]
   [:div.card-grid
    (for [item display-items]
-     [:div.card {:key (:item/id item)
+     [:div.card {:key (or (:item/id item) (:item/name item))
                  :data-item-id (str (:id item))
                  :style {:display "flex"
                          :flex-direction "column"
@@ -180,10 +180,12 @@
             [:tbody
              (doall
               (for [{:keys [item quantity]} @cart]
-                ^{:key (str (:item/id item))}
+                ^{:key (:item/id item)}
                 [:tr
                  [:td {:style {:padding "8px 0"}}
                   [:div {:style {:font-weight "bold"}} (:item/name item)]
+                  [:div {:style {:font-size "0.9em" :color "#666" :margin "4px 0"}}
+                   (:item/description item)]
                   [:div {:style {:font-size "0.95em" :color "#555"}}
                    (str quantity " × $" (gstring/format "%.2f" (/ (:item/price item) 100.0)))]]
                  [:td {:style {:text-align "right" :font-weight "bold"}}
