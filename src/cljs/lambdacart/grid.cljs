@@ -6,13 +6,37 @@
             [lambdacart.app :as app]
             [cljs.core.async :refer [chan put! <! >! close! timeout] :as async]))
 
+(declare add-new-row)
+
 (defn delete-selected-rows [grid-state context-menu]
   (let [selected (-> @grid-state :selected-rows)
-        rows (-> @grid-state :rows)]
+        rows (-> @grid-state :rows)
+        rows-to-delete (keep-indexed #(when (selected %1) %2) rows)
+        entity-ids (map :db/id rows-to-delete)]
+
+    ;; Optimistically update UI immediately
     (swap! grid-state assoc :rows
            (vec (keep-indexed #(when-not (selected %1) %2) rows)))
     (swap! grid-state assoc :selected-rows (sorted-set))
-    (reset! context-menu {:visible? false :x 0 :y 0})))
+    (reset! context-menu {:visible? false :x 0 :y 0})
+
+    ;; Then delete from database
+    (async/go
+      (try
+        (let [retract-txs (mapv (fn [entity-id]
+                                  [:db/retractEntity entity-id])
+                                entity-ids)
+              response (<! (rpc/invoke-with-response 'transact retract-txs))]
+          (if (:error response)
+            (do
+              (js/console.error "Failed to delete items from database:" (:error response))
+              ;; Rollback - restore the deleted rows
+              (swap! grid-state assoc :rows rows))
+            (js/console.log "Items deleted successfully from database")))
+        (catch js/Error e
+          (js/console.error "Error deleting items:" e)
+          ;; Rollback on error
+          (swap! grid-state assoc :rows rows))))))
 
 (defn context-menu-component [grid-state context-menu]
   (when (:visible? @context-menu)
@@ -29,7 +53,128 @@
             :on-click #(delete-selected-rows grid-state context-menu)}
       "Delete"]]))
 
-(defn header [grid-state]
+(defn slide-out-menu [side-menu-state grid-state]
+  (let [is-open? (:open? @side-menu-state)]
+    [:<>
+     ;; Backdrop overlay
+     (when is-open?
+       [:div {:style {:position "fixed"
+                      :top "0"
+                      :left "0"
+                      :width "100vw"
+                      :height "100vh"
+                      :background "rgba(0,0,0,0.4)"
+                      :z-index 1999
+                      :transition "opacity 0.3s ease-in-out"}
+              :on-click #(swap! side-menu-state assoc :open? false)}])
+
+     ;; Slide-out menu panel
+     [:div {:style {:position "fixed"
+                    :top "0"
+                    :right (if is-open? "0" "-300px")
+                    :width "300px"
+                    :height "100vh"
+                    :background "white"
+                    :box-shadow "-2px 0 10px rgba(0,0,0,0.3)"
+                    :z-index 2000
+                    :transition "right 0.3s ease-in-out"
+                    :display "flex"
+                    :flex-direction "column"}}
+      ;; Menu header
+      [:div {:style {:padding "20px"
+                     :background "#f8f9fa"
+                     :border-bottom "1px solid #dee2e6"
+                     :display "flex"
+                     :justify-content "space-between"
+                     :align-items "center"}}
+       [:h3 {:style {:margin "0"
+                     :font-size "18px"
+                     :font-weight "600"}}
+        "Menu"]
+       [:button {:style {:background "transparent"
+                         :border "none"
+                         :font-size "24px"
+                         :cursor "pointer"
+                         :padding "0"
+                         :width "30px"
+                         :height "30px"
+                         :display "flex"
+                         :align-items "center"
+                         :justify-content "center"}
+                 :on-click #(swap! side-menu-state assoc :open? false)}
+        "×"]]
+
+      ;; Menu content
+      [:div {:style {:flex "1"
+                     :padding "20px"
+                     :overflow-y "auto"}}
+       [:div {:style {:margin-bottom "20px"}}
+        [:h4 {:style {:margin "0 0 10px 0"
+                      :font-size "14px"
+                      :font-weight "600"
+                      :color "#6c757d"}}
+         "Actions"]
+        [:div {:style {:display "flex"
+                       :flex-direction "column"
+                       :gap "10px"}}
+         [:button {:style {:padding "10px 15px"
+                           :background "#28a745"
+                           :color "white"
+                           :border "none"
+                           :border-radius "4px"
+                           :cursor "pointer"
+                           :font-size "14px"
+                           :transition "background 0.2s"
+                           :display "flex"
+                           :align-items "center"
+                           :justify-content "center"
+                           :gap "8px"}
+                   :on-mouse-over #(set! (-> % .-target .-style .-background) "#218838")
+                   :on-mouse-out #(set! (-> % .-target .-style .-background) "#28a745")
+                   :on-click #(do
+                                (add-new-row grid-state)
+                                (swap! side-menu-state assoc :open? false))}
+          [:span "+" ]
+          [:span "Add New Item"]]
+         [:button {:style {:padding "10px 15px"
+                           :background "#007bff"
+                           :color "white"
+                           :border "none"
+                           :border-radius "4px"
+                           :cursor "pointer"
+                           :font-size "14px"
+                           :transition "background 0.2s"}
+                   :on-mouse-over #(set! (-> % .-target .-style .-background) "#0056b3")
+                   :on-mouse-out #(set! (-> % .-target .-style .-background) "#007bff")}
+          "Refresh Data"]]]
+
+       [:div {:style {:margin-bottom "20px"}}
+        [:h4 {:style {:margin "0 0 10px 0"
+                      :font-size "14px"
+                      :font-weight "600"
+                      :color "#6c757d"}}
+         "Settings"]
+        [:div {:style {:display "flex"
+                       :flex-direction "column"
+                       :gap "10px"}}
+         [:label {:style {:display "flex"
+                          :align-items "center"
+                          :gap "8px"
+                          :cursor "pointer"}}
+          [:input {:type "checkbox"
+                   :style {:cursor "pointer"}}]
+          [:span {:style {:font-size "14px"}}
+           "Option 1"]]
+         [:label {:style {:display "flex"
+                          :align-items "center"
+                          :gap "8px"
+                          :cursor "pointer"}}
+          [:input {:type "checkbox"
+                   :style {:cursor "pointer"}}]
+          [:span {:style {:font-size "14px"}}
+           "Option 2"]]]]]]]))
+
+(defn header [grid-state side-menu-state]
   (let [columns (-> @grid-state :columns)
         sort-col (-> @grid-state :sort-col)
         sort-dir (-> @grid-state :sort-dir)]
@@ -42,7 +187,23 @@
                    :font-weight "bold"
                    :border-bottom "1px solid #ccc"}}
 
-     [:div {:style {:width "20px" :height "20px" :padding "10px" :border-right "1px solid #ddd"}} ""]
+     [:div {:style {:width "20px" :height "20px" :padding "10px" :border-right "1px solid #ddd"
+                    :display "flex"
+                    :align-items "center"
+                    :justify-content "center"}}
+      [:button {:style {:background "transparent"
+                        :border "none"
+                        :cursor "pointer"
+                        :font-size "16px"
+                        :padding "0"
+                        :display "flex"
+                        :align-items "center"
+                        :justify-content "center"}
+                :title "Open menu"
+                :on-click #(do
+                             (.stopPropagation %)
+                             (swap! side-menu-state assoc :open? true))}
+       "☰"]]
      (doall
       (map-indexed
        (fn [i column]
@@ -189,6 +350,22 @@
                 (swap! app/state update-in [:grid :dirty-cells] disj cell-key))))
           (catch js/Error e
             (js/console.error "Error saving cell value:" e)))))))
+
+(defn create-empty-item
+  "Create a new empty item in the database with optional default tagory"
+  [default-tagory-id]
+  (let [temp-id (str "temp-item-" (random-uuid))
+        empty-item (if default-tagory-id
+                     {:db/id temp-id
+                      :item/name ""
+                      :item/description ""
+                      :item/price 0.0
+                      :item/tagories default-tagory-id}
+                     {:db/id temp-id
+                      :item/name ""
+                      :item/description ""
+                      :item/price 0.0})]
+    (rpc/invoke-with-response 'transact [empty-item])))
 
 (defn load-grid-data []
   (rpc/invoke-with-response 'q '[:find [(pull ?e [:db/id :item/name :item/description :item/price
@@ -393,11 +570,15 @@
                    :style {:width "100%"}
                    :on-change (fn [e]
                                 (let [new-id (.. e -target -value)
-                                      new-tagory (first (filter #(= (str (:tagory/id %)) new-id) @all-tagories))]
-                                  ;; Retract old tagory and add new tagory in one transaction
-                                  (rpc/invoke-with-response 'transact
-                                                            [[:db/retract item-id :item/tagories (:db/id current-tagory)]
-                                                             [:db/add item-id :item/tagories (:db/id new-tagory)]])
+                                      new-tagory (first (filter #(= (str (:tagory/id %)) new-id) @all-tagories))
+                                      transaction (if current-tagory
+                                                    ;; If there's an existing tagory, retract it and add new one
+                                                    [[:db/retract item-id :item/tagories (:db/id current-tagory)]
+                                                     [:db/add item-id :item/tagories (:db/id new-tagory)]]
+                                                    ;; If no existing tagory, just add the new one
+                                                    [[:db/add item-id :item/tagories (:db/id new-tagory)]])]
+                                  ;; Execute transaction
+                                  (rpc/invoke-with-response 'transact transaction)
                                   ;; Update local state
                                   (reset! cell-value-cursor [new-tagory])
                                   (swap! app/state update-in [:grid :dirty-cells] (fnil conj #{}) [row-idx col-idx])))}
@@ -469,6 +650,46 @@
                                   {:name header-kw
                                    :type (detect-column-type header-kw sample-value)}))
                               headers))))))
+
+(defn add-new-row
+  "Add a new row to the grid with optimistic UI update"
+  [grid-state]
+  (let [existing-rows (-> @grid-state :rows)
+        ;; Find a tagory from existing rows
+        default-tagory (some (fn [row]
+                               (let [tagories (:item/tagories row)]
+                                 (when (and tagories (seq tagories))
+                                   (first tagories))))
+                             existing-rows)
+        temp-row {:db/id (str "temp-" (random-uuid))
+                  :item/name ""
+                  :item/description ""
+                  :item/price 0.0
+                  :item/tagories (if default-tagory [default-tagory] [])
+                  :item/images []}]
+    ;; Add to UI immediately (optimistic update)
+    (swap! grid-state update :rows conj temp-row)
+
+    ;; Then sync with server
+    (async/go
+      (try
+        (let [response (<! (create-empty-item (:db/id default-tagory)))]
+          (if (:error response)
+            (do
+              (js/console.error "Failed to create item:" (:error response))
+              ;; Rollback on error - remove the temp row
+              (swap! grid-state update :rows
+                     #(vec (remove (fn [r] (= (:db/id r) (:db/id temp-row))) %))))
+            (do
+              (js/console.log "Item created successfully, reloading data...")
+              ;; Reload grid data to get the real db/id
+              (let [grid-response (<! (load-grid-data))]
+                (process-grid-data grid-response)))))
+        (catch js/Error e
+          (js/console.error "Error creating item:" e)
+          ;; Rollback on error
+          (swap! grid-state update :rows
+                 #(vec (remove (fn [r] (= (:db/id r) (:db/id temp-row))) %))))))))
 
 (defn cell-component [row-cursor row-idx col-idx]
   (let [columns-cursor (r/cursor app/state [:grid :columns])
@@ -544,11 +765,11 @@
         [cell-component row-cursor row-idx col-idx]])
      @columns-cursor))])
 
-(defn grid-component [grid-state context-menu-state]
+(defn grid-component [grid-state context-menu-state side-menu-state]
   [:div {:on-click #(when (:visible? @context-menu-state)
                       (swap! context-menu-state assoc :visible? false))
          :on-context-menu #(.preventDefault %)}
-   [header grid-state]
+   [header grid-state side-menu-state]
    [:div {:style {:width "100%"
                   :height "90%"
                   :border "1px solid #ccc"
@@ -564,12 +785,44 @@
                [grid-row-component i row-cursor columns-cursor selected-rows-cursor]))
            (-> @grid-state :rows count range)))]])
 
+(defn floating-action-button [grid-state]
+  [:button {:style {:position "fixed"
+                    :bottom "30px"
+                    :right "30px"
+                    :width "60px"
+                    :height "60px"
+                    :border-radius "50%"
+                    :background "#28a745"
+                    :color "white"
+                    :border "none"
+                    :font-size "28px"
+                    :cursor "pointer"
+                    :box-shadow "0 4px 12px rgba(0,0,0,0.3)"
+                    :z-index 1500
+                    :display "flex"
+                    :align-items "center"
+                    :justify-content "center"
+                    :transition "all 0.2s ease"
+                    :font-weight "300"}
+            :title "Add New Item"
+            :on-mouse-over #(do
+                              (set! (-> % .-target .-style .-transform) "scale(1.1)")
+                              (set! (-> % .-target .-style .-boxShadow) "0 6px 16px rgba(0,0,0,0.4)"))
+            :on-mouse-out #(do
+                             (set! (-> % .-target .-style .-transform) "scale(1)")
+                             (set! (-> % .-target .-style .-boxShadow) "0 4px 12px rgba(0,0,0,0.3)"))
+            :on-click #(add-new-row grid-state)}
+   "+"])
+
 (defn app-component []
   (let [grid-state (r/cursor app/state [:grid])
-        context-menu-state (r/cursor app/state [:context-menu])]
+        context-menu-state (r/cursor app/state [:context-menu])
+        side-menu-state (r/cursor app/state [:side-menu])]
     [:div
-     [grid-component grid-state context-menu-state]
-     [context-menu-component grid-state context-menu-state]]))
+     [grid-component grid-state context-menu-state side-menu-state]
+     [context-menu-component grid-state context-menu-state]
+     [slide-out-menu side-menu-state grid-state]
+     [floating-action-button grid-state]]))
 
 (defonce root (atom nil))
 
@@ -580,6 +833,7 @@
 
     (swap! app/state assoc
            :context-menu {:visible? false :x 0 :y 0}
+           :side-menu {:open? false}
            :grid {:rows []
                   :columns []
                   :selected-rows (sorted-set)
