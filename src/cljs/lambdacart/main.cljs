@@ -148,6 +148,8 @@
 ;; Cart content with pay button and QR code
 (defn cart-content [cart]
   (let [payment-status (r/cursor app/state [:payment-status])
+        payment-method (r/cursor app/state [:payment-method])
+        show-payment-methods (r/atom false)
         monitor-chan (r/cursor app/state [:monitor-chan])
         store-id (-> @app/state :store :store/id)
         store-name (-> @app/state :store :store/name)
@@ -201,37 +203,108 @@
             "Subtotal: " [:span {:style {:color "#e91e63"}} (str "$" (gstring/format "%.2f" (/ sub-total 100.0)))]
             (case @payment-status
               :pending
-              [:div {:style {:textAlign "center"}}
-               [:a {:href algo-url
-                    :on-click (fn []
-                                (reset! payment-status :monitoring)
-                                (let [monitor (wallet/monitor-transactions
-                                               algo-address
-                                               (fn [txs]
-                                                 (let [tx (first txs)
-                                                       tx-order-num (:note-decoded tx)
-                                                       receiver (-> tx :payment-transaction :receiver)]
-                                                   (when (and (= tx-order-num @order-num)
-                                                              (= receiver algo-address))
-                                                     (reset! payment-status :confirmed)
-                                                     (reset! order-num nil)
-                                                     (submit-cart @cart tx)
-                                                     (when-let [stop-ch @monitor-chan]
-                                                       (async/close! stop-ch)
-                                                       (reset! monitor-chan nil)))))
-                                               {:interval-ms 5000})]
-                                  (reset! monitor-chan (:stop monitor))))
-                    :style {:display "inline-block"
-                            :background "#e91e63"
-                            :color "white"
-                            :border "none"
-                            :border-radius "5px"
-                            :padding "10px 20px"
-                            :cursor "pointer"
-                            :font-size "1.1em"
-                            :margin-top "16px"
-                            :text-decoration "none"}}
-                "Pay with Algo"]]
+              [:div {:style {:textAlign "center" :position "relative"}}
+               ;; Payment method selection modal
+               (when @show-payment-methods
+                 [:div {:style {:position "absolute"
+                                :bottom "60px"
+                                :left "50%"
+                                :transform "translateX(-50%)"
+                                :background "white"
+                                :border "1px solid #ddd"
+                                :border-radius "8px"
+                                :box-shadow "0 4px 12px rgba(0,0,0,0.15)"
+                                :padding "16px"
+                                :min-width "250px"
+                                :z-index 1000}}
+                  [:h3 {:style {:margin "0 0 12px 0" :font-size "1em" :color "#333"}}
+                   "Select Payment Method"]
+                  [:div {:style {:display "flex" :flex-direction "column" :gap "8px"}}
+                   ;; Algorand option
+                   [:a {:href algo-url
+                        :on-click (fn []
+                                    (reset! show-payment-methods false)
+                                    (reset! payment-method :algo)
+                                    (reset! payment-status :monitoring)
+                                    (let [monitor (wallet/monitor-transactions
+                                                   algo-address
+                                                   (fn [txs]
+                                                     (let [tx (first txs)
+                                                           tx-order-num (:note-decoded tx)
+                                                           receiver (-> tx :payment-transaction :receiver)]
+                                                       (when (and (= tx-order-num @order-num)
+                                                                  (= receiver algo-address))
+                                                         (reset! payment-status :confirmed)
+                                                         (reset! order-num nil)
+                                                         (submit-cart @cart tx)
+                                                         (when-let [stop-ch @monitor-chan]
+                                                           (async/close! stop-ch)
+                                                           (reset! monitor-chan nil)))))
+                                                   {:interval-ms 5000})]
+                                      (reset! monitor-chan (:stop monitor))))
+                        :style {:padding "12px"
+                                :background "#f5f5f5"
+                                :border "1px solid #ddd"
+                                :border-radius "5px"
+                                :cursor "pointer"
+                                :text-align "left"
+                                :text-decoration "none"
+                                :color "#333"
+                                :transition "background 0.2s"
+                                :font-weight "500"}}
+                    "Algorand (ALGO)"]
+                   ;; Bitcoin option
+                   [:button {:on-click (fn []
+                                         (reset! show-payment-methods false)
+                                         (reset! payment-method :btc)
+                                         (js/alert "Bitcoin payment coming soon!"))
+                             :style {:padding "12px"
+                                     :background "#f5f5f5"
+                                     :border "1px solid #ddd"
+                                     :border-radius "5px"
+                                     :cursor "pointer"
+                                     :text-align "left"
+                                     :font-weight "500"}}
+                    "Bitcoin (BTC)"]
+                   ;; Ethereum option
+                   [:button {:on-click (fn []
+                                         (reset! show-payment-methods false)
+                                         (reset! payment-method :ethereum)
+                                         (js/alert "Ethereum payment coming soon!"))
+                             :style {:padding "12px"
+                                     :background "#f5f5f5"
+                                     :border "1px solid #ddd"
+                                     :border-radius "5px"
+                                     :cursor "pointer"
+                                     :text-align "left"
+                                     :font-weight "500"}}
+                    "Ethereum (ETH)"]
+                   ;; Credit Card option
+                   [:button {:on-click (fn []
+                                         (reset! show-payment-methods false)
+                                         (reset! payment-method :credit-card)
+                                         (js/alert "Credit Card payment coming soon!"))
+                             :style {:padding "12px"
+                                     :background "#f5f5f5"
+                                     :border "1px solid #ddd"
+                                     :border-radius "5px"
+                                     :cursor "pointer"
+                                     :text-align "left"
+                                     :font-weight "500"}}
+                    "Credit Card"]]])
+               ;; Pay button
+               [:button {:on-click (fn []
+                                     (swap! show-payment-methods not))
+                         :style {:display "inline-block"
+                                 :background "#e91e63"
+                                 :color "white"
+                                 :border "none"
+                                 :border-radius "5px"
+                                 :padding "10px 20px"
+                                 :cursor "pointer"
+                                 :font-size "1.1em"
+                                 :margin-top "16px"}}
+                "Pay"]]
               :monitoring
               [:div {:style {:marginTop "16px" :textAlign "center"}}
                [:div {:style {:marginBottom "8px" :fontWeight "bold" :fontSize "1.1em" :color "#333"}}
@@ -378,6 +451,7 @@
     (swap! app/state assoc
            :context-menu {:visible? false :x 0 :y 0}
            :payment-status :pending
+           :payment-method nil
            :monitor-chan nil
            :grid {:rows []
                   :columns []
