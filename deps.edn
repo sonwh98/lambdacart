@@ -1,4 +1,5 @@
 {:deps {org.clojure/core.async {:mvn/version "1.8.741"}
+        org.clojure/data.json {:mvn/version "2.5.1"}
         ring/ring {:mvn/version "1.14.1"}
         com.cognitect/transit-clj {:mvn/version "1.0.333"}
         com.datomic/peer {:mvn/version "1.0.7364"}
