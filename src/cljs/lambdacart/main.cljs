@@ -430,7 +430,7 @@
 (defn header [state]
   [:div.header-container
    [:div.search-container
-    [:input.search-box {:type "text" :placeholder "Search cosmetics..."}]]
+    [:input.search-box {:type "text" :placeholder "Search ..."}]]
    [:button.menu-toggle {:on-click toggle-menu}
     [:span.hamburger]]
    [:nav.navigation
@@ -488,7 +488,7 @@
         (when (not= (:status (stream/status wss)) :connected)
           (<! (async/timeout 100))
           (recur)))
-      (load-store "TT Cosmetics" "TT Cosmetics Downtown NYC"))))
+      (load-store "TT Game Stock" "TT Game Stock Online Store"))))
 
 (comment
   (-> @app/state keys)
