@@ -279,7 +279,7 @@
                  :border-radius "8px" :text-align "center" :max-width "600px"}}
    [:h2 {:style {:margin-bottom "16px"}} "Contact Us"]
    [:p {:style {:margin "8px 0"}} "For any inquiries, please reach out to us at "
-    [:a {:href "mailto:tt@ttgamestock.com"} "tt@ttgamestock.com"] "."]
+    [:a {:href "mailto:sales@ttgamestock.com"} "sales@ttgamestock.com"] "."]
    [:p {:style {:margin "8px 0"}} "WhatsApp: " [:a {:href "https://wa.me/8613928458941" :target "_blank" :rel "noopener noreferrer"} "+86 139 2845 8941"]]])
 
 (defn set-account [addresses]
