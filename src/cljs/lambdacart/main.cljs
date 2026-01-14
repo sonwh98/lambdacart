@@ -1,5 +1,6 @@
 (ns lambdacart.main
   (:require [cljs.core.async :refer [chan put! <! >! close! timeout] :as async]
+            [clojure.string :as str]
             [lambdacart.app :as app]
             [lambdacart.rpc :as rpc]
             [lambdacart.stream :as stream]
@@ -347,13 +348,61 @@
              :on-click on-click}
    content])
 
+(def contacts
+  [{:name "Tian Tian"
+    :image "/images/contacts/zhao.zeng.tian.jpeg"
+    :whatsapp "+8613928458941"
+    :email "zhao.zeng.tian@gmail.com"}
+   {:name "Jerry"
+    :image "/images/contacts/jerryb99888.jpeg"
+    :whatsapp "+8615989290114"
+    :email "jerryb99888@gmail.com"}
+   {:name "Feni"
+    :image "/images/contacts/zhangruifen520.jpeg"
+    :whatsapp "+8619064012840"
+    :email "zhangruifen520@gmail.com"}])
+
+(defn contact-card [{:keys [name image whatsapp email]}]
+  [:div {:style {:display "flex"
+                 :flex-direction "column"
+                 :align-items "center"
+                 :padding "16px"
+                 :background "#f9f9f9"
+                 :border-radius "8px"
+                 :box-shadow "0 2px 4px rgba(0,0,0,0.1)"}}
+   [:img {:src image
+          :alt name
+          :style {:width "120px"
+                  :height "120px"
+                  :object-fit "cover"
+                  :border-radius "50%"
+                  :margin-bottom "12px"}}]
+   [:div {:style {:display "flex" :margin-bottom "8px"}}
+    [:span {:style {:color "#666" :width "70px" :text-align "right" :margin-right "8px"}} "Name:"]
+    [:span {:style {:font-weight "bold"}} name]]
+   [:div {:style {:display "flex" :margin-bottom "8px"}}
+    [:span {:style {:color "#666" :width "70px" :text-align "right" :margin-right "8px"}} "WhatsApp:"]
+    [:a {:href (str "https://wa.me/" (str/replace whatsapp #"[^0-9]" ""))
+         :target "_blank"
+         :rel "noopener noreferrer"
+         :style {:color "#25D366" :font-weight "bold"}}
+     whatsapp]]
+   [:div {:style {:display "flex"}}
+    [:span {:style {:color "#666" :width "70px" :text-align "right" :margin-right "8px"}} "Email:"]
+    [:a {:href (str "mailto:" email)
+         :style {:color "#e91e63"}}
+     email]]])
+
 (defn contact-page []
   [:div {:style {:padding "20px" :background-color "white" :margin "20px auto"
-                 :border-radius "8px" :text-align "center" :max-width "600px"}}
-   [:h2 {:style {:margin-bottom "16px"}} "Contact Us"]
-   [:p {:style {:margin "8px 0"}} "For any inquiries, please reach out to us at "
-    [:a {:href "mailto:sales@ttgamestock.com"} "sales@ttgamestock.com"] "."]
-   [:p {:style {:margin "8px 0"}} "WhatsApp: " [:a {:href "https://wa.me/8613928458941" :target "_blank" :rel "noopener noreferrer"} "+86 139 2845 8941"]]])
+                 :border-radius "8px" :text-align "center" :max-width "800px"}}
+   [:h2 {:style {:margin-bottom "24px"}} "Contact Us"]
+   [:div {:style {:display "grid"
+                  :grid-template-columns "repeat(auto-fit, minmax(200px, 1fr))"
+                  :gap "20px"}}
+    (for [contact contacts]
+      ^{:key (:email contact)}
+      [contact-card contact])]])
 
 (defn set-account [addresses]
   (when (seq addresses)
