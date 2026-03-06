@@ -42,6 +42,7 @@
 ;; clj -M:fmt
 ;; clj -M:cljs -m shadow.cljs.devtools.cli watch app
 ;; clj -M:cljs -m shadow.cljs.devtools.cli compile app
+;; clj -M:cljs -m shadow.cljs.devtools.cli compile grid-prod
 ;; clj -M:server
 
 ;; clj -M:dev -m shadow.cljs.devtools.cli watch grid

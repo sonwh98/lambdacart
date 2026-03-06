@@ -1,23 +1,3 @@
-# run in Docker
-```bash
-% docker build -t lambdacart .
-% ./scripts/start-docker.sh
-```
-
-
-then open browser http://localhost:3001/grid.chp
-
-# copy files to container without redeploying
-```bash
-% docker cp public/. <container-name>:/app/public 
-% docker cp public/. mai:/app/public
-```
-
-# start bash shell in docker
-```bash
-% docker exec -it lambdacart /bin/sh 
-```
-
 # deps.edn scripts
 ```bash
 

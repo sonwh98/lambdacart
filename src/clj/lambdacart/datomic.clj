@@ -3,12 +3,13 @@
             [clojure.edn :as edn]))
 
 ;; Datomic connection setup
+(def datomic-sql-host (or (System/getenv "DATOMIC_SQL_HOST") "localhost"))
 (def datomic-user (or (System/getenv "DATOMIC_USER") "datomic"))
 (def datomic-password (or (System/getenv "DATOMIC_PASSWORD") "datomic"))
 
 (def db-uri
-  (format "datomic:sql://lambdacart?jdbc:postgresql://localhost:5432/datomic?user=%s&password=%s"
-          datomic-user datomic-password))
+  (format "datomic:sql://lambdacart?jdbc:postgresql://%s:5432/datomic?user=%s&password=%s"
+          datomic-sql-host datomic-user datomic-password))
 (def conn (atom nil))
 
 (defn get-db []

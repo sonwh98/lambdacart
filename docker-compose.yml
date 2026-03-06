@@ -1,0 +1,50 @@
+services:
+  db:
+    image: postgres:latest
+    environment:
+      POSTGRES_DB: datomic
+      POSTGRES_USER: datomic
+      POSTGRES_PASSWORD: datomic
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    networks:
+      - lambdacart-net
+
+  transactor:
+    build:
+      context: .
+      dockerfile: Dockerfile.transactor
+    ports:
+      - "4344:4334"
+      - "4345:4335"
+      - "4346:4336"
+    depends_on:
+      - db
+    networks:
+      - lambdacart-net
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      DATOMIC_USER: datomic
+      DATOMIC_PASSWORD: datomic
+      CONFIG: config.clj
+      DATOMIC_SQL_HOST: db
+    ports:
+      - "3003:3001"
+    depends_on:
+      - transactor
+      - db
+    networks:
+      - lambdacart-net
+
+volumes:
+  postgres_data:
+
+networks:
+  lambdacart-net:
+    driver: bridge
