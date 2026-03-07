@@ -1,7 +1,9 @@
 services:
   db:
     image: postgres:latest
+    restart: always
     environment:
+      LC_ALL: C.UTF-8
       POSTGRES_DB: datomic
       POSTGRES_USER: datomic
       POSTGRES_PASSWORD: datomic
@@ -16,6 +18,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.transactor
+    restart: always
     ports:
       - "4344:4334"
       - "4345:4335"
@@ -29,13 +32,17 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    restart: always
     environment:
+      LC_ALL: C.UTF-8
       DATOMIC_USER: datomic
       DATOMIC_PASSWORD: datomic
       CONFIG: config.clj
       DATOMIC_SQL_HOST: db
     ports:
       - "3003:3001"
+    volumes:
+      - ./public/images:/app/public/images
     depends_on:
       - transactor
       - db
