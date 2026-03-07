@@ -1,4 +1,4 @@
-{:port 3001
+{:port 3003
  :chp-dir "public/chp"
  :public-dir "public"
  :image-upload-dir "public/images"
